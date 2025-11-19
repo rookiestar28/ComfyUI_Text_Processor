@@ -1,6 +1,5 @@
 class FlexibleInputs(dict):
-    BGCOLOR = "#3d124d"  # Background color
-    COLOR = "#19124d"  # Title color
+    # 已移除 BGCOLOR 和 COLOR
     """A special class to make flexible node inputs."""
     def __init__(self, type):
         self.type = type
@@ -12,8 +11,7 @@ class FlexibleInputs(dict):
         return True
 
 class TextInput:
-    BGCOLOR = "#3d124d"  # Background color
-    COLOR = "#19124d"  # Title color
+    # 已移除 BGCOLOR 和 COLOR
     def __init__(self):
         pass
     

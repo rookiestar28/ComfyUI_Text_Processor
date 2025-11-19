@@ -1,11 +1,11 @@
 import re
+from typing import Tuple, Optional, Any
 
 class AdvancedTextFilter:
     """
-    這個節點根據指定的操作，處理輸入文本，並提供兩個輸出：
+    這個節點根據指定的操作處理輸入文本，並提供兩個輸出：
     1. processed_text: 操作的主要結果。
-    2. remaining_text: 另一個部分的文本。
-    (v1.3 - 將 Find/Replace 與 Split/Between 的輸入欄位分開)
+    2. remaining_text: 被移除或未被選中的部分文本。
     """
     
     def __init__(self):
@@ -13,25 +13,19 @@ class AdvancedTextFilter:
 
     @classmethod
     def INPUT_TYPES(cls):
-        
-        # 更新 'find and replace' 的名稱以反映新輸入
         operation_modes = [
-            # === 查找/替換/擷取 (使用 optional_text_input) ===
             "find and remove (use optional_text)",
             "find and replace (use optional_text, replace_with_text)",
             "find all (extract) (use optional_text)",
             
-            # === 範圍 (Between) (使用 start_text, end_text) ===
             "extract between",
             "remove between",
             
-            # === 分割 (Split) (使用 start_text) ===
             "extract before start text",
             "extract after start text",
             "remove before start text",
             "remove after start text",
             
-            # === 清理 (Cleanup) ===
             "remove empty lines",
             "remove newlines",
             "strip lines (trim)",
@@ -42,18 +36,14 @@ class AdvancedTextFilter:
             "required": {
                 "text": ("STRING", {"multiline": True, "default": ""}),
                 "concat_mode": (["disabled", "prepend_external_text", "append_external_text"],),
-                
                 "operation": (operation_modes,),
                 
-                # --- 專用於 Split/Between 操作 ---
                 "start_text": ("STRING", {"multiline": False, "default": ""}),
                 "end_text": ("STRING", {"multiline": False, "default": ""}),
                 
-                # --- 專用於 Find/Replace/Extract 操作 ---
                 "optional_text_input": ("STRING", {"multiline": False, "default": "", "placeholder": "用於 Find... 可用 , 分隔多個"}),
                 "replace_with_text": ("STRING", {"multiline": False, "default": "", "placeholder": "用於 Find and Replace"}),
                 
-                # --- 通用 ---
                 "use_regex": ("BOOLEAN", {"default": False}),
                 "case_conversion": (["disabled", "to UPPERCASE", "to lowercase"],),
             },
@@ -68,136 +58,94 @@ class AdvancedTextFilter:
     FUNCTION = "process"
     CATEGORY = "Text Processor"
 
-    # 更新 process 函式簽名，分離 'find' 和 'split' 的輸入
-    def process(self, text, concat_mode, operation, 
-                start_text, end_text,                     # 用於 Split/Between
-                optional_text_input, replace_with_text,   # 用於 Find/Replace
-                use_regex, case_conversion, 
-                external_text=None):
+    def process(self, text: str, concat_mode: str, operation: str, 
+                start_text: str, end_text: str, 
+                optional_text_input: str, replace_with_text: str, 
+                use_regex: bool, case_conversion: str, 
+                external_text: Optional[Any] = None) -> Tuple[str, str]:
 
-        external_text_str = None
-        if external_text is not None:
-            external_text_str = str(external_text) 
-
-        # 1. 預處理：合併文本
-        text_to_process = text  
-        if external_text_str and concat_mode != "disabled":
+        text_to_process = text
+        if external_text is not None and concat_mode != "disabled":
+            external_text_str = str(external_text)
             if concat_mode == "prepend_external_text":
                 text_to_process = external_text_str + text_to_process
             elif concat_mode == "append_external_text":
                 text_to_process = text_to_process + external_text_str
         
-        # 2. 預處理：大小寫轉換
         if case_conversion == "to UPPERCASE":
             text_to_process = text_to_process.upper()
         elif case_conversion == "to lowercase":
             text_to_process = text_to_process.lower()
 
-        # 儲存此階段的文本，用於錯誤回退
         original_text_input = text_to_process
-        
         
         try:
             if operation == "remove empty lines":
-                lines = text_to_process.splitlines()
-                processed_lines = [line for line in lines if line.strip()]
+                processed_lines = [line for line in text_to_process.splitlines() if line.strip()]
                 return ("\n".join(processed_lines), "")
 
-            if operation == "remove newlines":
+            elif operation == "remove newlines":
                 processed = text_to_process.replace("\r", "").replace("\n", "")
                 return (processed, "")
 
-            if operation == "strip lines (trim)":
-                lines = text_to_process.splitlines()
-                processed_lines = [line.strip() for line in lines]
+            elif operation == "strip lines (trim)":
+                processed_lines = [line.strip() for line in text_to_process.splitlines()]
                 return ("\n".join(processed_lines), "")
 
-            if operation == "remove all whitespace (keep newlines)":
-                lines = text_to_process.splitlines()
-                processed_lines = ["".join(line.split()) for line in lines]
+            elif operation == "remove all whitespace (keep newlines)":
+                processed_lines = ["".join(line.split()) for line in text_to_process.splitlines()]
                 return ("\n".join(processed_lines), "")
 
-            
-            find_ops = [
-                "find and remove (use optional_text)",
-                "find and replace (use optional_text, replace_with_text)",
-                "find all (extract) (use optional_text)"
-            ]
-
-            if operation in find_ops:
-                # 這些操作現在 *只* 使用 optional_text_input
+            elif operation.startswith("find"):
                 if not optional_text_input:
-                    if operation == "find all (extract) (use optional_text)":
-                        return ("", original_text_input) 
-                    else:
-                        return (original_text_input, "") 
+                    if "extract" in operation:
+                        return ("", original_text_input)
+                    return (original_text_input, "")
 
-                # 根據 , 分隔符解析多個 pattern
                 patterns = [p.strip() for p in optional_text_input.split(',') if p.strip()]
+                
                 if not patterns:
                      raise ValueError("optional_text_input is empty or contains only delimiters")
 
-                processed_text = text_to_process
-                all_found_matches = [] # 用於 'remaining_text'
+                all_found_matches = []
 
-                # 'find all (extract)' 需要一個獨立的列表
                 if operation == "find all (extract) (use optional_text)":
-                    for pattern in patterns:
-                        if use_regex:
-                            all_found_matches.extend(re.findall(pattern, processed_text))
-                        else:
-                            # 對於純文字，我們需要計算次數
-                            count = processed_text.count(pattern)
-                            if count > 0:
-                                all_found_matches.extend([pattern] * count)
-                    
-                    # 處理 (processed_text) 是所有找到的匹配項
-                    processed_output = "\n".join(all_found_matches)
-                    
-                    # 剩餘 (remaining_text) 是移除了所有匹配項的原始文本
                     remaining_output = text_to_process
+                    
                     for pattern in patterns:
                         if use_regex:
+                            found = re.findall(pattern, text_to_process)
+                            all_found_matches.extend(found)
                             remaining_output = re.sub(pattern, "", remaining_output)
                         else:
+                            count = text_to_process.count(pattern)
+                            if count > 0:
+                                all_found_matches.extend([pattern] * count)
                             remaining_output = remaining_output.replace(pattern, "")
                     
+                    processed_output = "\n".join(all_found_matches)
                     return (processed_output, remaining_output)
 
                 else:
-                    # 對於 'remove' 和 'replace'
                     temp_processed_text = text_to_process
-                    
+                    replace_str = replace_with_text if "replace" in operation else ""
+
                     for pattern in patterns:
-                        # 先收集被替換/移除的內容
                         if use_regex:
-                            all_found_matches.extend(re.findall(pattern, temp_processed_text))
+                            found = re.findall(pattern, temp_processed_text)
+                            all_found_matches.extend(found)
+                            temp_processed_text = re.sub(pattern, replace_str, temp_processed_text)
                         else:
                             count = temp_processed_text.count(pattern)
                             if count > 0:
                                 all_found_matches.extend([pattern] * count)
-                        
-                        # 然後執行替換/移除
-                        replace_str = ""
-                        if operation == "find and replace (use optional_text, replace_with_text)":
-                            replace_str = replace_with_text # 使用新輸入
-
-                        if use_regex:
-                            temp_processed_text = re.sub(pattern, replace_str, temp_processed_text)
-                        else:
                             temp_processed_text = temp_processed_text.replace(pattern, replace_str)
                     
                     processed_output = temp_processed_text
                     remaining_output = "\n".join(all_found_matches)
                     return (processed_output, remaining_output)
 
-            
-            split_ops = [
-                "extract before start text", "extract after start text",
-                "remove before start text", "remove after start text"
-            ]
-            
-            if operation in split_ops:
+            elif "start text" in operation:
                 if not start_text:
                     raise ValueError("start_text is required for this operation")
                 
@@ -206,73 +154,60 @@ class AdvancedTextFilter:
                 if use_regex:
                     match = re.search(start_text, text_to_process)
                     if not match:
-                        raise ValueError("Start text regex not found")
+                        raise ValueError(f"Start text regex '{start_text}' not found")
                     split_index = match.start()
                 else:
                     split_index = text_to_process.find(start_text)
                     if split_index == -1:
-                        raise ValueError("Start text not found")
+                        raise ValueError(f"Start text '{start_text}' not found")
 
                 part_before = text_to_process[:split_index]
                 part_after = text_to_process[split_index:]
                 
-                if operation == "extract before start text" or operation == "remove after start text":
+                if "extract before" in operation or "remove after" in operation:
                     return (part_before, part_after)
-                
-                if operation == "extract after start text" or operation == "remove before start text":
+                else: # extract after / remove before
                     return (part_after, part_before)
 
-
-            between_ops = ["extract between", "remove between"]
-            if operation in between_ops:
-                
+            elif "between" in operation:
                 if not start_text or not end_text:
-                    if operation == "extract between":
-                        return ("", text_to_process)
-                    else:
-                        return (text_to_process, "")
+                    return ("", text_to_process) if operation == "extract between" else (text_to_process, "")
 
-                
                 if use_regex:
                     start_match = re.search(start_text, text_to_process)
                     if not start_match:
-                        raise ValueError("Start text regex not found in text")
+                        raise ValueError(f"Start text regex '{start_text}' not found")
                     
                     start_of_target = start_match.end()
 
                     end_match = re.search(end_text, text_to_process[start_of_target:])
                     if not end_match:
-                        raise ValueError("End text regex not found after start text")
+                        raise ValueError(f"End text regex '{end_text}' not found after start text")
 
                     end_of_target = start_of_target + end_match.start()
 
                 else:
                     start_index = text_to_process.find(start_text)
                     if start_index == -1:
-                        raise ValueError("Start text not found in text")
+                        raise ValueError(f"Start text '{start_text}' not found")
                     
                     start_of_target = start_index + len(start_text)
                     
                     end_of_target = text_to_process.find(end_text, start_of_target)
                     if end_of_target == -1:
-                        raise ValueError("End text not found after start delimiter")
+                        raise ValueError(f"End text '{end_text}' not found after start text")
 
                 target_text = text_to_process[start_of_target:end_of_target]
                 before_text = text_to_process[:start_of_target]
                 after_text = text_to_process[end_of_target:]
 
                 if operation == "extract between":
-                    processed_output = target_text
-                    remaining_output = before_text + after_text
-                else: # "remove between"
-                    processed_output = before_text + after_text
-                    remaining_output = target_text
-                
-                return (processed_output, remaining_output)
+                    return (target_text, before_text + after_text)
+                else: # remove between
+                    return (before_text + after_text, target_text)
 
-        
         except ValueError as e:
-            print(f"[AdvancedTextFilter] Warning: {e}")
+            print(f"[AdvancedTextFilter] Value Warning: {e}")
             if operation.startswith("extract") or operation.startswith("find all"):
                 return ("", original_text_input) 
             else:
@@ -283,8 +218,8 @@ class AdvancedTextFilter:
             return (original_text_input, f"REGEX ERROR: {e}")
 
         except Exception as e:
-            print(f"[AdvancedTextFilter] Error: {e}")
+            print(f"[AdvancedTextFilter] Generic Error: {e}")
             return (original_text_input, str(e)) 
 
-        # 備用
+        # Fallback for unknown operation
         return (text_to_process, "Unknown operation")

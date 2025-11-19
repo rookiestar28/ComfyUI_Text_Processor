@@ -54,7 +54,7 @@ class AddTextToImage:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
     FUNCTION = "execute_draw_on_batch"
-    CATEGORY = "image/transform" # 保持在 image/transform 分類
+    CATEGORY = "image/transform"
 
     def execute_draw_on_batch(
         self,
@@ -93,7 +93,6 @@ class AddTextToImage:
         parsed_bg_color_tuple = self._parse_color_with_alpha(background_color_hex, 128)
         print(f"  Parsed background_color_hex '{background_color_hex}' to RGBA: {parsed_bg_color_tuple}")
 
-
         for i in range(batch_size):
             current_image_tensor_hwc = image[i]
             
@@ -119,13 +118,13 @@ class AddTextToImage:
                     except TypeError: 
                         text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing)
                     actual_text_width = text_bbox[2] - text_bbox[0]
+                    
                     if actual_text_width <= (img_width - margin * 2): break
                     if current_font_size_iter <= min_font_size:
                         try:
                             text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
                         except TypeError:
                             text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing)
-                        actual_text_width = text_bbox[2] - text_bbox[0]
                         break
                     current_font_size_iter -= 1
                 
@@ -171,16 +170,20 @@ class AddTextToImage:
 
             final_pil_image_rgba = Image.alpha_composite(base_pil_image, overlay_pil_image)
             
-            output_tensor_chw = to_image(final_pil_image_rgba) / 255.0
+            final_pil_image_rgb = final_pil_image_rgba.convert("RGB")
+            
+            output_tensor_chw = to_image(final_pil_image_rgb) / 255.0
             processed_pil_images_chw.append(output_tensor_chw)
         
         try:
             stacked_images_bchw = torch.stack(processed_pil_images_chw, dim=0)
             final_output_tensor_bhwc = stacked_images_bchw.permute(0, 2, 3, 1)
             print(f"  Batch processed successfully. Output shape: {final_output_tensor_bhwc.shape}")
+            
             if final_output_tensor_bhwc.shape[-1] == 4:
                  alpha_channel_values = final_output_tensor_bhwc[0, :, :, 3]
                  print(f"    Alpha channel min: {alpha_channel_values.min().item()}, max: {alpha_channel_values.max().item()}")
+            
             print(f"[AddTextToImage EXECUTE_DRAW_ON_BATCH END]")
             return (final_output_tensor_bhwc,)
         except RuntimeError as e:

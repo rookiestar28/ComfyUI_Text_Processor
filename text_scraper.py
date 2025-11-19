@@ -1,65 +1,44 @@
 import requests
 from bs4 import BeautifulSoup
 from typing import List, Dict
-import os
 
 class TextScraper:
-    BGCOLOR = "#3d124d"  # Background color
-    COLOR = "#19124d"  # Title color
     """
     A ComfyUI node that scrapes news headlines from a given URL and outputs them as formatted text.
     """
     
     def __init__(self):
-        self.sites_file = os.path.join(os.path.dirname(__file__), "sites.txt")
-        self.known_sites = self.load_sites()
-    
-    def load_sites(self) -> List[str]:
-        """Load known sites from sites.txt"""
-        if not os.path.exists(self.sites_file):
-            # Create default sites file with example URL
-            default_sites = ["https://news.ycombinator.com"]
-            with open(self.sites_file, "w") as f:
-                f.write("\n".join(default_sites))
-            return default_sites
-        
-        with open(self.sites_file, "r") as f:
-            return [line.strip() for line in f.readlines() if line.strip()]
-    
-    def save_new_site(self, url: str) -> None:
-        """Save a new site to sites.txt if it's not already present"""
-        if url not in self.known_sites:
-            with open(self.sites_file, "a") as f:
-                f.write(f"\n{url}")
-            self.known_sites.append(url)
-    
+        pass
+
     @classmethod
     def INPUT_TYPES(cls):
-        instance = cls()
         return {
             "required": {
-                "url_choice": (["NEW_URL"] + instance.known_sites,),
-                "new_url": ("STRING", {
-                    "default": "https://",
+                # 修改：改為單一的字串輸入框
+                # ComfyUI 前端通常會保留此欄位上次輸入的值，且支援原生的數值管理功能
+                "url": ("STRING", {
+                    "default": "https://news.ycombinator.com",
                     "multiline": False
                 }),
             }
         }
 
     RETURN_TYPES = ("STRING",)
-    FUNCTION = "scrape_text"
+    # 修復：將原本錯誤的 "scrape_text" 修正為正確的函數名稱 "scrape_news"
+    FUNCTION = "scrape_news"
     CATEGORY = "Text Processor"
 
     def scrape_headlines(self, url: str) -> List[Dict[str, str]]:
         """
         Scrapes headlines from a given URL.
+        Helper function containing the scraping logic.
         """
         try:
             # Fetch the webpage
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10) # Added timeout for safety
             response.raise_for_status()
             
             # Parse the HTML content
@@ -105,36 +84,35 @@ class TextScraper:
             print(f"An error occurred while scraping: {str(e)}")
             return []
 
-    def scrape_news(self, url_choice: str, new_url: str):
+    def scrape_news(self, url: str):
         """
         Main function that processes the URL and returns formatted text output.
         """
-        # Determine which URL to use
-        url = new_url if url_choice == "NEW_URL" else url_choice
+        # 簡單的防呆檢查
+        if not url.strip():
+             return ("Please enter a valid URL.",)
         
-        # Save new URL if it's valid and not already known
-        if url_choice == "NEW_URL" and url.startswith(("http://", "https://")):
-            self.save_new_site(url)
-        
+        # 如果沒有 http 前綴，嘗試自動補全（可選，視需求而定，這裡建議嚴謹一點比較好，但為了方便先不做強制轉換，只做檢查）
+        if not url.startswith(("http://", "https://")):
+            # 為了使用者體驗，若忘記打協定，自動補上 https
+            url = "https://" + url
+
         headlines = self.scrape_headlines(url)
         
         if not headlines:
-            return ("No headlines found. The website might be blocking scraping attempts.",)
+            return (f"No headlines found at {url}. The website might be blocking scraping attempts or the structure is complex.",)
         
         # Format the output text
         output_text = ""
-        
         for item in headlines:
             output_text += f"{item['headline']}.\n"
                     
         return (output_text,)
 
-# This line is required to register the node with ComfyUI
 NODE_CLASS_MAPPINGS = {
     "TextScraper": TextScraper
 }
 
-# A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "TextScraper": "Text Scraper Node"
 }

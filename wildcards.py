@@ -3,16 +3,111 @@ import random
 import re
 import folder_paths
 
-class Wildcards:
-    BGCOLOR = "#3d124d"  # Background color
-    COLOR = "#19124d"  # Title color
+
+def get_wildcard_dir():
+    """Get or create the wildcards directory safely."""
+    wildcard_path = os.path.join(folder_paths.base_path, 'wildcards')
+    if not os.path.exists(wildcard_path):
+        try:
+            os.makedirs(wildcard_path, exist_ok=True)
+        except Exception:
+            pass
+    return wildcard_path
+
+def get_all_wildcards():
+    """Scan for .txt files in the wildcards directory."""
+    wildcards_path = get_wildcard_dir()
+    files_list = []
+    if os.path.exists(wildcards_path):
+        for root, dirs, files in os.walk(wildcards_path):
+            for file in files:
+                if file.endswith('.txt'):
+                    files_list.append(file[:-4])
+    return sorted(files_list)
+
+def process_random_options(text, seed):
+    """Handle {option1|option2} syntax."""
+    rng = random.Random(seed)
     
+    def replace_options(match):
+        options = [opt.strip() for opt in match.group(1).split('|')]
+        if not options: return ""
+        selected = rng.choice(options)
+        
+        if '__' in selected or '{' in selected:
+            return process_wildcard_syntax(selected, seed + 1)
+        return selected
+    
+    return re.sub(r'\{([^{}]+)\}', replace_options, text)
+
+def find_and_replace_wildcards(prompt, offset_seed, debug=False, recursion_depth=0):
+    """Handle __wildcard__ syntax with cross-platform support."""
+    regex_pattern = r'((?:[^_]+[/\\])?)(__[^_]*?__)'
+    
+    wildcard_count = 0
+    
+    def replacement_func(match):
+        nonlocal wildcard_count
+        folder_part = match.group(1) or ''
+        wildcard_part = match.group(2)
+        wildcard_name = wildcard_part[2:-2] # remove __
+        
+        base_dir = get_wildcard_dir()
+        target_path = base_dir
+        
+        if folder_part:
+            clean_folder = folder_part.rstrip('/\\')
+            target_path = os.path.join(base_dir, clean_folder)
+            
+        file_path = os.path.join(target_path, wildcard_name + '.txt')
+        
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = [line.strip() for line in f.readlines() if line.strip()]
+                
+                if lines:
+                    match_seed = offset_seed + wildcard_count
+                    match_rng = random.Random(match_seed)
+                    selected = match_rng.choice(lines)
+                    
+                    wildcard_count += 1
+                    
+                    if '__' in selected or '{' in selected:
+                        return process_wildcard_syntax(selected, match_seed, debug, recursion_depth + 1)
+                    return selected
+            except Exception:
+                pass
+        
+        return wildcard_part
+
+    return re.sub(regex_pattern, replacement_func, prompt)
+
+def process_wildcard_syntax(text, seed, debug=False, recursion_depth=0):
+    """Main processing pipeline."""
+    if recursion_depth > 10: # Max recursion limit
+        return text
+    if not text:
+        return ""
+        
+    text = process_random_options(text, seed)
+    
+    text = find_and_replace_wildcards(text, seed, debug, recursion_depth)
+    
+    return text
+
+
+class Wildcards:
+    """
+    Basic Wildcards Node: Simple text inputs only.
+    Good for compact layouts.
+    """
     RETURN_TYPES = ('STRING',)
     FUNCTION = 'star_wilds'
     CATEGORY = "Text Processor"
 
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
@@ -26,134 +121,100 @@ class Wildcards:
             }
         }
     
-    def star_wilds(self, seed, prompt_1, prompt_2, prompt_3, prompt_4, prompt_5, prompt_6, prompt_7):
-        # Process each prompt individually
-        processed_1 = process_wildcard_syntax(prompt_1, seed)
-        processed_2 = process_wildcard_syntax(prompt_2, seed+144)
-        processed_3 = process_wildcard_syntax(prompt_3, seed+245)
-        processed_4 = process_wildcard_syntax(prompt_4, seed+283)
-        processed_5 = process_wildcard_syntax(prompt_5, seed+483)
-        processed_6 = process_wildcard_syntax(prompt_6, seed+747)
-        processed_7 = process_wildcard_syntax(prompt_7, seed-969)
+    def star_wilds(self, seed, **kwargs):
+        offsets = [0, 144, 245, 283, 483, 747, -969]
+        final_parts = []
         
-        # Join all processed prompts with spaces
-        final_text = " ".join([processed_1, processed_2, processed_3, processed_4, 
-                             processed_5, processed_6, processed_7])
-        return (final_text,)
+        for i in range(1, 8):
+            prompt_key = f"prompt_{i}"
+            prompt_text = kwargs.get(prompt_key, "")
+            
+            if prompt_text.strip():
+                current_seed = seed + offsets[(i-1) % len(offsets)]
+                processed = process_wildcard_syntax(prompt_text, current_seed)
+                if processed.strip():
+                    final_parts.append(processed)
+        
+        return (" ".join(final_parts),)
 
-def find_and_replace_wildcards(prompt, offset_seed, debug=False, recursion_depth=0):
-    # Prevent infinite recursion
-    if recursion_depth > 10:  # Maximum recursion depth
-        return prompt
+
+class WildcardsAdv:
+    """
+    Advanced Wildcards Node: Includes dropdown menus for file selection.
+    """
+    RETURN_TYPES = ('STRING',)
+    FUNCTION = 'star_wilds_adv'
+    CATEGORY = "Text Processor"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        wildcard_files = get_all_wildcards()
+        wildcard_options = ["None", "Random"] + wildcard_files
         
-    # Split the prompt into parts based on wildcards, including potential folder paths
-    # This pattern matches folder paths followed by wildcards: ([^_\\]+\\)?(__[^_]*?__)
-    parts = re.split(r'((?:[^_\\]+\\)?(?:__[^_]*?__))', prompt)
+        return {
+            "required": {
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "prompt_1": ("STRING", {"multiline": True}),
+                "wildcard_1": (wildcard_options,),
+                "prompt_2": ("STRING", {"multiline": True}),
+                "wildcard_2": (wildcard_options,),
+                "prompt_3": ("STRING", {"multiline": True}),
+                "wildcard_3": (wildcard_options,),
+                "prompt_4": ("STRING", {"multiline": True}),
+                "wildcard_4": (wildcard_options,),
+                "prompt_5": ("STRING", {"multiline": True}),
+                "wildcard_5": (wildcard_options,),
+                "prompt_6": ("STRING", {"multiline": True}),
+                "wildcard_6": (wildcard_options,),
+                "prompt_7": ("STRING", {"multiline": True}),
+                "wildcard_7": (wildcard_options,),
+            }
+        }
     
-    # Process each part
-    result = ""
-    wildcard_count = 0  # Counter for wildcards processed
-    
-    for part in parts:
-        # Skip empty parts
-        if not part:
-            continue
+    def star_wilds_adv(self, seed, **kwargs):
+        offsets = [0, 144, 245, 283, 483, 747, -969]
+        final_parts = []
+        
+        for i in range(1, 8):
+            prompt_key = f"prompt_{i}"
+            wildcard_key = f"wildcard_{i}"
             
-        # Check if this part contains a wildcard
-        wildcard_match = re.search(r'((?:[^_\\]+\\)?)((?:__[^_]*?__))', part)
-        if wildcard_match:
-            folder_path = wildcard_match.group(1) or ''  # This will include the folder path if it exists
-            wildcard = wildcard_match.group(2)     # This will be just the wildcard
+            prompt_text = kwargs.get(prompt_key, "")
+            wildcard_selection = kwargs.get(wildcard_key, "None")
             
-            # Get the wildcard name without the __
-            wildcard_name = wildcard[2:-2]
+            current_seed = seed + offsets[(i-1) % len(offsets)]
             
-            # Build the full path
-            if folder_path:
-                # Remove trailing backslash from folder path
-                folder_path = folder_path.rstrip('\\')
-                wildcard_path = os.path.join(folder_paths.base_path, 'wildcards', folder_path, wildcard_name + '.txt')
-            else:
-                wildcard_path = os.path.join(folder_paths.base_path, 'wildcards', wildcard_name + '.txt')
+            processed_text = process_wildcard_syntax(prompt_text, current_seed)
             
-            # Check if the file exists
-            if os.path.exists(wildcard_path):
-                try:
-                    # Read the lines from the file
-                    with open(wildcard_path, 'r', encoding='utf-8') as f:
-                        lines = [line.strip() for line in f.readlines() if line.strip()]
-                    
-                    if lines:  # Only process if we have lines
-                        # Use a different seed for each wildcard by adding the counter
-                        current_seed = offset_seed + wildcard_count
-                        random.seed(current_seed)
-                        selected_line = random.choice(lines)
-                        
-                        # Process any nested wildcards in the selected line
-                        if '__' in selected_line:
-                            selected_line = find_and_replace_wildcards(
-                                selected_line, 
-                                current_seed, 
-                                debug,
-                                recursion_depth + 1
-                            )
-                            
-                        wildcard_count += 1  # Increment counter after processing
-                        result += selected_line
+            wildcard_text = ""
+            if wildcard_selection != "None":
+                wc_seed = current_seed + 5
+                rng = random.Random(wc_seed)
+                
+                target = wildcard_selection
+                if target == "Random":
+                    all_files = get_all_wildcards()
+                    if all_files:
+                        target = rng.choice(all_files)
                     else:
-                        # File exists but is empty, use wildcard name as fallback
-                        result += wildcard_name
-                except Exception as e:
-                    if debug:
-                        print(f"Error processing wildcard {wildcard_name}: {str(e)}")
-                    result += wildcard_name
-            else:
-                # If the file doesn't exist, just use the wildcard name
-                result += wildcard_name
-        else:
-            # Not a wildcard, just add it to the result
-            result += part
-    
-    return result
-
-def process_random_options(text, seed):
-    # Use regex to find patterns like {option1|option2|option3} or {__wildcard1__|__wildcard2__}
-    random.seed(seed)
-    def replace_options(match):
-        options = [opt.strip() for opt in match.group(1).split('|')]
-        selected = random.choice(options)
+                        target = None
+                
+                if target:
+                    dummy = f"__{target}__"
+                    wildcard_text = process_wildcard_syntax(dummy, wc_seed)
+            
+            combined = f"{processed_text} {wildcard_text}".strip()
+            if combined:
+                final_parts.append(combined)
         
-        # Check if the selected option is a wildcard
-        if selected.startswith('__') and selected.endswith('__'):
-            # Process the wildcard using the existing functionality
-            # We add 1 to the seed to ensure it's different from the main seed
-            processed = find_and_replace_wildcards(selected, seed + 1)
-            return processed
-        return selected
-    
-    # Replace all occurrences of {options} with a random choice
-    processed = re.sub(r'\{([^{}]+)\}', replace_options, text)
-    return processed
-
-def process_wildcard_syntax(text, seed):
-    # First process the random options in curly braces
-    text = process_random_options(text, seed)
-    # Then process the wildcards
-    processed_text = find_and_replace_wildcards(text, seed)
-    return processed_text
-
-def search_and_replace(text):
-    # This is a simplified version that just processes wildcards
-    return text
-
-def strip_all_syntax(text):
-    # Remove all special syntax from the text
-    return text
+        return (" ".join(final_parts),)
 
 NODE_CLASS_MAPPINGS = {
-    "Wildcards": Wildcards
+    "Wildcards": Wildcards,
+    "WildcardsAdv": WildcardsAdv
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Wildcards": "Wildcards Node"
+    "Wildcards": "Wildcards Node (Simple)",
+    "WildcardsAdv": "Wildcards Node (Advanced)"
 }
