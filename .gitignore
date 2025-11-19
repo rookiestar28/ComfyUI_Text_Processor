@@ -1,2 +1,12 @@
 ﻿fonts/*
 !fonts/.gitkeep
+
+# --- Python Standard Ignores ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Optional: System Junk ---
+.DS_Store
+.vscode/
