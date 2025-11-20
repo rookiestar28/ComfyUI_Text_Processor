@@ -5,6 +5,9 @@ from .text_storage import TextStorage
 from .wildcards import Wildcards, WildcardsAdv
 from .add_text_to_image import AddTextToImage
 
+from .image_cropper import NODE_CLASS_MAPPINGS as IMAGE_CLASS_MAPPINGS
+from .image_cropper import NODE_DISPLAY_NAME_MAPPINGS as IMAGE_DISPLAY_NAME_MAPPINGS
+
 NODE_CLASS_MAPPINGS = {
     "AdvancedTextFilter": AdvancedTextFilter,
     "TextInput": TextInput,
@@ -24,5 +27,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "WildcardsAdv": "Advanced Wildcards Node",
     "AddTextToImage": "Add text to image",
 }
+
+NODE_CLASS_MAPPINGS.update(IMAGE_CLASS_MAPPINGS)
+NODE_DISPLAY_NAME_MAPPINGS.update(IMAGE_DISPLAY_NAME_MAPPINGS)
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
