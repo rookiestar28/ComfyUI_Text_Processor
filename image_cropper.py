@@ -37,7 +37,7 @@ class _:
         "required": {
             "image": ("IMAGE",),
             
-            "enable_fixed_crop": ("BOOLEAN", {"default": False, "label_on": "Enable Fixed Crop", "label_off": "Use Aspect Ratio"}),
+            "enable_fixed_crop": ("BOOLEAN", {"default": False}),
             
             "fixed_crop_side": (["shortest", "longest", "width", "height"],),
             "fixed_crop_length": ("INT", {"default": 512, "min": 1, "max": 99999, "step": 1}),
