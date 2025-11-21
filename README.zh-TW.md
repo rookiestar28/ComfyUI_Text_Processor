@@ -2,7 +2,7 @@
 
 # ComfyUI Text Processor (文字處理工具包)
 
-這是一套專為 ComfyUI 設計的文字處理節點合集，旨在增強提示詞工程、文字操作和自動化工作流的效率。
+這是一套專為 ComfyUI 設計的全方位工具節點合集，涵蓋文字處理、邏輯運算與圖像工具。旨在增強提示詞工程、文字操作和自動化工作流的效率。
 
 ## 1. Advanced Text Filter Node (核心節點)
 
@@ -41,7 +41,7 @@
 
 ---
 
-## 2. 其他工具節點
+## 2. 文字工具節點 (Text Utilities)
 
 ### 📝 Text Input Node (文字輸入)
 智慧型文字合併工具，最多可支援 7 組輸入。
@@ -68,6 +68,28 @@ ComfyUI 內部的「持久化剪貼簿」，可直接在介面上管理常用文
     * **Advanced:** 增加下拉選單，可直接選擇 `wildcards` 資料夾內的檔案。
 * **跨平台：** 完美支援 Windows 與 Linux/macOS 路徑。
 * **獨立亂數：** 每個輸入欄位擁有獨立的亂數種子，確保多樣性。
+
+---
+
+## 3. 邏輯與數學節點 (Logic & Math)
+
+基於 `simpleeval` 安全地評估 Python 表達式，用於動態計算與邏輯控制。
+
+### 🧮 Simple Eval (整數 / 浮點數 / 字串)
+無需編寫複雜代碼即可執行數學運算或字串操作。
+* **三種變體：** 提供 `Integers` (整數)、`Floats` (浮點數) 和 `Strings` (字串) 專用節點。
+* **變數支援：** 支援 `a`、`b`、`c` 三個輸入變數。可在表達式中直接使用（例如：`(a + b) * 2` 或 `a + " " + b`）。
+* **安全執行：** 受限的執行環境防止不安全的代碼運行，同時保留強大的邏輯功能。
+* **控制台日誌：** 可選的開關，用於將結果列印到控制台以便除錯。
+
+---
+
+## 4. 圖像工具節點 (Image Utilities)
+
+### ✂️ Image Cropper (圖片裁切)
+一個方便的實用工具，可直接在工作流中裁切圖片。
+* **精準裁切：** 輕鬆去除不需要的邊緣或聚焦於特定主體。
+* **批量處理：** 支援對批量圖片 (Image Batches) 進行裁切。
 
 ### 🖼️ Add Text to Image (圖片加字)
 在圖片上繪製文字，支援高級排版功能。
@@ -102,7 +124,11 @@ ComfyUI 內部的「持久化剪貼簿」，可直接在介面上管理常用文
     ```bash
     git clone [https://github.com/rookiestar28/ComfyUI_Text_Processor.git](https://github.com/rookiestar28/ComfyUI_Text_Processor.git)
     ```
-3.  **重新啟動 ComfyUI**。
+3.  **安裝依賴庫：**
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  **重新啟動 ComfyUI**。
 
 ---
 
