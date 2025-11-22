@@ -1,5 +1,5 @@
 [project]
-name = "text_processor"
+name = "comfyui_text_processor"
 description = "A comprehensive suite of utility nodes for ComfyUI: Text Processing, Logic Evaluation, and Image Tools."
 version = "1.0.0"
 license = {file = "LICENSE"} 
