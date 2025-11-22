@@ -1,6 +1,6 @@
 [project]
 name = "text_processor"
-description = "An advanced text processing node for ComfyUI."
+description = "A comprehensive suite of utility nodes for ComfyUI: Text Processing, Logic Evaluation, and Image Tools."
 version = "1.0.0"
 license = {file = "LICENSE"} 
 # classifiers = [
@@ -29,7 +29,7 @@ Documentation = "https://github.com/rookiestar28/ComfyUI_Text_Processor/wiki"
 "Bug Tracker" = "https://github.com/rookiestar28/ComfyUI_Text_Processor/issues"
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "rookiestar"
 DisplayName = "ComfyUI_Text_Processor"
 Icon = ""
 includes = [] 
