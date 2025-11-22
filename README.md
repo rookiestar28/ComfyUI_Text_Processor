@@ -94,7 +94,7 @@ A handy utility to crop images directly within your workflow.
 * **Targeted Cropping:** Easily remove unwanted borders or focus on specific subjects.
 * **Batch Processing:** Supports cropping for image batches.
 
-### 名ｸAdd Text to Image
+### Add Text to Image
 Renders text onto images with advanced formatting options.
 * **Auto-Scaling:** Text size automatically adjusts to fit the image width.
 * **Background Box:** Supports semi-transparent background colors with padding.
