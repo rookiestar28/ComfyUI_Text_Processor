@@ -2,6 +2,8 @@
 
 # ComfyUI Text Processor (文字處理工具包)
 
+![Workflow Demo](examples/advanced_text_filter.png)
+
 這是一套專為 ComfyUI 設計的全方位工具節點合集，涵蓋文字處理、邏輯運算與圖像工具。旨在增強提示詞工程、文字操作和自動化工作流的效率。
 
 ## 1. Advanced Text Filter Node (核心節點)

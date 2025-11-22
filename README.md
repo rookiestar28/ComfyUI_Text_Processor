@@ -3,6 +3,8 @@
 
 A comprehensive suite of utility nodes for ComfyUI: Text Processing, Logic Evaluation, and Image Tools. Designed to enhance prompt engineering and streamline automated workflows.
 
+![Workflow Demo](./examples/advanced_text_filter.png)
+
 ## 1. Advanced Text Filter Node (Core)
 
 This is a powerful and flexible text processing node for ComfyUI, designed to automate and simplify your dynamic prompt workflows.
