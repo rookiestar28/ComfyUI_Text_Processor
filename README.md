@@ -125,7 +125,7 @@ If you prefer terminal commands or don't use the Manager:
     ```
 2.  Clone this repository:
     ```bash
-    git clone [https://github.com/rookiestar28/ComfyUI_Text_Processor.git](https://github.com/rookiestar28/ComfyUI_Text_Processor.git)
+    git clone https://github.com/rookiestar28/ComfyUI_Text_Processor.git
     ```
 3.  **Install dependencies:**
     ```bash
@@ -139,3 +139,26 @@ If you prefer terminal commands or don't use the Manager:
 
 * **Fonts:** Place your `.ttf` or `.otf` files in `ComfyUI/custom_nodes/ComfyUI_Text_Processor/fonts/` for the *Add Text to Image* node.
 * **Wildcards:** Place your wildcard text files in `ComfyUI/wildcards/` or `ComfyUI/custom_nodes/ComfyUI_Text_Processor/wildcards/`.
+
+<details>
+<summary><strong>Click to see handy Regex Patterns (Cheat Sheet)</strong></summary>
+
+### 🧹 Basic Cleaning
+
+| Goal | Regex Pattern | Description |
+| :--- | :--- | :--- |
+| **Remove Extra Spaces** | `\s+` | Replaces multiple spaces with a single space. |
+| **Remove Non-English** | `[^a-zA-Z0-9,\.\s]` | Removes everything except English letters, numbers, commas, and dots. |
+| **Remove Digits/Numbers** | `\d+` | Removes all numbers (e.g., weights or unintended seeds). |
+| **Clean Line Breaks** | `[\r\n]+` | Replaces new lines with commas (useful for flattening lists). |
+
+### 🔍 Advanced Extraction & Filtering
+
+| Goal | Regex Pattern | Description |
+| :--- | :--- | :--- |
+| **Remove HTML Tags** | `<[^>]*>` | Cleans up text scraped from websites (removes div, br tags, etc.). |
+| **Remove Weight Brackets** | `\(([^)]*:\d+(?:\.\d+)?)\)` | Removes standard prompt weights like `(word:1.2)`. |
+| **Extract Email** | `[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}` | Extracts email addresses from mixed text. |
+| **Match Wildcards** | `__\w+__` | Matches typical wildcard syntax like `__character__`. |
+
+</details>

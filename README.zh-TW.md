@@ -124,7 +124,7 @@ ComfyUI 內部的「持久化剪貼簿」，可直接在介面上管理常用文
     ```
 2.  克隆此倉庫：
     ```bash
-    git clone [https://github.com/rookiestar28/ComfyUI_Text_Processor.git](https://github.com/rookiestar28/ComfyUI_Text_Processor.git)
+    git clone https://github.com/rookiestar28/ComfyUI_Text_Processor.git
     ```
 3.  **安裝依賴庫：**
     ```bash
@@ -138,3 +138,26 @@ ComfyUI 內部的「持久化剪貼簿」，可直接在介面上管理常用文
 
 * **字型檔：** 請將 `.ttf` 或 `.otf` 檔案放入 `ComfyUI/custom_nodes/ComfyUI_Text_Processor/fonts/` 資料夾中（用於圖片加字節點）。
 * **Wildcards (外掛卡)：** 將您的外掛卡文字檔放入 `ComfyUI/wildcards/` 或插件目錄下的 `wildcards/` 中。
+
+<details>
+<summary><strong>點擊查看常用 Regex 範例 (Regex 速查表)</strong></summary>
+
+### 🧹 基礎清理 (Basic Cleaning)
+
+| 目標功能 | Regex Pattern | 功能說明 |
+| :--- | :--- | :--- |
+| **清除多餘空白** | `\s+` | 將連續的多個空格縮減為單一空格。 |
+| **僅保留英文與符號** | `[^a-zA-Z0-9,\.\s]` | 清除中文或特殊字元，只保留英文、數字、逗號與句點。 |
+| **移除所有數字** | `\d+` | 移除字串中的所有數字 (例如權重數值或種子碼)。 |
+| **清除換行符號** | `[\r\n]+` | 將換行符號替換為逗號 (適合將列表轉為單行 Prompt)。 |
+
+### 🔍 進階提取與過濾 (Advanced)
+
+| 目標功能 | Regex Pattern | 功能說明 |
+| :--- | :--- | :--- |
+| **移除 HTML 標籤** | `<[^>]*>` | 清除網頁抓取資料中的 HTML 代碼 (如 div, br 等)。 |
+| **移除權重語法** | `\(([^)]*:\d+(?:\.\d+)?)\)` | 移除 ComfyUI 標準權重寫法，如 `(text:1.2)`。 |
+| **提取 Email** | `[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}` | 從雜亂文本中精準抓取 Email 地址。 |
+| **匹配萬用字元** | `__\w+__` | 匹配常見的 Wildcard 語法，如 `__tag__`。 |
+
+</details>
