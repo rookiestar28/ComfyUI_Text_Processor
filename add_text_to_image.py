@@ -42,11 +42,14 @@ class AddTextToImage:
                 "label_text": ("STRING", {"multiline": True, "default": "Label 1\nLabel 2"}),
                 "font_name": (font_names, {"default": default_font_for_ui}),
                 "text_position": (["bottom_center", "top_center", "bottom_left", "bottom_right", "top_left", "top_right", "center_center"], {"default": "bottom_center"}),
+                
+                "background_mode": (["text_box", "full_width_strip"], {"default": "text_box"}),
+
                 "font_size": ("INT", {"default": 48, "min": 4, "max": 1024, "step": 1}),
                 "margin": ("INT", {"default": 24, "min": 0, "max": 256, "step": 1}),
                 "line_spacing": ("INT", {"default": 5, "min": 0, "max": 128, "step": 1}),
                 "text_color_hex": ("STRING", {"default": "#ffffff"}),
-                "background_color_hex": ("STRING", {"default": "#00000080"}),
+                "background_color_hex": ("STRING", {"default": "#00000080"}), # 預設就是半透明黑
                 "background_padding": ("INT", {"default": 10, "min": 0, "max": 50, "step": 1}),
             },
         }
@@ -62,6 +65,7 @@ class AddTextToImage:
         label_text: str,
         font_name: str,
         text_position: str,
+        background_mode: str,
         font_size: int,
         margin: int,
         line_spacing: int,
@@ -160,10 +164,15 @@ class AddTextToImage:
                     bg_x2 = final_text_pixel_bbox[2] + background_padding
                     bg_y2 = final_text_pixel_bbox[3] + background_padding
                     
-                    bg_x1,bg_y1,bg_x2,bg_y2 = max(0.0,bg_x1),max(0.0,bg_y1),min(float(img_width),bg_x2),min(float(img_height),bg_y2)
+                    if background_mode == "full_width_strip":
+                        bg_x1 = 0
+                        bg_x2 = float(img_width)
+                    bg_y1 = max(0.0, bg_y1)
+                    bg_y2 = min(float(img_height), bg_y2)
                     
-                    if bg_x1 < bg_x2 and bg_y1 < bg_y2:
-                        draw_on_overlay.rectangle([bg_x1, bg_y1, bg_x2, bg_y2], fill=(bg_r, bg_g, bg_b, bg_a))
+                    if bg_y1 < bg_y2: 
+                         if background_mode == "full_width_strip" or (bg_x1 < bg_x2):
+                            draw_on_overlay.rectangle([bg_x1, bg_y1, bg_x2, bg_y2], fill=(bg_r, bg_g, bg_b, bg_a))
                 
                 if sized_font:
                     draw_on_overlay.multiline_text(xy=(text_draw_x, text_draw_y), text=current_label_text, fill=parsed_text_color, font=sized_font, anchor=final_anchor, spacing=line_spacing, align="center")
@@ -179,15 +188,8 @@ class AddTextToImage:
             stacked_images_bchw = torch.stack(processed_pil_images_chw, dim=0)
             final_output_tensor_bhwc = stacked_images_bchw.permute(0, 2, 3, 1)
             print(f"  Batch processed successfully. Output shape: {final_output_tensor_bhwc.shape}")
-            
-            if final_output_tensor_bhwc.shape[-1] == 4:
-                 alpha_channel_values = final_output_tensor_bhwc[0, :, :, 3]
-                 print(f"    Alpha channel min: {alpha_channel_values.min().item()}, max: {alpha_channel_values.max().item()}")
-            
             print(f"[AddTextToImage EXECUTE_DRAW_ON_BATCH END]")
             return (final_output_tensor_bhwc,)
         except RuntimeError as e:
             print(f"[AddTextToImage ERROR] Failed to stack processed images: {e}")
-            for idx, t_info in enumerate(processed_pil_images_chw):
-                print(f"    Processed image {idx} shape (CHW): {t_info.shape}")
             return (image,)
