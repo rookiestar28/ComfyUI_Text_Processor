@@ -7,7 +7,6 @@ class TextStorage:
     
     def __init__(self):
         self.storage_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "text_storage.json")
-        
         self._ensure_storage_exists()
     
     def _ensure_storage_exists(self):
@@ -22,18 +21,15 @@ class TextStorage:
             with open(self.storage_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
-            # 若文件損壞或不存在，返回空字典並重建文件
             with open(self.storage_file, 'w', encoding='utf-8') as f:
                 json.dump({}, f, indent=2)
             return {}
     
     @classmethod
     def INPUT_TYPES(cls):
-        # 實例化以讀取現有存儲的 Key，用於生成下拉選單
         instance = cls()
         saved_texts = list(instance._load_storage().keys())
         
-        # 防呆：若無數據，提供預設選項
         if not saved_texts:
             saved_texts = ["No texts saved yet"]
         
@@ -50,9 +46,6 @@ class TextStorage:
         
     @classmethod
     def VALIDATE_INPUTS(cls, **kwargs):
-        mode = kwargs.get("mode", "Load Text")
-        if mode == "Save Text":
-            return True
         return True
 
     RETURN_TYPES = ("STRING",)
@@ -66,116 +59,104 @@ class TextStorage:
         text_content = kwargs.get("text_content", "")
         text_selector = kwargs.get("Text-Selector", "")
         
-        # 根據模式分發處理邏輯
+        
         if mode == "Save Text":
             return self._save_text(save_name, text_content)
+            
         elif mode == "Load Text":
-            if text_selector and text_selector != "No texts saved yet":
-                save_name = text_selector
-            return self._load_text(save_name)
+            target_name = text_selector if (text_selector and text_selector != "No texts saved yet") else save_name
+            return self._load_text(target_name)
+            
         elif mode == "Replace Text":
-            if text_selector and text_selector != "No texts saved yet":
-                save_name = text_selector
-            return self._replace_text(save_name, text_content)
+            target_name = text_selector if (text_selector and text_selector != "No texts saved yet") else save_name
+            return self._replace_text(target_name, text_content)
+            
         else:  # Remove Text
-            if text_selector and text_selector != "No texts saved yet":
-                save_name = text_selector
-            return self._remove_text(save_name)
+            target_name = text_selector if (text_selector and text_selector != "No texts saved yet") else save_name
+            return self._remove_text(target_name)
     
     def _get_unique_name(self, base_name, storage):
-        """Generate a unique name if duplication exists."""
         if base_name not in storage:
             return base_name
-        
         counter = 1
         while f"{base_name}_{counter}" in storage:
             counter += 1
-        
         return f"{base_name}_{counter}"
     
     def _save_text(self, text_name, text_content):
-        """Save text to storage."""
+        """保存文本，並返回該文本內容以便後續使用"""
         if not text_name.strip():
-            return ("Error: Please provide a name for your text.",)
+            print("[TextStorage] Error: No name provided for save.")
+            return (text_content,) # 返回內容，不中斷流
         
         storage = self._load_storage()
         
-        # 確保名稱唯一性
         original_name = text_name
         text_name = self._get_unique_name(text_name, storage)
         
-        # 更新數據
         storage[text_name] = text_content
         
-        # 寫入文件
         with open(self.storage_file, 'w', encoding='utf-8') as f:
             json.dump(storage, f, indent=2)
         
-        # 更新版本號 (修復了此處原本的 NameError)
         TextStorage.storage_version += 1
         
         if text_name != original_name:
-            return (f"Text saved as '{text_name}' (original name '{original_name}' was already taken).",)
+            print(f"[TextStorage] Saved as '{text_name}' (original name taken).")
         else:
-            return (f"Text '{text_name}' saved successfully.",)
+            print(f"[TextStorage] Saved '{text_name}' successfully.")
+            
+        return (text_content,)
     
     def _load_text(self, text_name):
-        """Load text from storage."""
+        """讀取文本"""
         storage = self._load_storage()
         
         if text_name in storage:
+            print(f"[TextStorage] Loaded '{text_name}'.")
             return (storage[text_name],)
         else:
-            available = list(storage.keys())
-            if available:
-                return (f"Text '{text_name}' not found. Available: {', '.join(available)}",)
-            else:
-                return ("No texts found. Please save text first.",)
+            print(f"[TextStorage] Warning: Text '{text_name}' not found.")
+            return ("",)
     
     def _remove_text(self, text_name):
-        """Remove text from storage."""
+        """刪除文本"""
         storage = self._load_storage()
         
         if text_name not in storage:
-            return (f"Text '{text_name}' not found.",)
+            print(f"[TextStorage] Warning: Cannot remove '{text_name}', not found.")
+            return ("",)
         
-        # 刪除並寫回
         del storage[text_name]
         with open(self.storage_file, 'w', encoding='utf-8') as f:
             json.dump(storage, f, indent=2)
             
-        # 更新版本號 (修復了此處原本的 NameError)
         TextStorage.storage_version += 1
-        return (f"Text '{text_name}' removed successfully.",)
+        print(f"[TextStorage] Removed '{text_name}'.")
+        
+        return ("",)
                 
     def _replace_text(self, text_name, text_content):
-        """Replace text content."""
-        if not text_name.strip() or not text_content.strip():
-            return ("Error: Name or content missing.",)
-        
+        """替換/更新文本"""
+        if not text_name.strip():
+            print("[TextStorage] Error: No name provided for replace.")
+            return ("",)
+            
         storage = self._load_storage()
         
         if text_name not in storage:
-            return (f"Text '{text_name}' not found. Cannot replace.",)
+            print(f"[TextStorage] Error: Text '{text_name}' not found, cannot replace.")
+            return ("",)
         
-        # 更新並寫回
         storage[text_name] = text_content
         with open(self.storage_file, 'w', encoding='utf-8') as f:
             json.dump(storage, f, indent=2)
         
-        # 更新版本號 (修復了此處原本的 NameError)
         TextStorage.storage_version += 1
-        return (f"Text '{text_name}' replaced successfully.",)
+        print(f"[TextStorage] Replaced content for '{text_name}'.")
+        
+        return (text_content,)
 
     @classmethod
     def IS_CHANGED(cls, mode, **kwargs):
-        # 透過返回版本號，強制 ComfyUI 在數據變更時重新執行此節點
         return cls.storage_version
-
-NODE_CLASS_MAPPINGS = {
-    "TextStorage": TextStorage
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "TextStorage": "Text Storage Node"
-}

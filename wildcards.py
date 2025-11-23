@@ -15,14 +15,20 @@ def get_wildcard_dir():
     return wildcard_path
 
 def get_all_wildcards():
-    """Scan for .txt files in the wildcards directory."""
+    """
+    Scan for .txt files in the wildcards directory.
+    (優化：包含相對路徑，例如 'style/cyberpunk')
+    """
     wildcards_path = get_wildcard_dir()
     files_list = []
     if os.path.exists(wildcards_path):
         for root, dirs, files in os.walk(wildcards_path):
             for file in files:
                 if file.endswith('.txt'):
-                    files_list.append(file[:-4])
+                    full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_path, wildcards_path)
+                    clean_name = os.path.splitext(rel_path)[0].replace('\\', '/')
+                    files_list.append(clean_name)
     return sorted(files_list)
 
 def process_random_options(text, seed):
@@ -41,25 +47,18 @@ def process_random_options(text, seed):
     return re.sub(r'\{([^{}]+)\}', replace_options, text)
 
 def find_and_replace_wildcards(prompt, offset_seed, debug=False, recursion_depth=0):
-    """Handle __wildcard__ syntax with cross-platform support."""
-    regex_pattern = r'((?:[^_]+[/\\])?)(__[^_]*?__)'
+    """Handle __wildcard__ syntax."""
+    regex_pattern = r'__([^_\\/][^__]*?)__'
     
     wildcard_count = 0
     
     def replacement_func(match):
         nonlocal wildcard_count
-        folder_part = match.group(1) or ''
-        wildcard_part = match.group(2)
-        wildcard_name = wildcard_part[2:-2] # remove __
+        wildcard_name = match.group(1) 
         
         base_dir = get_wildcard_dir()
-        target_path = base_dir
         
-        if folder_part:
-            clean_folder = folder_part.rstrip('/\\')
-            target_path = os.path.join(base_dir, clean_folder)
-            
-        file_path = os.path.join(target_path, wildcard_name + '.txt')
+        file_path = os.path.join(base_dir, f"{wildcard_name}.txt")
         
         if os.path.exists(file_path):
             try:
@@ -79,13 +78,13 @@ def find_and_replace_wildcards(prompt, offset_seed, debug=False, recursion_depth
             except Exception:
                 pass
         
-        return wildcard_part
+        return match.group(0)
 
     return re.sub(regex_pattern, replacement_func, prompt)
 
 def process_wildcard_syntax(text, seed, debug=False, recursion_depth=0):
     """Main processing pipeline."""
-    if recursion_depth > 10: # Max recursion limit
+    if recursion_depth > 10: # 防止無限迴圈
         return text
     if not text:
         return ""
@@ -100,7 +99,6 @@ def process_wildcard_syntax(text, seed, debug=False, recursion_depth=0):
 class Wildcards:
     """
     Basic Wildcards Node: Simple text inputs only.
-    Good for compact layouts.
     """
     RETURN_TYPES = ('STRING',)
     FUNCTION = 'star_wilds'

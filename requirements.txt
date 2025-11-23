@@ -1,1 +1,3 @@
 simpleeval
+requests
+beautifulsoup4
