@@ -2,7 +2,7 @@ from .advanced_text_filter import AdvancedTextFilter
 from .text_input import TextInput
 from .text_scraper import TextScraper
 from .text_storage import TextStorage
-from .wildcards import Wildcards, WildcardsAdv
+from .wildcards import WildcardsNode
 from .add_text_to_image import AddTextToImage
 from .simple_eval import EvaluateInts, EvaluateFloats, EvaluateStrs
 
@@ -14,8 +14,7 @@ NODE_CLASS_MAPPINGS = {
     "TextInput": TextInput,
     "TextScraper": TextScraper,
     "TextStorage": TextStorage,
-    "Wildcards": Wildcards,
-    "WildcardsAdv": WildcardsAdv,
+    "WildcardsNode": WildcardsNode,
     "AddTextToImage": AddTextToImage,
     "EvaluateInts": EvaluateInts,
     "EvaluateFloats": EvaluateFloats,
@@ -23,12 +22,11 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "AdvancedTextFilter": "Advanced Text Filter Node",
-    "TextInput": "Text Input Node",
-    "TextScraper": "Text Scraper Node",
-    "TextStorage": "Text Storage Node",
-    "Wildcards": "Wildcards Node",
-    "WildcardsAdv": "Advanced Wildcards Node",
+    "AdvancedTextFilter": "Advanced Text Filter",
+    "TextInput": "Text Input",
+    "TextScraper": "Text Scraper",
+    "TextStorage": "Text Storage",
+    "WildcardsNode": "Wildcards Processor",
     "AddTextToImage": "Add text to image",
     "EvaluateInts": "Simple Eval Integers",
     "EvaluateFloats": "Simple Eval Floats",

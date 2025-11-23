@@ -17,7 +17,6 @@ def get_wildcard_dir():
 def get_all_wildcards():
     """
     Scan for .txt files in the wildcards directory.
-    (優化：包含相對路徑，例如 'style/cyberpunk')
     """
     wildcards_path = get_wildcard_dir()
     files_list = []
@@ -90,58 +89,18 @@ def process_wildcard_syntax(text, seed, debug=False, recursion_depth=0):
         return ""
         
     text = process_random_options(text, seed)
-    
     text = find_and_replace_wildcards(text, seed, debug, recursion_depth)
-    
     return text
 
 
-class Wildcards:
+class WildcardsNode:
     """
-    Basic Wildcards Node: Simple text inputs only.
-    """
-    RETURN_TYPES = ('STRING',)
-    FUNCTION = 'star_wilds'
-    CATEGORY = "Text Processor"
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "prompt_1": ("STRING", {"multiline": True}),
-                "prompt_2": ("STRING", {"multiline": True}),
-                "prompt_3": ("STRING", {"multiline": True}),
-                "prompt_4": ("STRING", {"multiline": True}),
-                "prompt_5": ("STRING", {"multiline": True}),
-                "prompt_6": ("STRING", {"multiline": True}),
-                "prompt_7": ("STRING", {"multiline": True}),
-            }
-        }
-    
-    def star_wilds(self, seed, **kwargs):
-        offsets = [0, 144, 245, 283, 483, 747, -969]
-        final_parts = []
-        
-        for i in range(1, 8):
-            prompt_key = f"prompt_{i}"
-            prompt_text = kwargs.get(prompt_key, "")
-            
-            if prompt_text.strip():
-                current_seed = seed + offsets[(i-1) % len(offsets)]
-                processed = process_wildcard_syntax(prompt_text, current_seed)
-                if processed.strip():
-                    final_parts.append(processed)
-        
-        return (" ".join(final_parts),)
-
-
-class WildcardsAdv:
-    """
-    Advanced Wildcards Node: Includes dropdown menus for file selection.
+    Wildcards Node: 
+    支援 '{a|b}' 隨機選擇與 '__file__' 通配符語法。
+    提供文字輸入框與檔案下拉選單，兩者可混合使用。
     """
     RETURN_TYPES = ('STRING',)
-    FUNCTION = 'star_wilds_adv'
+    FUNCTION = 'process'
     CATEGORY = "Text Processor"
 
     @classmethod
@@ -152,24 +111,24 @@ class WildcardsAdv:
         return {
             "required": {
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "prompt_1": ("STRING", {"multiline": True}),
+                "prompt_1": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                 "wildcard_1": (wildcard_options,),
-                "prompt_2": ("STRING", {"multiline": True}),
+                "prompt_2": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                 "wildcard_2": (wildcard_options,),
-                "prompt_3": ("STRING", {"multiline": True}),
+                "prompt_3": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                 "wildcard_3": (wildcard_options,),
-                "prompt_4": ("STRING", {"multiline": True}),
+                "prompt_4": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                 "wildcard_4": (wildcard_options,),
-                "prompt_5": ("STRING", {"multiline": True}),
+                "prompt_5": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                 "wildcard_5": (wildcard_options,),
-                "prompt_6": ("STRING", {"multiline": True}),
+                "prompt_6": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                 "wildcard_6": (wildcard_options,),
-                "prompt_7": ("STRING", {"multiline": True}),
+                "prompt_7": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                 "wildcard_7": (wildcard_options,),
             }
         }
     
-    def star_wilds_adv(self, seed, **kwargs):
+    def process(self, seed, **kwargs):
         offsets = [0, 144, 245, 283, 483, 747, -969]
         final_parts = []
         
@@ -186,7 +145,7 @@ class WildcardsAdv:
             
             wildcard_text = ""
             if wildcard_selection != "None":
-                wc_seed = current_seed + 5
+                wc_seed = current_seed + 5 
                 rng = random.Random(wc_seed)
                 
                 target = wildcard_selection
@@ -207,12 +166,11 @@ class WildcardsAdv:
         
         return (" ".join(final_parts),)
 
+
 NODE_CLASS_MAPPINGS = {
-    "Wildcards": Wildcards,
-    "WildcardsAdv": WildcardsAdv
+    "WildcardsNode": WildcardsNode
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Wildcards": "Wildcards Node (Simple)",
-    "WildcardsAdv": "Wildcards Node (Advanced)"
+    "WildcardsNode": "Wildcards Processor"
 }
