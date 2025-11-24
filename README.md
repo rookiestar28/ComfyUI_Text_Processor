@@ -79,11 +79,15 @@ Fetches and formats headlines from any URL. Ideal for injecting real-time contex
 * **Smart Parsing:** Uses heuristics to identify headlines (`h1`-`h4`, class names).
 * **Safe:** Includes timeouts and error handling to prevent workflow freezing.
 
-###  Text Storage Node
-A persistent "clipboard" for ComfyUI. Save, load, and manage text snippets directly within the interface.
-* **Modes:** `Save`, `Load`, `Remove`, `Replace`.
-* **Local Storage:** Saves data to `text_storage.json` inside the node folder (easy backup).
-* **Auto-Refresh:** Automatically updates the dropdown list when new text is saved.
+### Text Storage Nodes (Reader & Writer)
+A persistent "clipboard" for ComfyUI. We have split this into two separate nodes for better clarity and workflow management.
+* **Text Storage (Reader)**:
+    * **Simple Interface:** Just a dropdown menu to select and output your saved text.
+    * **Auto-Refresh:** Automatically updates the list when new text is saved via the Writer node.
+* **Text Storage (Writer)**:
+    * **Dedicated Actions:** Supports `Add New (Auto Rename)`, `Overwrite Existing`, and `Delete`.
+    * **Force Input:** Accepts text input directly from other nodes (string connection).
+    * **Local Storage:** All data is saved safely to `text_storage.json` within the node folder.
 
 ### Wildcards Processor (Dynamic Prompt Mixer)
 
