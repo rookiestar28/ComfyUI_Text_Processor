@@ -5,15 +5,13 @@ try:
     import simpleeval
     from simpleeval import simple_eval
 except ImportError:
-    print("\033[31m[ComfyUI_Text_Processor] Error: 'simpleeval' module not found.\033[0m")
+    print("\033[31m[ComfyUI Text Processor] Error: 'simpleeval' module not found.\033[0m")
     print("Please run: pip install simpleeval")
     def simple_eval(*args, **kwargs):
         raise ImportError("simpleeval library is required. Please install it.")
 
 class EvaluateInts:
-    """
-    Evaluate Integers: 使用 Python 表達式計算整數。
-    """
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -31,7 +29,7 @@ class EvaluateInts:
     RETURN_TYPES = ("INT", "FLOAT", "STRING",)
     OUTPUT_NODE = True
     FUNCTION = "evaluate"
-    CATEGORY = "ComfyUI_Text_Processor/Logic"
+    CATEGORY = "ComfyUI Text Processor/Logic"
 
     def evaluate(self, python_expression, print_to_console, a=0, b=0, c=0):
         names = {'a': a, 'b': b, 'c': c}
@@ -55,9 +53,7 @@ class EvaluateInts:
 
 
 class EvaluateFloats:
-    """
-    Evaluate Floats: 使用 Python 表達式計算浮點數。
-    """
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -75,7 +71,7 @@ class EvaluateFloats:
     RETURN_TYPES = ("INT", "FLOAT", "STRING",)
     OUTPUT_NODE = True
     FUNCTION = "evaluate"
-    CATEGORY = "ComfyUI_Text_Processor/Logic"
+    CATEGORY = "ComfyUI Text Processor/Logic"
 
     def evaluate(self, python_expression, print_to_console, a=0.0, b=0.0, c=0.0):
         names = {'a': a, 'b': b, 'c': c}
@@ -119,7 +115,7 @@ class EvaluateStrs:
     RETURN_TYPES = ("STRING",)
     OUTPUT_NODE = True
     FUNCTION = "evaluate"
-    CATEGORY = "ComfyUI_Text_Processor/Logic"
+    CATEGORY = "ComfyUI Text Processor/Logic"
 
     def evaluate(self, python_expression, print_to_console, a="", b="", c=""):
         names = {'a': a, 'b': b, 'c': c}
@@ -141,3 +137,16 @@ class EvaluateStrs:
         print(f"Vars: {vars}")
         print(f"Expr: {expr}")
         print(f"Result: {result}")
+
+
+NODE_CLASS_MAPPINGS = {
+    "EvaluateInts": EvaluateInts,
+    "EvaluateFloats": EvaluateFloats,
+    "EvaluateStrs": EvaluateStrs
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "EvaluateInts": "Simple Eval (Integers)",
+    "EvaluateFloats": "Simple Eval (Floats)",
+    "EvaluateStrs": "Simple Eval (Strings)"
+}

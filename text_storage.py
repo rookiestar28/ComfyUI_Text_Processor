@@ -86,7 +86,7 @@ class TextStorageReader:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text_content",)
     FUNCTION = "read_text"
-    CATEGORY = "Text Processor"
+    CATEGORY = "ComfyUI Text Processor"
     
     @classmethod
     def IS_CHANGED(cls, **kwargs):
@@ -121,7 +121,7 @@ class TextStorageWriter:
     RETURN_NAMES = ("passthrough_text",)
     OUTPUT_NODE = True
     FUNCTION = "write_text"
-    CATEGORY = "Text Processor"
+    CATEGORY = "ComfyUI Text Processor"
 
     def write_text(self, text_input, save_name, mode):
         action = "add"

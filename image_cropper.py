@@ -32,7 +32,7 @@ def get_mask_center(mask: Image.Image):
 
 @register_node("ImageCropper", "Image Cropper")
 class _:
-    CATEGORY = "ComfyUI_Text_Processor/Image"
+    CATEGORY = "ComfyUI Text Processor/Image"
     INPUT_TYPES = lambda: {
         "required": {
             "image": ("IMAGE",),

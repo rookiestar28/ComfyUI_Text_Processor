@@ -33,7 +33,7 @@ class TextScraper:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
     FUNCTION = "scrape_news"
-    CATEGORY = "Text Processor"
+    CATEGORY = "ComfyUI Text Processor"
 
     def scrape_headlines(self, url: str) -> List[Dict[str, str]]:
         """

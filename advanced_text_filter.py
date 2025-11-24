@@ -69,7 +69,7 @@ class AdvancedTextFilter:
     RETURN_NAMES = ("processed_text (Target)", "remaining_text")
 
     FUNCTION = "process"
-    CATEGORY = "Text Processor"
+    CATEGORY = "ComfyUI Text Processor"
 
     def process(self, text: str, concat_mode: str, operation: str, 
                 start_text: str, end_text: str, 
