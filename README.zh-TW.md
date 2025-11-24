@@ -19,7 +19,9 @@
     * 全局查找/替換 (`Find/Replace/Extract`)
     * 首次匹配分割 (`Split/Between`)
     * 格式清理 (`Cleanup`)
-* **強大的 Regex 支援**：`use_regex` 開關可將所有查找和分割操作切換為使用正規表示式，實現複雜的模式匹配。
+    * [New] LLM 輸出解析 (JSON, 程式碼區塊)
+* **強大的錯誤處理 (v1.1.5)**：新增 `if_not_found` 選項，允許您設定當找不到匹配項時的行為（返回原文本、返回空字串或報錯），有效防止批次工作流中斷。
+* **強大的 Regex 支援**：`use_regex` 開關可將所有查找和分割操作切換為使用正規表示式，實現複雜的模式匹配。**現已支援 `DOTALL` 模式**（可跨行匹配）。
 * **多關鍵字處理**：`Find/Replace` 操作支援在 `optional_text_input` 欄位中使用逗號 (`,`) 分隔多個查找目標。
 * **輸入靈活性**：可選的 `external_text` 輸入，允許您在處理前將兩段文本（如 B-box 數據和提示詞）進行合併。
 * **預處理**：內建 `to UPPERCASE` / `to lowercase` 功能，在執行任何操作前統一大小寫。
@@ -40,6 +42,12 @@
 
 #### C. Text Cleanup (文本清理)
 * `remove empty lines`, `remove newlines`, `strip lines`, `remove all whitespace`.
+
+#### D. LLM 工具箱 (v1.1.5 新增)
+專為處理大型語言模型 (LLM) 原始輸出而設計的工具。
+* **`LLM: extract code block (```)`**：精確提取位於三個反引號之間的程式碼內容。
+* **`LLM: extract JSON object ({...})`**：定位並提取第一個有效的 JSON 物件結構，便於後續連接 JSON 解析器。
+* **`LLM: clean markdown formatting`**：移除粗體 (`**`)、斜體 (`*`)、標題 (`#`) 和連結語法，還原純淨文本。
 
 ---
 

@@ -18,7 +18,9 @@ Whether you need to precisely extract sections from a large text block, batch re
     * Global Find/Replace/Extract
     * First-Match Split/Between
     * Format Cleanup
-* **Powerful Regex Support**: A `use_regex` toggle switches all find and split operations to use Regular Expressions for complex pattern matching.
+    * [New] LLM Output Parsing (JSON, Code blocks)
+* Robust Error Handling (v1.1.5): The new `if_not_found` option allows you to choose the fallback behavior (return original, return empty, or trigger error) when a pattern isn't found, preventing batch workflow failures.
+* **Powerful Regex Support**: A `use_regex` toggle switches all find and split operations to use Regular Expressions. **Now supports `DOTALL` mode** for multi-line matching.
 * **Multi-Keyword Handling**: `Find/Replace` operations support multiple, comma-separated (`,`) targets in the `optional_text_input` field.
 * **Input Flexibility**: An optional `external_text` input allows you to concatenate two text sources (like B-box data and a prompt) before processing.
 * **Pre-processing**: Built-in `to UPPERCASE` / `to lowercase` functions to normalize case before any operation.
@@ -41,6 +43,12 @@ This group targets only the **first** matched instance. It uses the `start_text`
 
 #### C. Text Cleanup
 * `remove empty lines`, `remove newlines`, `strip lines (trim)`, `remove all whitespace`.
+
+#### D. LLM Utilities (New in v1.1.5)
+Specialized tools for processing raw outputs from Large Language Models (LLMs).
+* **`LLM: extract code block (```)`**: Extracts code content strictly within triple backticks.
+* **`LLM: extract JSON object ({...})`**: Locates and extracts the first valid JSON object structure, useful for chaining with JSON parsers.
+* **`LLM: clean markdown formatting`**: Removes bold (`**`), italics (`*`), headers (`#`), and links to return clean, plain text.
 
 ---
 
