@@ -1,7 +1,7 @@
 [![zh-TW](https://img.shields.io/badge/lang-zh--TW-blue.svg)](./README.zh-TW.md)
 # ComfyUI Text Processor
 
-A comprehensive suite of utility nodes for ComfyUI: Text Processing, Logic Evaluation, and Image Tools. Designed to enhance prompt engineering and streamline automated workflows.
+An advanced automation toolkit for ComfyUI, bridging the gap between raw data and generative AI. Features Batch Text Cleaning (for Img2Text), LLM Output Parsing, Dynamic Wildcards, and Logic Evaluation to streamline complex prompt engineering workflows.
 
 ![Workflow Demo](./examples/advanced_text_filter.png)
 
@@ -85,13 +85,22 @@ A persistent "clipboard" for ComfyUI. Save, load, and manage text snippets direc
 * **Local Storage:** Saves data to `text_storage.json` inside the node folder (easy backup).
 * **Auto-Refresh:** Automatically updates the dropdown list when new text is saved.
 
-###  Wildcards Node (Basic & Advanced)
-Generate dynamic prompts using wildcard syntax (e.g., `__style__`) and random choices (e.g., `{cat|dog}`).
-* **Two Versions:**
-    * **Basic:** Simple text box interface, compact.
-    * **Advanced:** Adds dropdown menus to select wildcard files directly from your `wildcards` folder.
-* **Cross-Platform:** Fully supports Windows and Linux/macOS paths.
-* **Independent Seeds:** Each input field uses a unique random seed offset to ensure variety.
+### Wildcards Processor (Dynamic Prompt Mixer)
+
+Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and random choices (e.g., `{cat|dog}`). This node has been evolved into a powerful **7-slot mixer**.
+
+* **Unified & Powerful (7-Slot Mixer)**:
+    Replaces the previous Basic/Advanced split with a single, robust node. It features **7 input slots**, allowing you to combine manual text and wildcard files in complex layers.
+* **Hybrid Inputs**:
+    Each of the 7 slots offers both a **Text Box** (for manual prompt or `{choice}` syntax) and a **Dropdown Menu** (to select a wildcard file). They work together—you can use one, the other, or both simultaneously.
+* **Smart "Random" Mode**:
+    The dropdown menu includes a special **"Random"** option. When selected, it picks a random wildcard file from your collection for that specific slot, adding an extra layer of surprise.
+* **Recursive Generation**:
+    Fully supports nested wildcards (e.g., a wildcard file containing other `__wildcards__`).
+* **Independent Seeds**:
+    Each input slot uses a unique internal seed offset. This ensures that even if you use the same `{A|B}` syntax in multiple slots, they won't rigidly output the same result.
+* **Cross-Platform**:
+    Fully supports nested subdirectories and handles Windows/Linux/macOS file paths correctly.
 
 ---
 
