@@ -3,10 +3,10 @@ from typing import Tuple, Optional, Any
 
 class AdvancedTextFilter:
     """
-    v1.1.5 Key Updates:
-    1. New LLM Utilities: Added functions to extract code blocks, extract JSON objects, and clean Markdown formatting.
-    2. Enhanced Boundary Handling: Added 'if_not_found' option to prevent workflow crashes when matches are missing.
-    3. Optimized Regex: Added support for DOTALL mode (enabling multi-line matching).
+    ComfyUI Text Processor Node (Enhanced Version 1.2.0)
+    Update Log:
+    - v1.2.0: Added 'batch replace' mode using a custom dictionary/list (Img2Text workflow support).
+    - v1.1.5: Added LLM utilities, error handling policies, and DOTALL regex support.
     """
     
     def __init__(self):
@@ -18,6 +18,8 @@ class AdvancedTextFilter:
             "find and remove (use optional_text)",
             "find and replace (use optional_text, replace_with_text)",
             "find all (extract) (use optional_text)",
+            
+            "batch replace (use replacement_rules)",
             
             "extract between",
             "remove between",
@@ -55,6 +57,11 @@ class AdvancedTextFilter:
             },
             "optional": {
                 "external_text": ("*",), 
+                "replacement_rules": ("STRING", {
+                    "multiline": True, 
+                    "default": "", 
+                    "placeholder": "Syntax:\nfind_text -> replace_text\nbad_tag -> good_tag\n(One rule per line)"
+                }),
             }
         }
 
@@ -69,10 +76,10 @@ class AdvancedTextFilter:
                 optional_text_input: str, replace_with_text: str, 
                 use_regex: bool, case_conversion: str, 
                 if_not_found: str,
-                external_text: Optional[Any] = None) -> Tuple[str, str]:
+                external_text: Optional[Any] = None,
+                replacement_rules: str = "") -> Tuple[str, str]:
 
-        if text is None:
-            text = ""
+        if text is None: text = ""
         text_to_process = str(text)
 
         if external_text is not None and concat_mode != "disabled":
@@ -102,7 +109,39 @@ class AdvancedTextFilter:
                 return (original, "")
 
         try:
-            if operation == "remove empty lines":
+            if operation == "batch replace (use replacement_rules)":
+                if not replacement_rules:
+                    return handle_not_found(text_to_process, "No replacement rules provided")
+                
+                lines = replacement_rules.splitlines()
+                processed = text_to_process
+                match_count = 0
+                
+                for line in lines:
+                    line = line.strip()
+                    if not line or "->" not in line:
+                        continue
+                    
+                    parts = line.split("->", 1)
+                    find_str = parts[0].strip()
+                    repl_str = parts[1].strip()
+                    
+                    if not find_str: continue
+
+                    if use_regex:
+                        processed, count = re.subn(find_str, repl_str, processed, flags=re.DOTALL)
+                        match_count += count
+                    else:
+                        count = processed.count(find_str)
+                        processed = processed.replace(find_str, repl_str)
+                        match_count += count
+                
+                if match_count == 0:
+                     return handle_not_found(original_text_input, "No batch rules matched")
+
+                return (processed, "")
+
+            elif operation == "remove empty lines":
                 processed_lines = [line for line in text_to_process.splitlines() if line.strip()]
                 return ("\n".join(processed_lines), "")
 
@@ -131,10 +170,8 @@ class AdvancedTextFilter:
             elif operation == "LLM: extract JSON object ({...})":
                 start_idx = text_to_process.find("{")
                 end_idx = text_to_process.rfind("}")
-                
                 if start_idx == -1 or end_idx == -1 or end_idx < start_idx:
                     return handle_not_found(text_to_process, "No valid JSON brackets found")
-                
                 json_content = text_to_process[start_idx:end_idx+1]
                 remaining = text_to_process[:start_idx] + text_to_process[end_idx+1:]
                 return (json_content, remaining)
@@ -176,7 +213,7 @@ class AdvancedTextFilter:
                     processed_output = "\n".join(all_found_matches)
                     return (processed_output, remaining_output)
 
-                else:
+                else: # Find and Replace / Remove
                     temp_processed_text = text_to_process
                     replace_str = replace_with_text if "replace" in operation else ""
                     match_count_total = 0
@@ -198,12 +235,12 @@ class AdvancedTextFilter:
                          return handle_not_found(original_text_input, "Pattern not found for replacement")
                     
                     processed_output = temp_processed_text
-                    remaining_output = "\n".join(all_found_matches) 
+                    remaining_output = "\n".join(all_found_matches)
                     return (processed_output, remaining_output)
 
             elif "start text" in operation or "between" in operation:
                 
-                def get_index(txt, pattern, is_regex, is_end_search=False, start_from=0):
+                def get_index(txt, pattern, is_regex, start_from=0):
                     if is_regex:
                         match = re.search(pattern, txt[start_from:], re.DOTALL)
                         if not match: return -1, -1
@@ -218,23 +255,17 @@ class AdvancedTextFilter:
                         return handle_not_found(original_text_input, "start_text input is missing")
                     
                     s_start, s_end = get_index(text_to_process, start_text, use_regex)
-                    
                     if s_start == -1:
                         return handle_not_found(original_text_input, f"Start text '{start_text}' not found")
 
                     split_point = s_start 
-
                     part_before = text_to_process[:split_point]
-                    part_after = text_to_process[split_point:] 
+                    part_after = text_to_process[split_point:]
 
-                    if "extract before" in operation:
-                        return (part_before, part_after)
-                    elif "remove before" in operation: 
-                        return (part_after, part_before)
-                    elif "extract after" in operation:
-                        return (part_after, part_before)
-                    elif "remove after" in operation:
-                        return (part_before, part_after)
+                    if "extract before" in operation: return (part_before, part_after)
+                    elif "remove before" in operation: return (part_after, part_before)
+                    elif "extract after" in operation: return (part_after, part_before)
+                    elif "remove after" in operation: return (part_before, part_after)
 
                 elif "between" in operation:
                     if not start_text or not end_text:
@@ -245,7 +276,6 @@ class AdvancedTextFilter:
                         return handle_not_found(original_text_input, f"Start text '{start_text}' not found")
                     
                     e_start, e_end = get_index(text_to_process, end_text, use_regex, start_from=s_end)
-                    
                     if e_start == -1:
                         return handle_not_found(original_text_input, f"End text '{end_text}' not found after start")
 

@@ -49,6 +49,20 @@
 * **`LLM: extract JSON object ({...})`**：定位並提取第一個有效的 JSON 物件結構，便於後續連接 JSON 解析器。
 * **`LLM: clean markdown formatting`**：移除粗體 (`**`)、斜體 (`*`)、標題 (`#`) 和連結語法，還原純淨文本。
 
+#### E. 批量操作 (Batch Operations) (v1.2.0 新增)
+專為圖生文 (Img2Text) 工作流或大量清洗需求設計。
+* **`batch replace (use replacement_rules)`**：在一次執行中完成多組「查找與替換」操作。
+    * 使用 `replacement_rules` 輸入框。
+    * **語法：** `查找內容 -> 替換內容` (每一行一條規則)。
+    * 範例：
+      ```text
+      ugly -> beautiful
+      bad hands -> detailed hands
+      error_tag -> 
+      ```
+      (箭頭右側留空即代表刪除該詞)
+    * 若啟用 `use_regex`，查找內容可支援正規表示式。
+
 ---
 
 ## 2. 文字工具節點 (Text Utilities)

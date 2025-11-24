@@ -50,6 +50,19 @@ Specialized tools for processing raw outputs from Large Language Models (LLMs).
 * **`LLM: extract JSON object ({...})`**: Locates and extracts the first valid JSON object structure, useful for chaining with JSON parsers.
 * **`LLM: clean markdown formatting`**: Removes bold (`**`), italics (`*`), headers (`#`), and links to return clean, plain text.
 
+#### E. Batch Operations (New in v1.2.0)
+Designed for Img2Text workflows or bulk cleaning.
+* **`batch replace (use replacement_rules)`**: Performs multiple find-and-replace operations in a single pass.
+    * Uses the `replacement_rules` input box.
+    * **Syntax:** `find_text -> replace_text` (one rule per line).
+    * Example:
+      ```text
+      ugly -> beautiful
+      bad hands -> detailed hands
+      error_tag -> 
+      ```
+    * Supports Regex if `use_regex` is enabled.
+
 ---
 
 ## 2. Text Utilities
