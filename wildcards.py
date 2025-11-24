@@ -101,7 +101,7 @@ class WildcardsNode:
     """
     RETURN_TYPES = ('STRING',)
     FUNCTION = 'process'
-    CATEGORY = "Text Processor"
+    CATEGORY = "ComfyUI Text Processor"
 
     @classmethod
     def INPUT_TYPES(cls):

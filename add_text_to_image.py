@@ -57,7 +57,7 @@ class AddTextToImage:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
     FUNCTION = "execute_draw_on_batch"
-    CATEGORY = "image/transform"
+    CATEGORY = "ComfyUI Text Processor/Image"
 
     def execute_draw_on_batch(
         self,

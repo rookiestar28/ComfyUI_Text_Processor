@@ -31,7 +31,7 @@ class EvaluateInts:
     RETURN_TYPES = ("INT", "FLOAT", "STRING",)
     OUTPUT_NODE = True
     FUNCTION = "evaluate"
-    CATEGORY = "ComfyUI_Text_Processor/Logic"
+    CATEGORY = "ComfyUI Text Processor/Logic"
 
     def evaluate(self, python_expression, print_to_console, a=0, b=0, c=0):
         names = {'a': a, 'b': b, 'c': c}
