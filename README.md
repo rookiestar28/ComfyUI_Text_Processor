@@ -80,14 +80,27 @@ Fetches and formats headlines from any URL. Ideal for injecting real-time contex
 * **Safe:** Includes timeouts and error handling to prevent workflow freezing.
 
 ### Text Storage Nodes (Reader & Writer)
-A persistent "clipboard" for ComfyUI. We have split this into two separate nodes for better clarity and workflow management.
-* **Text Storage (Reader)**:
-    * **Simple Interface:** Just a dropdown menu to select and output your saved text.
-    * **Auto-Refresh:** Automatically updates the list when new text is saved via the Writer node.
-* **Text Storage (Writer)**:
-    * **Dedicated Actions:** Supports `Add New (Auto Rename)`, `Overwrite Existing`, and `Delete`.
-    * **Force Input:** Accepts text input directly from other nodes (string connection).
-    * **Local Storage:** All data is saved safely to `text_storage.json` within the node folder.
+A persistent "clipboard" for ComfyUI. These nodes allow you to save and retrieve text data across different workflows or sessions. All data is securely stored in the `text_storage/` directory within the node folder.
+
+#### **Text Storage (Writer)**
+Saves text content to a file or internal database.
+* **Inputs:**
+    * `text_input`: The text content to save.
+    * `filename_prefix`: Optional prefix for categorization (e.g., `ProjectA_`).
+    * `save_name`: The main filename or key. Supports **Time Formatting** (e.g., `%Y-%m-%d`) and **Wildcards** (e.g., `***` for auto-incrementing 001, 002...).
+    * `mode`:
+        * **Add New (Auto Rename)**: Automatically avoids conflicts by renaming (e.g., `Log_2024-11-26_001.txt`).
+        * **Overwrite Existing**: Replaces content if the name exists.
+        * **Delete**: Removes the specified file/key.
+    * **`storage_format` (New!)**:
+        * `json`: Saves as a key inside the internal `text_storage.json` database.
+        * `txt`: Saves as a standalone `.txt` file for easy external editing.
+
+#### **Text Storage (Reader)**
+Retrieves saved text content.
+* **Unified List:** Automatically scans and lists both JSON keys and `.txt` files from the storage folder.
+* **Passthrough:** Outputs the selected text content string.
+* **> Important Note:** The dropdown list is generated when the node loads. If you have just saved a NEW file using the Writer node, you must **Refresh the ComfyUI Page (F5)** to see the new file appear in the Reader's list.
 
 ### Wildcards Processor (Dynamic Prompt Mixer)
 
