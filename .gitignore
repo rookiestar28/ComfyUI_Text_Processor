@@ -6,7 +6,8 @@ __pycache__/
 *.pyd
 .DS_Store
 .vscode/
-text_storage.json
+text_storage/*
+!text_storage/.gitkeep
 wildcards/*
 !wildcards/.gitkeep
 !wildcards/example_format.txt

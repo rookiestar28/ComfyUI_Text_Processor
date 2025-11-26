@@ -47,7 +47,24 @@ class TP_SaveMask:
 class TP_LoadMask:
     @classmethod
     def INPUT_TYPES(s):
-        files = folder_paths.get_filename_list("input")
+        input_dir = folder_paths.get_input_directory()
+        files = []
+        
+        try:
+            files = folder_paths.get_filename_list("input")
+        except (KeyError, AttributeError):
+            if os.path.exists(input_dir):
+                supported_ext = {'.png', '.jpg', '.jpeg', '.bmp', '.webp', '.tiff'}
+                for root, dirs, filenames in os.walk(input_dir):
+                    for filename in filenames:
+                        if os.path.splitext(filename)[1].lower() in supported_ext:
+                            filepath = os.path.join(root, filename)
+                            rel_path = os.path.relpath(filepath, input_dir)
+                            rel_path = rel_path.replace("\\", "/") 
+                            files.append(rel_path)
+            else:
+                files = []
+        
         return {
             "required": {
                 "image": (sorted(files), {"image_upload": True})
@@ -68,7 +85,6 @@ class TP_LoadMask:
             
         image = np.array(i).astype(np.float32) / 255.0
         mask = torch.from_numpy(image)
-        
         mask = mask.unsqueeze(0)
         
         return (mask, )
