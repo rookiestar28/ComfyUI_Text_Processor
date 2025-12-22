@@ -49,7 +49,7 @@ class AddTextToImage:
                 "margin": ("INT", {"default": 24, "min": 0, "max": 256, "step": 1}),
                 "line_spacing": ("INT", {"default": 5, "min": 0, "max": 128, "step": 1}),
                 "text_color_hex": ("STRING", {"default": "#ffffff"}),
-                "background_color_hex": ("STRING", {"default": "#00000080"}), # 預設就是半透明黑
+                "background_color_hex": ("STRING", {"default": "#00000080"}),
                 "background_padding": ("INT", {"default": 10, "min": 0, "max": 50, "step": 1}),
             },
         }
@@ -119,7 +119,7 @@ class AddTextToImage:
                     sized_font = base_font_object.font_variant(size=current_font_size_iter)
                     try:
                         text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
-                    except TypeError: 
+                    except (TypeError, ValueError): 
                         text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing)
                     actual_text_width = text_bbox[2] - text_bbox[0]
                     
@@ -127,7 +127,7 @@ class AddTextToImage:
                     if current_font_size_iter <= min_font_size:
                         try:
                             text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
-                        except TypeError:
+                        except (TypeError, ValueError):
                             text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing)
                         break
                     current_font_size_iter -= 1
@@ -148,7 +148,7 @@ class AddTextToImage:
                     
                     try:
                         final_text_pixel_bbox = draw_on_overlay.multiline_textbbox((text_draw_x, text_draw_y), current_label_text, font=sized_font, spacing=line_spacing, align="center", anchor=final_anchor)
-                    except TypeError: 
+                    except (TypeError, ValueError): 
                         temp_text_bbox_for_fallback = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
                         fb_actual_text_width = temp_text_bbox_for_fallback[2] - temp_text_bbox_for_fallback[0]
                         fb_actual_text_height = temp_text_bbox_for_fallback[3] - temp_text_bbox_for_fallback[1]
@@ -175,7 +175,23 @@ class AddTextToImage:
                             draw_on_overlay.rectangle([bg_x1, bg_y1, bg_x2, bg_y2], fill=(bg_r, bg_g, bg_b, bg_a))
                 
                 if sized_font:
-                    draw_on_overlay.multiline_text(xy=(text_draw_x, text_draw_y), text=current_label_text, fill=parsed_text_color, font=sized_font, anchor=final_anchor, spacing=line_spacing, align="center")
+                    try:
+                        draw_on_overlay.multiline_text(xy=(text_draw_x, text_draw_y), text=current_label_text, fill=parsed_text_color, font=sized_font, anchor=final_anchor, spacing=line_spacing, align="center")
+                    except (TypeError, ValueError):
+                        # Fallback for Pillow versions that do not support anchor in multiline_text
+                        temp_text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
+                        actual_w = temp_text_bbox[2] - temp_text_bbox[0]
+                        actual_h = temp_text_bbox[3] - temp_text_bbox[1]
+                        
+                        draw_x, draw_y = text_draw_x, text_draw_y
+                        
+                        if final_anchor[0] == 'm': draw_x -= actual_w / 2
+                        elif final_anchor[0] == 'r': draw_x -= actual_w
+                        
+                        if final_anchor[1] == 'm': draw_y -= actual_h / 2
+                        elif final_anchor[1] == 's' or final_anchor[1] == 'd': draw_y -= actual_h
+                        
+                        draw_on_overlay.multiline_text(xy=(draw_x, draw_y), text=current_label_text, fill=parsed_text_color, font=sized_font, spacing=line_spacing, align="center")
 
             final_pil_image_rgba = Image.alpha_composite(base_pil_image, overlay_pil_image)
             
