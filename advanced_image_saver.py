@@ -52,20 +52,14 @@ class AdvancedImageSaver:
     CATEGORY = "Text Processor/IO"
 
     def parse_name(self, text):
-        """
-        簡易的 Token 解析器，取代 WAS 的 TextTokens。
-        目前支援 [time(format)] 語法。
-        """
         if not text:
             return ""
-            
         def replace_time(match):
             fmt = match.group(1)
             try:
                 return datetime.now().strftime(fmt)
             except:
                 return match.group(0)
-
         text = re.sub(r'\[time\((.*?)\)\]', replace_time, text)
         return text
 
@@ -141,10 +135,8 @@ class AdvancedImageSaver:
                         current_score_val = float(aesthetic_score)
                     
                     if current_score_val < aesthetic_threshold:
-                        print(f"[AdvancedImageSaver] Skipped image {idx} (Score: {current_score_val:.2f} < {aesthetic_threshold})")
                         continue 
                 except (ValueError, TypeError):
-                    print(f"[AdvancedImageSaver] Warning: Invalid aesthetic score input, skipping filter for image {idx}")
                     pass
 
             i = 255. * image.cpu().numpy()
@@ -152,25 +144,39 @@ class AdvancedImageSaver:
 
             exif_data = None
             if save_metadata_bool:
+                items_to_save = {}
+                
+                if prompt is not None:
+                    items_to_save["prompt"] = json.dumps(prompt)
+
+                if extra_pnginfo is not None:
+                    for key, value in extra_pnginfo.items():
+                        if key == 'workflow' and not embed_workflow_bool:
+                            continue
+                        
+                        items_to_save[key] = json.dumps(value)
+
                 if extension == 'webp':
                     img_exif = img.getexif()
-                    workflow_metadata = ''
-                    prompt_str = ''
-                    if prompt is not None:
-                        prompt_str = json.dumps(prompt)
-                        img_exif[0x010f] = "Prompt:" + prompt_str
-                    if embed_workflow_bool and extra_pnginfo is not None:
-                        for x in extra_pnginfo:
-                            workflow_metadata += json.dumps(extra_pnginfo[x])
+                    # 0x010f = Prompt (Parameters)
+                    if "prompt" in items_to_save:
+                        img_exif[0x010f] = "Prompt:" + items_to_save["prompt"]
+                    
+                    # 0x010e = Workflow (Nodes Graph) + Others
+                    workflow_metadata = ""
+                    for key, value in items_to_save.items():
+                        if key == "prompt": continue
+                        workflow_metadata += value
+                    
+                    if workflow_metadata:
                         img_exif[0x010e] = "Workflow:" + workflow_metadata
+                        
                     exif_data = img_exif.tobytes()
                 else:
+                    # PNG
                     metadata = PngInfo()
-                    if prompt is not None:
-                        metadata.add_text("prompt", json.dumps(prompt))
-                    if embed_workflow_bool and extra_pnginfo is not None:
-                        for x in extra_pnginfo:
-                            metadata.add_text(x, json.dumps(extra_pnginfo[x]))
+                    for key, value in items_to_save.items():
+                        metadata.add_text(key, value)
                     exif_data = metadata
 
             if overwrite_mode == 'prefix_as_filename':
@@ -209,9 +215,7 @@ class AdvancedImageSaver:
 
                 if show_previews == 'true':
                     subfolder = os.path.relpath(full_output_folder, self.output_dir)
-                    if subfolder == '.': 
-                        subfolder = ""
-                        
+                    if subfolder == '.': subfolder = ""
                     results.append({
                         "filename": file_name,
                         "subfolder": subfolder,
