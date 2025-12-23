@@ -7,6 +7,8 @@ from .wildcards import WildcardsNode
 from .add_text_to_image import AddTextToImage
 from .simple_eval import EvaluateInts, EvaluateFloats, EvaluateStrs
 
+from .advanced_image_saver import AdvancedImageSaver
+
 from .image_cropper import NODE_CLASS_MAPPINGS as IMAGE_CLASS_MAPPINGS
 from .image_cropper import NODE_DISPLAY_NAME_MAPPINGS as IMAGE_DISPLAY_NAME_MAPPINGS
 
@@ -22,6 +24,7 @@ NODE_CLASS_MAPPINGS = {
     "EvaluateInts": EvaluateInts,
     "EvaluateFloats": EvaluateFloats,
     "EvaluateStrs": EvaluateStrs,
+    "AdvancedImageSaver": AdvancedImageSaver,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -33,6 +36,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "EvaluateInts": "Simple Eval Integers",
     "EvaluateFloats": "Simple Eval Floats",
     "EvaluateStrs": "Simple Eval Strings",
+    "AdvancedImageSaver": "Advanced Image Saver (Aesthetic)",
 }
 
 NODE_CLASS_MAPPINGS.update(TEXT_STORAGE_CLASS_MAPPINGS)
