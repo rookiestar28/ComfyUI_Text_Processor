@@ -153,16 +153,13 @@ class AdvancedImageSaver:
                     for key, value in extra_pnginfo.items():
                         if key == 'workflow' and not embed_workflow_bool:
                             continue
-                        
                         items_to_save[key] = json.dumps(value)
 
                 if extension == 'webp':
                     img_exif = img.getexif()
-                    # 0x010f = Prompt (Parameters)
                     if "prompt" in items_to_save:
                         img_exif[0x010f] = "Prompt:" + items_to_save["prompt"]
                     
-                    # 0x010e = Workflow (Nodes Graph) + Others
                     workflow_metadata = ""
                     for key, value in items_to_save.items():
                         if key == "prompt": continue
