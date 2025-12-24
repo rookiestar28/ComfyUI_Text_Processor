@@ -1,3 +1,4 @@
 simpleeval
 requests
 beautifulsoup4
+aesthetic-predictor-v2-5

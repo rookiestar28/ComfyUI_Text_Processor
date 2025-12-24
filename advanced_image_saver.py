@@ -2,16 +2,25 @@ import os
 import json
 import re
 import numpy as np
+import torch
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from datetime import datetime
 import folder_paths
+
+try:
+    from aesthetic_predictor_v2_5 import convert_v2_5_from_siglip
+except ImportError:
+    print("[AdvancedImageSaver] Warning: aesthetic_predictor_v2_5 module not found. Aesthetic scoring will fail if enabled.")
 
 class AdvancedImageSaver:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
         self.type = 'output'
         self.prefix_append = ""
+        
+        self.predictor_model = None
+        self.predictor_preprocessor = None
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -32,6 +41,7 @@ class AdvancedImageSaver:
                 "embed_workflow": (["true", "false"],),
                 "show_previews": (["true", "false"],),
                 "save_metadata": (["true", "false"],),
+                "calculate_aesthetic_score": (["false", "true"],),
                 "aesthetic_threshold": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 10.0, "step": 0.1}),
             },
             "optional": {
@@ -42,8 +52,8 @@ class AdvancedImageSaver:
             },
         }
 
-    RETURN_TYPES = ("IMAGE", "STRING",)
-    RETURN_NAMES = ("images", "files",)
+    RETURN_TYPES = ("IMAGE", "STRING", "STRING",)
+    RETURN_NAMES = ("filtered_images", "files", "scores",)
 
     FUNCTION = "save_images"
 
@@ -63,11 +73,51 @@ class AdvancedImageSaver:
         text = re.sub(r'\[time\((.*?)\)\]', replace_time, text)
         return text
 
+    def load_predictor(self):
+        """加載評分模型，如果尚未加載"""
+        if self.predictor_model is not None:
+            return
+
+        print("[AdvancedImageSaver] Loading Aesthetic Predictor V2.5 model...")
+        try:
+            self.predictor_model, self.predictor_preprocessor = convert_v2_5_from_siglip(
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+            )
+            if torch.cuda.is_available():
+                self.predictor_model = self.predictor_model.to(torch.bfloat16).cuda()
+            print("[AdvancedImageSaver] Model loaded successfully.")
+        except Exception as e:
+            print(f"[AdvancedImageSaver] Error loading model: {e}")
+            raise e
+
+    def get_aesthetic_score(self, image_tensor):
+        """計算單張圖片的美學分數"""
+        try:
+            # Convert to numpy, scale to 255, uint8
+            img_np = (image_tensor.cpu().numpy() * 255).astype(np.uint8)
+            image = Image.fromarray(img_np).convert("RGB")
+            
+            # Preprocess
+            pixel_values = self.predictor_preprocessor(images=image, return_tensors="pt").pixel_values
+
+            if torch.cuda.is_available():
+                pixel_values = pixel_values.to(torch.bfloat16).cuda()
+
+            # Predict
+            with torch.inference_mode():
+                score = self.predictor_model(pixel_values).logits.squeeze().float().cpu().numpy()
+            
+            return float(score)
+        except Exception as e:
+            print(f"[AdvancedImageSaver] Prediction failed: {e}")
+            return 0.0
+
     def save_images(self, images, output_path='', filename_prefix="ComfyUI", filename_delimiter='_',
                     extension='png', dpi=300, quality=100, optimize_image="true", lossless_webp="false", 
                     prompt=None, extra_pnginfo=None, overwrite_mode='false', filename_number_padding=4, 
                     filename_number_start='false', embed_workflow="true", show_previews="true", 
-                    save_metadata="true", aesthetic_threshold=5.0, aesthetic_score=None):
+                    save_metadata="true", calculate_aesthetic_score="false", aesthetic_threshold=5.0, aesthetic_score=None):
 
         delimiter = filename_delimiter
         number_padding = filename_number_padding
@@ -75,6 +125,10 @@ class AdvancedImageSaver:
         optimize_image = (optimize_image == "true")
         save_metadata_bool = (save_metadata == "true")
         embed_workflow_bool = (embed_workflow == "true")
+        calculate_score_bool = (calculate_aesthetic_score == "true")
+
+        if calculate_score_bool:
+            self.load_predictor()
 
         filename_prefix = self.parse_name(filename_prefix)
         output_path = self.parse_name(output_path)
@@ -120,12 +174,20 @@ class AdvancedImageSaver:
 
         results = list()
         output_files = list()
+        saved_scores = list()
+        valid_images_list = list() 
 
         for idx, image in enumerate(images):
             
-            if aesthetic_score is not None:
+            should_save = True
+            current_score_val = None
+
+            if calculate_score_bool and self.predictor_model is not None:
+                current_score_val = self.get_aesthetic_score(image)
+                print(f"[AdvancedImageSaver] Image {idx} Score: {current_score_val:.4f}")
+
+            elif aesthetic_score is not None:
                 try:
-                    current_score_val = 0.0
                     if isinstance(aesthetic_score, list):
                         if idx < len(aesthetic_score):
                             current_score_val = float(aesthetic_score[idx])
@@ -133,11 +195,18 @@ class AdvancedImageSaver:
                             current_score_val = float(aesthetic_score[-1])
                     else:
                         current_score_val = float(aesthetic_score)
-                    
-                    if current_score_val < aesthetic_threshold:
-                        continue 
                 except (ValueError, TypeError):
                     pass
+            
+            if current_score_val is not None:
+                if current_score_val < aesthetic_threshold:
+                    continue 
+            
+            valid_images_list.append(image)
+            if current_score_val is not None:
+                saved_scores.append(f"{current_score_val:.4f}")
+            else:
+                saved_scores.append("N/A")
 
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -226,8 +295,14 @@ class AdvancedImageSaver:
 
             if overwrite_mode == 'false':
                 counter += 1
+        
+        if len(valid_images_list) > 0:
+            filtered_images_out = torch.stack(valid_images_list)
+        else:
+
+            filtered_images_out = torch.empty((0, 1, 1, 3))
 
         if show_previews == 'true':
-            return {"ui": {"images": results, "files": output_files}, "result": (images, output_files,)}
+            return {"ui": {"images": results, "files": output_files}, "result": (filtered_images_out, output_files, saved_scores)}
         else:
-            return {"ui": {"images": []}, "result": (images, output_files,)}
+            return {"ui": {"images": []}, "result": (filtered_images_out, output_files, saved_scores)}
