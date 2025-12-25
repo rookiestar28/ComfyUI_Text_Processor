@@ -270,9 +270,3 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 | **匹配萬用字元** | `__\w+__` | 匹配常見的 Wildcard 語法，如 `__tag__`。 |
 
 </details>
-
----
-
-<div align="center">
-Made with ❤️ for the ComfyUI Community
-</div>

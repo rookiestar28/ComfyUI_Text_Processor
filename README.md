@@ -273,9 +273,3 @@ If you prefer terminal commands or don't use the Manager:
 | **Match Wildcards** | `__\w+__` | Matches typical wildcard syntax like `__character__`. |
 
 </details>
-
----
-
-<div align="center">
-Made with ❤️ for the ComfyUI Community
-</div>
