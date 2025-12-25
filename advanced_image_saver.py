@@ -40,7 +40,7 @@ class AdvancedImageSaver:
                 "overwrite_mode": (["false", "prefix_as_filename"],),
                 "embed_workflow": (["true", "false"],),
                 "show_previews": (["true", "false"],),
-                "save_metadata": (["true", "false"],),
+                "metadata_mode": (["full", "minimal", "none"],),
                 "calculate_aesthetic_score": (["false", "true"],),
                 "aesthetic_threshold": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 10.0, "step": 0.1}),
             },
@@ -72,6 +72,83 @@ class AdvancedImageSaver:
                 return match.group(0)
         text = re.sub(r'\[time\((.*?)\)\]', replace_time, text)
         return text
+
+    def extract_minimal_metadata(self, prompt):
+        """從 prompt 中提取關鍵生成參數"""
+        if prompt is None:
+            return {}
+        
+        minimal_data = {
+            "positive": "",
+            "negative": "",
+            "steps": None,
+            "cfg": None,
+            "sampler": None,
+            "scheduler": None,
+            "seed": None,
+            "model": None,
+            "vae": None,
+            "size": None
+        }
+        
+        try:
+            for node_id, node_data in prompt.items():
+                if not isinstance(node_data, dict):
+                    continue
+                
+                class_type = node_data.get("class_type", "")
+                inputs = node_data.get("inputs", {})
+                
+                # 提取正向/負向提示詞
+                if class_type in ["CLIPTextEncode", "CLIPTextEncodeSDXL", "CLIPTextEncodeFlux"]:
+                    text = inputs.get("text", "")
+                    if text:
+                        # 嘗試判斷是正向還是負向（通過追蹤連接）
+                        if not minimal_data["positive"]:
+                            minimal_data["positive"] = text
+                        elif not minimal_data["negative"]:
+                            minimal_data["negative"] = text
+                
+                # 提取採樣器參數
+                if class_type in ["KSampler", "KSamplerAdvanced", "SamplerCustom", "KSampler (Efficient)"]:
+                    if inputs.get("steps"):
+                        minimal_data["steps"] = inputs.get("steps")
+                    if inputs.get("cfg"):
+                        minimal_data["cfg"] = inputs.get("cfg")
+                    if inputs.get("sampler_name"):
+                        minimal_data["sampler"] = inputs.get("sampler_name")
+                    if inputs.get("scheduler"):
+                        minimal_data["scheduler"] = inputs.get("scheduler")
+                    if inputs.get("seed") is not None:
+                        minimal_data["seed"] = inputs.get("seed")
+                    if inputs.get("noise_seed") is not None:
+                        minimal_data["seed"] = inputs.get("noise_seed")
+                
+                # 提取模型名稱
+                if class_type in ["CheckpointLoaderSimple", "CheckpointLoader", "UNETLoader"]:
+                    if inputs.get("ckpt_name"):
+                        minimal_data["model"] = inputs.get("ckpt_name")
+                    if inputs.get("unet_name"):
+                        minimal_data["model"] = inputs.get("unet_name")
+                
+                # 提取 VAE
+                if class_type == "VAELoader":
+                    if inputs.get("vae_name"):
+                        minimal_data["vae"] = inputs.get("vae_name")
+                
+                # 提取圖片尺寸
+                if class_type in ["EmptyLatentImage", "EmptySD3LatentImage"]:
+                    width = inputs.get("width")
+                    height = inputs.get("height")
+                    if width and height:
+                        minimal_data["size"] = f"{width}x{height}"
+            
+            # 清理空值
+            return {k: v for k, v in minimal_data.items() if v is not None and v != ""}
+        
+        except Exception as e:
+            print(f"[AdvancedImageSaver] Error extracting minimal metadata: {e}")
+            return {}
 
     def load_predictor(self):
         """加載評分模型，如果尚未加載"""
@@ -117,15 +194,15 @@ class AdvancedImageSaver:
                     extension='png', dpi=300, quality=100, optimize_image="true", lossless_webp="false", 
                     prompt=None, extra_pnginfo=None, overwrite_mode='false', filename_number_padding=4, 
                     filename_number_start='false', embed_workflow="true", show_previews="true", 
-                    save_metadata="true", calculate_aesthetic_score="false", aesthetic_threshold=5.0, aesthetic_score=None):
+                    metadata_mode="full", calculate_aesthetic_score="false", aesthetic_threshold=5.0, aesthetic_score=None):
 
         delimiter = filename_delimiter
         number_padding = filename_number_padding
         lossless_webp = (lossless_webp == "true")
         optimize_image = (optimize_image == "true")
-        save_metadata_bool = (save_metadata == "true")
         embed_workflow_bool = (embed_workflow == "true")
         calculate_score_bool = (calculate_aesthetic_score == "true")
+        # metadata_mode: "full" | "minimal" | "none"
 
         if calculate_score_bool:
             self.load_predictor()
@@ -212,26 +289,33 @@ class AdvancedImageSaver:
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
             exif_data = None
-            if save_metadata_bool:
+            if metadata_mode != "none":
                 items_to_save = {}
                 
-                if prompt is not None:
-                    items_to_save["prompt"] = json.dumps(prompt)
+                if metadata_mode == "minimal":
+                    minimal_meta = self.extract_minimal_metadata(prompt)
+                    if minimal_meta:
+                        items_to_save["parameters"] = json.dumps(minimal_meta)
+                else:
+                    if prompt is not None:
+                        items_to_save["prompt"] = json.dumps(prompt)
 
-                if extra_pnginfo is not None:
-                    for key, value in extra_pnginfo.items():
-                        if key == 'workflow' and not embed_workflow_bool:
-                            continue
-                        items_to_save[key] = json.dumps(value)
+                    if extra_pnginfo is not None:
+                        for key, value in extra_pnginfo.items():
+                            if key == 'workflow' and not embed_workflow_bool:
+                                continue
+                            items_to_save[key] = json.dumps(value)
 
                 if extension == 'webp':
                     img_exif = img.getexif()
-                    if "prompt" in items_to_save:
+                    if metadata_mode == "minimal" and "parameters" in items_to_save:
+                        img_exif[0x010f] = "Parameters:" + items_to_save["parameters"]
+                    elif "prompt" in items_to_save:
                         img_exif[0x010f] = "Prompt:" + items_to_save["prompt"]
                     
                     workflow_metadata = ""
                     for key, value in items_to_save.items():
-                        if key == "prompt": continue
+                        if key in ["prompt", "parameters"]: continue
                         workflow_metadata += value
                     
                     if workflow_metadata:

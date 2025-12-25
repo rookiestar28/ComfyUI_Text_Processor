@@ -16,10 +16,10 @@
 
 * **雙重輸出（節點串聯）**：提供 `processed_text (Target)` 和 `remaining_text` 兩個輸出。您可以將 `remaining_text` 連接到另一個 `AdvancedTextFilter` 節點，實現多步驟的文本解析。
 * **17+ 種操作模式**：
-    * 全局查找/替換 (`Find/Replace/Extract`)
-    * 首次匹配分割 (`Split/Between`)
-    * 格式清理 (`Cleanup`)
-    * [New] LLM 輸出解析 (JSON, 程式碼區塊)
+  * 全局查找/替換 (`Find/Replace/Extract`)
+  * 首次匹配分割 (`Split/Between`)
+  * 格式清理 (`Cleanup`)
+  * [New] LLM 輸出解析 (JSON, 程式碼區塊)
 * **強大的錯誤處理 (v1.1.5)**：新增 `if_not_found` 選項，允許您設定當找不到匹配項時的行為（返回原文本、返回空字串或報錯），有效防止批次工作流中斷。
 * **強大的 Regex 支援**：`use_regex` 開關可將所有查找和分割操作切換為使用正規表示式，實現複雜的模式匹配。**現已支援 `DOTALL` 模式**（可跨行匹配）。
 * **多關鍵字處理**：`Find/Replace` 操作支援在 `optional_text_input` 欄位中使用逗號 (`,`) 分隔多個查找目標。
@@ -29,80 +29,101 @@
 ### 操作模式
 
 #### A. Find / Replace / Extract (全局操作)
+
 這組操作會查找並處理**所有**匹配的實例。
+
 * **`find and remove`**: 移除指定關鍵字。
 * **`find and replace`**: 將關鍵字替換為指定內容。
 * **`find all (extract)`**: 提取所有匹配項；剩餘文本為移除了匹配項的內容。
 
 #### B. Split & Between (首次匹配)
+
 這組操作只會針對**第一個**匹配的實例進行操作。
+
 * **`extract between`** / **`remove between`** (提取/移除兩段文字中間的內容)
 * **`extract before start text`** / **`remove after start text`**
 * **`extract after start text`** / **`remove before start text`**
 
 #### C. Text Cleanup (文本清理)
+
 * `remove empty lines`, `remove newlines`, `strip lines`, `remove all whitespace`.
 
 #### D. LLM 工具箱 (v1.1.5 新增)
+
 專為處理大型語言模型 (LLM) 原始輸出而設計的工具。
+
 * **`LLM: extract code block (```)`**：精確提取位於三個反引號之間的程式碼內容。
 * **`LLM: extract JSON object ({...})`**：定位並提取第一個有效的 JSON 物件結構，便於後續連接 JSON 解析器。
 * **`LLM: clean markdown formatting`**：移除粗體 (`**`)、斜體 (`*`)、標題 (`#`) 和連結語法，還原純淨文本。
 
 #### E. 批量操作 (Batch Operations) (v1.2.0 新增)
+
 專為圖生文 (Img2Text) 工作流或大量清洗需求設計。
+
 * **`batch replace (use replacement_rules)`**：在一次執行中完成多組「查找與替換」操作。
-    * 使用 `replacement_rules` 輸入框。
-    * **語法：** `查找內容 -> 替換內容` (每一行一條規則)。
-    * 範例：
+  * 使用 `replacement_rules` 輸入框。
+  * **語法：** `查找內容 -> 替換內容` (每一行一條規則)。
+  * 範例：
+
       ```text
       ugly -> beautiful
       bad hands -> detailed hands
       error_tag -> 
       ```
+
       (箭頭右側留空即代表刪除該詞)
-    * 若啟用 `use_regex`，查找內容可支援正規表示式。
+  * 若啟用 `use_regex`，查找內容可支援正規表示式。
 
 ---
 
 ## 2. 文字工具節點 (Text Utilities)
 
 ### Text Input Node (文字輸入)
+
 智慧型文字合併工具，最多可支援 7 組輸入。
+
 * **混合輸入：** 包含 3 個連接點（Slots）和 4 個文字框（Widgets）。
 * **自動清理：** 自動過濾空字串，避免出現多餘的分隔符號。
 * **趣味防呆：** 若未輸入任何內容，會回傳一組可愛的預設提示詞。
 
 ### Text Scraper Node (網頁爬蟲)
+
 從指定網址抓取標題並格式化，適合用於為 LLM 提供即時上下文。
+
 * **簡單易用：** 僅需輸入 URL 字串。
 * **智慧解析：** 自動識別網頁標題 (`h1`-`h4`) 與類別。
 * **安全機制：** 內建超時與錯誤處理，防止工作流卡死。
 
 ### Text Storage Nodes (文字倉庫 - 讀寫分離版)
+
 ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會話之間保存與讀取文字數據，所有資料皆安全儲存在節點目錄下的 `text_storage/` 資料夾中。
 
 #### **Text Storage (Writer / 寫入器)**
+
 將文字內容保存到檔案或內部資料庫。
+
 * **Inputs (輸入):**
-    * `text_input`: 要保存的文字內容。
-    * `filename_prefix`: 可選的分類前綴 (例如 `ProjectA_`)。
-    * `save_name`: 主要檔名或鍵值。支援 **時間格式化** (如 `%Y-%m-%d`) 與 **通配符** (如 `***` 代表自動編號 001, 002...)。
-    * `mode`:
-        * **Add New (Auto Rename)**: 新增模式。若檔名重複會自動更名 (例如 `Log_2024-11-26_001.txt`)，避免覆蓋。
-        * **Overwrite Existing**: 覆蓋模式。若檔名存在則直接覆蓋內容。
-        * **Delete**: 刪除模式。移除指定的檔案或鍵值。
-    * **`storage_format` (新功能!)**:
-        * `json`: 作為鍵值對 (Key-Value) 儲存在內部的 `text_storage.json` 資料庫中。
-        * `txt`: 儲存為獨立的 `.txt` 文字檔，方便外部編輯或查看。
+  * `text_input`: 要保存的文字內容。
+  * `filename_prefix`: 可選的分類前綴 (例如 `ProjectA_`)。
+  * `save_name`: 主要檔名或鍵值。支援 **時間格式化** (如 `%Y-%m-%d`) 與 **通配符** (如 `***` 代表自動編號 001, 002...)。
+  * `mode`:
+    * **Add New (Auto Rename)**: 新增模式。若檔名重複會自動更名 (例如 `Log_2024-11-26_001.txt`)，避免覆蓋。
+    * **Overwrite Existing**: 覆蓋模式。若檔名存在則直接覆蓋內容。
+    * **Delete**: 刪除模式。移除指定的檔案或鍵值。
+  * **`storage_format` (新功能!)**:
+    * `json`: 作為鍵值對 (Key-Value) 儲存在內部的 `text_storage.json` 資料庫中。
+    * `txt`: 儲存為獨立的 `.txt` 文字檔，方便外部編輯或查看。
 
 #### **Text Storage (Reader / 讀取器)**
+
 讀取已保存的文字內容。
+
 * **統一列表:** 自動掃描並列出資料夾內所有的 JSON 鍵值與 `.txt` 檔案。
 * **直通輸出:** 輸出選定的文字內容字串。
 * **> 重要提示:** 下拉選單是在節點載入時生成的。如果您剛剛透過 Writer 寫入了新檔案，必須 **重新整理 ComfyUI 網頁 (F5)**，新檔案才會出現在 Reader 的列表中。
 
 ### Wildcards Processor (動態提示詞混合器)
+
 使用通配符語法（如 `__style__`）和隨機選擇（如 `{cat|dog}`）生成豐富的動態提示詞。此節點已進化為強大的 **7 槽混合器**。
 
 * **單一整合版 (7-Slot Mixer)**：
@@ -123,7 +144,9 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 基於 `simpleeval` 安全地評估 Python 表達式，用於動態計算與邏輯控制。
 
 ### Simple Eval (整數 / 浮點數 / 字串)
+
 無需編寫複雜代碼即可執行數學運算或字串操作。
+
 * **三種變體：** 提供 `Integers` (整數)、`Floats` (浮點數) 和 `Strings` (字串) 專用節點。
 * **變數支援：** 支援 `a`、`b`、`c` 三個輸入變數。可在表達式中直接使用（例如：`(a + b) * 2` 或 `a + " " + b`）。
 * **安全執行：** 受限的執行環境防止不安全的代碼運行，同時保留強大的邏輯功能。
@@ -133,13 +156,48 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 
 ## 4. 圖像工具節點 (Image Utilities)
 
+### Advanced Image Saver (進階圖像儲存器)
+
+專業級圖片輸出節點，具備進階品質控制與美學評分過濾功能。
+
+* **美學評分過濾:**
+  * 內建支援 **Aesthetic Predictor V2.5** 評分模型(自動 CUDA 加速)。
+  * 為每張圖片計算美學分數，自動過濾低於閾值的圖像。
+  * 支援外部評分輸入，可與其他評分節點整合使用。
+* **靈活的輸出路徑:**
+  * 動態路徑解析，支援時間格式化(如 `[time(%Y-%m-%d)]` → `2025-12-25`)。
+  * 支援相對路徑(ComfyUI output 下)與絕對路徑。
+  * 資料夾不存在時自動建立。
+* **智慧檔名生成:**
+  * 可自訂前綴、分隔符號、數字補零位數。
+  * 自動遞增計數器，並偵測檔名衝突。
+  * 支援數字在前或在後格式(`0001_前綴` 或 `前綴_0001`)。
+  * 覆蓋模式:使用前綴作為靜態檔名。
+* **多格式支援:**
+  * **PNG**: 完整支援中繼資料嵌入(工作流 + 提示詞)透過 PngInfo。
+  * **JPEG/JPG**: 品質控制(1-100)，支援 DPI 設定。
+  * **WebP**: 支援無損模式，EXIF 中繼資料嵌入。
+  * **BMP/TIFF**: 額外的備用格式選擇。
+* **中繼資料管理:**
+  * 可切換工作流嵌入(減少檔案大小)。
+  * 將提示詞與生成參數儲存進圖像中繼資料。
+  * WebP 格式:將資料儲存於 EXIF 標籤(Make/ImageDescription)。
+* **輸出控制:**
+  * **三組輸出**: `filtered_images` (IMAGE)、`files` (檔案路徑列表)、`scores` (美學分數列表)。
+  * 可選的預覽開關，適用於無頭工作流。
+  * 僅回傳通過美學閾值的圖片給下游節點。
+
 ### Image Cropper (圖片裁切)
+
 一個方便的實用工具，可直接在工作流中裁切圖片。
+
 * **精準裁切：** 輕鬆去除不需要的邊緣或聚焦於特定主體。
 * **批量處理：** 支援對批量圖片 (Image Batches) 進行裁切。
 
 ### Add Text to Image (圖片加字)
+
 在圖片上繪製文字，支援高級排版功能。
+
 * **自動縮放：** 文字大小會根據圖片寬度自動調整。
 * **背景色塊：** 支援半透明背景顏色與邊距設定。
 * **批量支援：** 支援批量圖片處理 (Batch Processing)。
@@ -153,29 +211,35 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 
 這是最簡單的安裝方式。
 
-1.  在 ComfyUI 介面中打開 **ComfyUI Manager**。
-2.  點擊 **"Custom Nodes Manager"**。
-3.  搜尋 `ComfyUI Text Processor`。
-4.  點擊 **Install** (安裝) 並等待完成。
-5.  **重新啟動 ComfyUI**。
+1. 在 ComfyUI 介面中打開 **ComfyUI Manager**。
+2. 點擊 **"Custom Nodes Manager"**。
+3. 搜尋 `ComfyUI Text Processor`。
+4. 點擊 **Install** (安裝) 並等待完成。
+5. **重新啟動 ComfyUI**。
 
 ### 方法 2：手動安裝 (Manual)
 
 如果您習慣使用終端機指令：
 
-1.  進入您的 ComfyUI 自定義節點目錄：
+1. 進入您的 ComfyUI 自定義節點目錄：
+
     ```bash
     cd ComfyUI/custom_nodes/
     ```
-2.  克隆此倉庫：
+
+2. 克隆此倉庫：
+
     ```bash
     git clone https://github.com/rookiestar28/ComfyUI_Text_Processor.git
     ```
-3.  **安裝依賴庫：**
+
+3. **安裝依賴庫：**
+
     ```bash
     pip install -r requirements.txt
     ```
-4.  **重新啟動 ComfyUI**。
+
+4. **重新啟動 ComfyUI**。
 
 ---
 
