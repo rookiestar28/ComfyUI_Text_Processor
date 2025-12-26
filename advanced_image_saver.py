@@ -10,8 +10,11 @@ import folder_paths
 
 try:
     from aesthetic_predictor_v2_5 import convert_v2_5_from_siglip
+    AESTHETIC_AVAILABLE = True
 except ImportError:
-    print("[AdvancedImageSaver] Warning: aesthetic_predictor_v2_5 module not found. Aesthetic scoring will fail if enabled.")
+    AESTHETIC_AVAILABLE = False
+    print("[AdvancedImageSaver] Warning: aesthetic_predictor_v2_5 module not found.")
+    print("[AdvancedImageSaver] To enable aesthetic scoring, run: pip install aesthetic-predictor-v2-5")
 
 class AdvancedImageSaver:
     def __init__(self):
@@ -153,7 +156,12 @@ class AdvancedImageSaver:
     def load_predictor(self):
         """加載評分模型，如果尚未加載"""
         if self.predictor_model is not None:
-            return
+            return True
+        
+        if not AESTHETIC_AVAILABLE:
+            print("[AdvancedImageSaver] Aesthetic scoring unavailable: aesthetic_predictor_v2_5 module not installed.")
+            print("[AdvancedImageSaver] To install, run: pip install aesthetic-predictor-v2-5")
+            return False
 
         print("[AdvancedImageSaver] Loading Aesthetic Predictor V2.5 model...")
         try:
@@ -164,9 +172,10 @@ class AdvancedImageSaver:
             if torch.cuda.is_available():
                 self.predictor_model = self.predictor_model.to(torch.bfloat16).cuda()
             print("[AdvancedImageSaver] Model loaded successfully.")
+            return True
         except Exception as e:
             print(f"[AdvancedImageSaver] Error loading model: {e}")
-            raise e
+            return False
 
     def get_aesthetic_score(self, image_tensor):
         """計算單張圖片的美學分數"""
@@ -205,7 +214,9 @@ class AdvancedImageSaver:
         # metadata_mode: "full" | "minimal" | "none"
 
         if calculate_score_bool:
-            self.load_predictor()
+            if not self.load_predictor():
+                calculate_score_bool = False
+                print("[AdvancedImageSaver] Aesthetic scoring disabled for this run.")
 
         filename_prefix = self.parse_name(filename_prefix)
         output_path = self.parse_name(output_path)
