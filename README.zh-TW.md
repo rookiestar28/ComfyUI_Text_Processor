@@ -4,7 +4,13 @@
 
 ![Workflow Demo](examples/advanced_text_filter.png)
 
+---
+
+**01/2026 更新：** 在 add_text_to_image 節點新增智慧文字自適應功能 `auto_adapt` 開關 - 自動換行過長文字並調整字體大小以符合圖片尺寸，另提供截斷模式搭配省略號以固定字體渲染。現已同步強制高度與寬度檢查。
+
 專為 ComfyUI 打造的進階自動化工具套件，連結原始數據與生成式 AI。具備批量文字清洗（針對圖生文工作流）、LLM 輸出解析、動態通配符以及邏輯運算功能，旨在簡化複雜的提示工程工作流。
+
+---
 
 ## 1. Advanced Text Filter Node (核心節點)
 
@@ -193,6 +199,14 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 
 * **精準裁切：** 輕鬆去除不需要的邊緣或聚焦於特定主體。
 * **批量處理：** 支援對批量圖片 (Image Batches) 進行裁切。
+
+### Image Concat Advanced (多圖拼接)
+
+將一個 batch（或 list）的多張圖片依序拼接成一張圖。
+
+* **方向：** `right / down / left / up`。
+* **縮放：** 會強制自動縮放以匹配第一張圖片（保留長寬比）。
+* **輸出通道：** 可強制 `rgb`（預設）、`rgba` 或 `auto`。
 
 ### Add Text to Image (圖片加字)
 

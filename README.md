@@ -6,6 +6,12 @@ An advanced automation toolkit for ComfyUI, bridging the gap between raw data an
 
 ![Workflow Demo](./examples/advanced_text_filter.png)
 
+---
+
+**01/2026 update:** Add Text to Image node now supports intelligent text adaptation with `auto_adapt` toggle - automatically wraps long text and adjusts font size to fit image dimensions, plus truncation mode with ellipsis for fixed-size rendering. Height constraints are now enforced alongside width checks.
+
+---
+
 ## 1. Advanced Text Filter Node (Core)
 
 This is a powerful and flexible text processing node for ComfyUI, designed to automate and simplify your dynamic prompt workflows.
@@ -196,6 +202,14 @@ A handy utility to crop images directly within your workflow.
 
 * **Targeted Cropping:** Easily remove unwanted borders or focus on specific subjects.
 * **Batch Processing:** Supports cropping for image batches.
+
+### Image Concat Advanced
+
+Concatenate images from a batch (or list) into a single image strip.
+
+* **Direction:** `right / down / left / up`.
+* **Resize:** Always resizes each image to match the first image (keeps aspect ratio).
+* **Output Channels:** Force `rgb` (default), `rgba`, or `auto`.
 
 ### Add Text to Image
 

@@ -11,3 +11,4 @@ text_storage/*
 wildcards/*
 !wildcards/.gitkeep
 !wildcards/example_format.txt
+REFERENCE/

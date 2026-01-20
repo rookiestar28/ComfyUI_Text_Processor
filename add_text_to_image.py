@@ -1,5 +1,6 @@
 import logging
-from typing import Tuple, List
+import textwrap
+from typing import Tuple, List, Optional
 
 import torch
 from torch import Tensor
@@ -55,45 +56,183 @@ class AddTextToImage:
                 draw_y -= text_height
         return draw_x, draw_y
 
-    def _find_optimal_font_size(
+    def _wrap_text_to_width(
+        self,
+        draw: ImageDraw.ImageDraw,
+        text: str,
+        font: FreeTypeFont,
+        max_width: int,
+        line_spacing: int
+    ) -> str:
+        """
+        Wrap text to fit within max_width by inserting line breaks.
+        Uses character-by-character measurement for accuracy with CJK characters.
+        """
+        if not text:
+            return text
+        
+        lines = text.split('\n')
+        wrapped_lines = []
+        
+        for line in lines:
+            if not line:
+                wrapped_lines.append('')
+                continue
+            
+            # Measure line width
+            try:
+                bbox = draw.textbbox((0, 0), line, font=font)
+                line_width = bbox[2] - bbox[0]
+            except (TypeError, ValueError):
+                line_width = len(line) * font.size  # Rough estimate
+            
+            if line_width <= max_width:
+                wrapped_lines.append(line)
+                continue
+            
+            # Need to wrap - use character-by-character approach for CJK support
+            current_line = ""
+            for char in line:
+                test_line = current_line + char
+                try:
+                    bbox = draw.textbbox((0, 0), test_line, font=font)
+                    test_width = bbox[2] - bbox[0]
+                except (TypeError, ValueError):
+                    test_width = len(test_line) * font.size
+                
+                if test_width <= max_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        wrapped_lines.append(current_line)
+                    current_line = char
+            
+            if current_line:
+                wrapped_lines.append(current_line)
+        
+        return '\n'.join(wrapped_lines)
+
+    def _truncate_text(
+        self,
+        draw: ImageDraw.ImageDraw,
+        text: str,
+        font: FreeTypeFont,
+        max_width: int,
+        ellipsis: str = "..."
+    ) -> str:
+        """
+        Truncate text to fit within max_width, adding ellipsis if truncated.
+        Processes each line independently.
+        """
+        if not text:
+            return text
+        
+        lines = text.split('\n')
+        truncated_lines = []
+        
+        for line in lines:
+            if not line:
+                truncated_lines.append('')
+                continue
+            
+            try:
+                bbox = draw.textbbox((0, 0), line, font=font)
+                line_width = bbox[2] - bbox[0]
+            except (TypeError, ValueError):
+                line_width = len(line) * font.size
+            
+            if line_width <= max_width:
+                truncated_lines.append(line)
+                continue
+            
+            # Need to truncate
+            try:
+                ellipsis_bbox = draw.textbbox((0, 0), ellipsis, font=font)
+                ellipsis_width = ellipsis_bbox[2] - ellipsis_bbox[0]
+            except (TypeError, ValueError):
+                ellipsis_width = len(ellipsis) * font.size
+            
+            available_width = max_width - ellipsis_width
+            if available_width <= 0:
+                truncated_lines.append(ellipsis[:1])  # Just show first char of ellipsis
+                continue
+            
+            # Find truncation point
+            truncated = ""
+            for char in line:
+                test_text = truncated + char
+                try:
+                    bbox = draw.textbbox((0, 0), test_text, font=font)
+                    test_width = bbox[2] - bbox[0]
+                except (TypeError, ValueError):
+                    test_width = len(test_text) * font.size
+                
+                if test_width <= available_width:
+                    truncated = test_text
+                else:
+                    break
+            
+            truncated_lines.append(truncated + ellipsis)
+        
+        return '\n'.join(truncated_lines)
+
+    def _find_optimal_font_size_with_height(
         self,
         draw: ImageDraw.ImageDraw,
         text: str,
         base_font: FreeTypeFont,
         max_width: int,
+        max_height: int,
         initial_size: int,
         min_size: int,
-        line_spacing: int
-    ) -> Tuple[FreeTypeFont, Tuple[int, int, int, int]]:
+        line_spacing: int,
+        auto_wrap: bool = False
+    ) -> Tuple[FreeTypeFont, str, Tuple[int, int, int, int]]:
         """
-        Use binary search to find the optimal font size that fits within max_width.
-        Returns the sized font and its text bounding box.
+        Find optimal font size that fits within both max_width and max_height.
+        If auto_wrap is True, text will be wrapped before checking dimensions.
+        Returns: (sized_font, processed_text, text_bbox)
         """
         low, high = min_size, initial_size
         best_font = base_font.font_variant(size=min_size)
+        best_text = text
         best_bbox = (0, 0, 0, 0)
 
         while low <= high:
             mid = (low + high) // 2
             sized_font = base_font.font_variant(size=mid)
+            
+            # Apply word wrap if enabled
+            if auto_wrap:
+                processed_text = self._wrap_text_to_width(draw, text, sized_font, max_width, line_spacing)
+            else:
+                processed_text = text
+            
             try:
                 text_bbox = draw.multiline_textbbox(
-                    (0, 0), text, font=sized_font, spacing=line_spacing, align="center"
+                    (0, 0), processed_text, font=sized_font, spacing=line_spacing, align="center"
                 )
             except (TypeError, ValueError):
                 text_bbox = draw.multiline_textbbox(
-                    (0, 0), text, font=sized_font, spacing=line_spacing
+                    (0, 0), processed_text, font=sized_font, spacing=line_spacing
                 )
+            
             actual_text_width = text_bbox[2] - text_bbox[0]
+            actual_text_height = text_bbox[3] - text_bbox[1]
 
-            if actual_text_width <= max_width:
+            # Check both width and height constraints
+            fits_width = actual_text_width <= max_width
+            fits_height = actual_text_height <= max_height
+
+            if fits_width and fits_height:
                 best_font = sized_font
+                best_text = processed_text
                 best_bbox = text_bbox
                 low = mid + 1
             else:
                 high = mid - 1
 
-        return best_font, best_bbox
+        return best_font, best_text, best_bbox
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -121,6 +260,10 @@ class AddTextToImage:
                 "text_color_hex": ("STRING", {"default": "#ffffff"}),
                 "background_color_hex": ("STRING", {"default": "#00000080"}),
                 "background_padding": ("INT", {"default": 10, "min": 0, "max": 50, "step": 1}),
+                
+                # New text adaptation options
+                "auto_adapt": ("BOOLEAN", {"default": True, "label_on": "Auto Wrap + Shrink", "label_off": "Truncate"}),
+                "min_font_size": ("INT", {"default": 8, "min": 4, "max": 128, "step": 1, "tooltip": "Minimum font size when auto_adapt is enabled"}),
             },
             "optional": {
                 "label_text": ("STRING", {"multiline": True, "default": "Label 1\nLabel 2", "forceInput": False}),
@@ -144,6 +287,8 @@ class AddTextToImage:
         text_color_hex: str,
         background_color_hex: str,
         background_padding: int,
+        auto_adapt: bool = True,
+        min_font_size: int = 8,
         label_text: str = None,
     ):
         logger.debug("EXECUTE_DRAW_ON_BATCH START")
@@ -177,6 +322,9 @@ class AddTextToImage:
         parsed_bg_color_tuple = self._parse_color_with_alpha(background_color_hex, 128)
         logger.debug(f"Parsed background_color_hex '{background_color_hex}' to RGBA: {parsed_bg_color_tuple}")
 
+        # Use user-defined min_font_size only when auto_adapt is enabled
+        effective_min_font_size = min_font_size if auto_adapt else 8
+
         for i in range(batch_size):
             current_image_tensor_hwc = image[i]
             
@@ -190,20 +338,48 @@ class AddTextToImage:
             draw_on_overlay = ImageDraw.Draw(overlay_pil_image)
             
             sized_font: FreeTypeFont | None = None
+            display_text = current_label_text
 
             if current_label_text:
-                min_font_size = 8
                 max_text_width = img_width - margin * 2
-                
-                sized_font, text_bbox = self._find_optimal_font_size(
-                    draw=draw_on_overlay,
-                    text=current_label_text,
-                    base_font=base_font_object,
-                    max_width=max_text_width,
-                    initial_size=font_size,
-                    min_size=min_font_size,
-                    line_spacing=line_spacing
-                )
+                max_text_height = img_height - margin * 2  # Height constraint
+
+                if auto_adapt:
+                    # Auto-adapt mode: wrap text and shrink font to fit
+                    sized_font, display_text, text_bbox = self._find_optimal_font_size_with_height(
+                        draw=draw_on_overlay,
+                        text=current_label_text,
+                        base_font=base_font_object,
+                        max_width=max_text_width,
+                        max_height=max_text_height,
+                        initial_size=font_size,
+                        min_size=effective_min_font_size,
+                        line_spacing=line_spacing,
+                        auto_wrap=True
+                    )
+                    logger.debug(f"Auto-adapt: font size optimized, text wrapped to {display_text.count(chr(10)) + 1} lines")
+                else:
+                    # Truncate mode: use fixed font size with truncation
+                    sized_font = base_font_object.font_variant(size=font_size)
+                    display_text = self._truncate_text(
+                        draw=draw_on_overlay,
+                        text=current_label_text,
+                        font=sized_font,
+                        max_width=max_text_width
+                    )
+                    try:
+                        text_bbox = draw_on_overlay.multiline_textbbox(
+                            (0, 0), display_text, font=sized_font, spacing=line_spacing, align="center"
+                        )
+                    except (TypeError, ValueError):
+                        text_bbox = draw_on_overlay.multiline_textbbox(
+                            (0, 0), display_text, font=sized_font, spacing=line_spacing
+                        )
+                    
+                    # Check height and warn if text exceeds
+                    text_height = text_bbox[3] - text_bbox[1]
+                    if text_height > max_text_height:
+                        logger.warning(f"Text height ({text_height}px) exceeds available height ({max_text_height}px). Text may be clipped.")
                 
                 text_draw_x, text_draw_y = 0.0, 0.0
                 final_anchor = "lt"
@@ -216,13 +392,60 @@ class AddTextToImage:
                 elif text_position == "top_right": text_draw_x, text_draw_y, final_anchor = float(img_width - margin), float(margin), "rt"
                 elif text_position == "center_center": text_draw_x, text_draw_y, final_anchor = img_width / 2, img_height / 2, "mm"
 
+                # Auto-adjust position to prevent text from being clipped when auto_adapt is enabled
+                if auto_adapt and sized_font:
+                    # Calculate actual text bounding box at the anchor position
+                    try:
+                        test_bbox = draw_on_overlay.multiline_textbbox(
+                            (text_draw_x, text_draw_y), display_text, font=sized_font, 
+                            spacing=line_spacing, align="center", anchor=final_anchor
+                        )
+                    except (TypeError, ValueError):
+                        temp_bbox = draw_on_overlay.multiline_textbbox(
+                            (0, 0), display_text, font=sized_font, spacing=line_spacing, align="center"
+                        )
+                        temp_w = temp_bbox[2] - temp_bbox[0]
+                        temp_h = temp_bbox[3] - temp_bbox[1]
+                        temp_x, temp_y = self._calculate_anchor_offset(
+                            final_anchor, temp_w, temp_h, text_draw_x, text_draw_y
+                        )
+                        test_bbox = (temp_x, temp_y, temp_x + temp_w, temp_y + temp_h)
+                    
+                    # Check if text extends beyond image boundaries (with background padding)
+                    text_y1 = test_bbox[1] - background_padding
+                    text_y2 = test_bbox[3] + background_padding
+                    text_x1 = test_bbox[0] - background_padding
+                    text_x2 = test_bbox[2] + background_padding
+                    
+                    # Adjust Y position if text overflows vertically
+                    if text_y2 > img_height:
+                        overflow = text_y2 - img_height
+                        text_draw_y -= overflow
+                        logger.debug(f"Adjusted text Y position by -{overflow}px to prevent bottom overflow")
+                    elif text_y1 < 0:
+                        overflow = -text_y1
+                        text_draw_y += overflow
+                        logger.debug(f"Adjusted text Y position by +{overflow}px to prevent top overflow")
+                    
+                    # Adjust X position if text overflows horizontally (for non-center positions)
+                    if background_mode != "full_width_strip":
+                        if text_x2 > img_width:
+                            overflow = text_x2 - img_width
+                            text_draw_x -= overflow
+                            logger.debug(f"Adjusted text X position by -{overflow}px to prevent right overflow")
+                        elif text_x1 < 0:
+                            overflow = -text_x1
+                            text_draw_x += overflow
+                            logger.debug(f"Adjusted text X position by +{overflow}px to prevent left overflow")
+
+
                 if background_color_hex.lower() != "none" and parsed_bg_color_tuple[3] > 0 and sized_font:
                     bg_r, bg_g, bg_b, bg_a = parsed_bg_color_tuple
                     
                     try:
-                        final_text_pixel_bbox = draw_on_overlay.multiline_textbbox((text_draw_x, text_draw_y), current_label_text, font=sized_font, spacing=line_spacing, align="center", anchor=final_anchor)
+                        final_text_pixel_bbox = draw_on_overlay.multiline_textbbox((text_draw_x, text_draw_y), display_text, font=sized_font, spacing=line_spacing, align="center", anchor=final_anchor)
                     except (TypeError, ValueError): 
-                        temp_text_bbox_for_fallback = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
+                        temp_text_bbox_for_fallback = draw_on_overlay.multiline_textbbox((0,0), display_text, font=sized_font, spacing=line_spacing, align="center")
                         fb_actual_text_width = temp_text_bbox_for_fallback[2] - temp_text_bbox_for_fallback[0]
                         fb_actual_text_height = temp_text_bbox_for_fallback[3] - temp_text_bbox_for_fallback[1]
                         fb_x1, fb_y1 = self._calculate_anchor_offset(
@@ -247,10 +470,10 @@ class AddTextToImage:
                 
                 if sized_font:
                     try:
-                        draw_on_overlay.multiline_text(xy=(text_draw_x, text_draw_y), text=current_label_text, fill=parsed_text_color, font=sized_font, anchor=final_anchor, spacing=line_spacing, align="center")
+                        draw_on_overlay.multiline_text(xy=(text_draw_x, text_draw_y), text=display_text, fill=parsed_text_color, font=sized_font, anchor=final_anchor, spacing=line_spacing, align="center")
                     except (TypeError, ValueError):
                         # Fallback for Pillow versions that do not support anchor in multiline_text
-                        temp_text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
+                        temp_text_bbox = draw_on_overlay.multiline_textbbox((0,0), display_text, font=sized_font, spacing=line_spacing, align="center")
                         actual_w = temp_text_bbox[2] - temp_text_bbox[0]
                         actual_h = temp_text_bbox[3] - temp_text_bbox[1]
                         
@@ -258,7 +481,7 @@ class AddTextToImage:
                             final_anchor, actual_w, actual_h, text_draw_x, text_draw_y
                         )
                         
-                        draw_on_overlay.multiline_text(xy=(draw_x, draw_y), text=current_label_text, fill=parsed_text_color, font=sized_font, spacing=line_spacing, align="center")
+                        draw_on_overlay.multiline_text(xy=(draw_x, draw_y), text=display_text, fill=parsed_text_color, font=sized_font, spacing=line_spacing, align="center")
 
             final_pil_image_rgba = Image.alpha_composite(base_pil_image, overlay_pil_image)
             
