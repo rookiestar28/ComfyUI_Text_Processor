@@ -1,4 +1,4 @@
-from math import ceil
+import logging
 from typing import Tuple, List
 
 import torch
@@ -7,6 +7,8 @@ from torchvision.transforms.v2.functional import to_pil_image, to_image
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ImageFont import FreeTypeFont
 from .font_manager import FontCollection
+
+logger = logging.getLogger(__name__)
 
 
 class AddTextToImage:
@@ -21,8 +23,77 @@ class AddTextToImage:
             r, g, b, a = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4, 6))
             return r, g, b, a
         else:
-            print(f"[AddTextToImage WARNING] Invalid color format: '{color_hex}'. Using black opaque as fallback.")
+            logger.warning(f"Invalid color format: '{color_hex}'. Using black opaque as fallback.")
             return 0, 0, 0, 255
+
+    @staticmethod
+    def _calculate_anchor_offset(
+        anchor: str,
+        text_width: float,
+        text_height: float,
+        base_x: float,
+        base_y: float
+    ) -> Tuple[float, float]:
+        """
+        Calculate the actual draw position based on anchor.
+        Anchor format: [horizontal][vertical] e.g. 'lt', 'ms', 'mm'
+        Horizontal: l=left, m=middle, r=right
+        Vertical: t=top, m=middle, s=baseline, d=descender
+        """
+        draw_x, draw_y = base_x, base_y
+        if len(anchor) >= 1:
+            h_anchor = anchor[0]
+            if h_anchor == 'm':
+                draw_x -= text_width / 2
+            elif h_anchor == 'r':
+                draw_x -= text_width
+        if len(anchor) >= 2:
+            v_anchor = anchor[1]
+            if v_anchor == 'm':
+                draw_y -= text_height / 2
+            elif v_anchor in ('s', 'd'):
+                draw_y -= text_height
+        return draw_x, draw_y
+
+    def _find_optimal_font_size(
+        self,
+        draw: ImageDraw.ImageDraw,
+        text: str,
+        base_font: FreeTypeFont,
+        max_width: int,
+        initial_size: int,
+        min_size: int,
+        line_spacing: int
+    ) -> Tuple[FreeTypeFont, Tuple[int, int, int, int]]:
+        """
+        Use binary search to find the optimal font size that fits within max_width.
+        Returns the sized font and its text bounding box.
+        """
+        low, high = min_size, initial_size
+        best_font = base_font.font_variant(size=min_size)
+        best_bbox = (0, 0, 0, 0)
+
+        while low <= high:
+            mid = (low + high) // 2
+            sized_font = base_font.font_variant(size=mid)
+            try:
+                text_bbox = draw.multiline_textbbox(
+                    (0, 0), text, font=sized_font, spacing=line_spacing, align="center"
+                )
+            except (TypeError, ValueError):
+                text_bbox = draw.multiline_textbbox(
+                    (0, 0), text, font=sized_font, spacing=line_spacing
+                )
+            actual_text_width = text_bbox[2] - text_bbox[0]
+
+            if actual_text_width <= max_width:
+                best_font = sized_font
+                best_bbox = text_bbox
+                low = mid + 1
+            else:
+                high = mid - 1
+
+        return best_font, best_bbox
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -39,7 +110,6 @@ class AddTextToImage:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "label_text": ("STRING", {"multiline": True, "default": "Label 1\nLabel 2"}),
                 "font_name": (font_names, {"default": default_font_for_ui}),
                 "text_position": (["bottom_center", "top_center", "bottom_left", "bottom_right", "top_left", "top_right", "center_center"], {"default": "bottom_center"}),
                 
@@ -52,6 +122,9 @@ class AddTextToImage:
                 "background_color_hex": ("STRING", {"default": "#00000080"}),
                 "background_padding": ("INT", {"default": 10, "min": 0, "max": 50, "step": 1}),
             },
+            "optional": {
+                "label_text": ("STRING", {"multiline": True, "default": "Label 1\nLabel 2", "forceInput": False}),
+            },
         }
 
     RETURN_TYPES = ("IMAGE",)
@@ -62,7 +135,6 @@ class AddTextToImage:
     def execute_draw_on_batch(
         self,
         image: Tensor,
-        label_text: str,
         font_name: str,
         text_position: str,
         background_mode: str,
@@ -72,16 +144,23 @@ class AddTextToImage:
         text_color_hex: str,
         background_color_hex: str,
         background_padding: int,
+        label_text: str = None,
     ):
-        print(f"\n[AddTextToImage EXECUTE_DRAW_ON_BATCH START]")
+        logger.debug("EXECUTE_DRAW_ON_BATCH START")
         
         if not isinstance(image, torch.Tensor) or image.ndim != 4:
-            print(f"[AddTextToImage ERROR] Input image is not a valid batch tensor.")
+            logger.error("Input image is not a valid batch tensor.")
             bs = image.shape[0] if isinstance(image, torch.Tensor) and image.ndim == 4 else 1
             return (torch.zeros((bs, 64, 64, 3), dtype=image.dtype if isinstance(image, torch.Tensor) else torch.float32, device=image.device if isinstance(image, torch.Tensor) else 'cpu'),)
 
+        # Handle None or empty label_text gracefully
+        if label_text is None or (isinstance(label_text, str) and not label_text.strip()):
+            logger.warning("label_text is empty or None. Returning original image without text overlay.")
+            return (image,)
+
         label_lines = [line.strip() for line in label_text.strip().split('\n') if line.strip()]
         if not label_lines:
+            logger.warning("label_text contains no valid lines. Returning original image without text overlay.")
             return (image,)
 
         num_provided_labels = len(label_lines)
@@ -91,11 +170,12 @@ class AddTextToImage:
         try:
             base_font_object = self.fonts[font_name]
         except KeyError:
+            logger.warning(f"Font '{font_name}' not found in FontCollection. Returning original image.")
             return (image,) 
 
         parsed_text_color = self._parse_color_with_alpha(text_color_hex, 255)
         parsed_bg_color_tuple = self._parse_color_with_alpha(background_color_hex, 128)
-        print(f"  Parsed background_color_hex '{background_color_hex}' to RGBA: {parsed_bg_color_tuple}")
+        logger.debug(f"Parsed background_color_hex '{background_color_hex}' to RGBA: {parsed_bg_color_tuple}")
 
         for i in range(batch_size):
             current_image_tensor_hwc = image[i]
@@ -104,7 +184,7 @@ class AddTextToImage:
             img_width, img_height = base_pil_image.size
             
             current_label_text = label_lines[i % num_provided_labels] if num_provided_labels > 0 else ""
-            print(f"    Processing image {i} (Size: {img_width}x{img_height}) with label: '{current_label_text}'")
+            logger.debug(f"Processing image {i} (Size: {img_width}x{img_height}) with label: '{current_label_text}'")
 
             overlay_pil_image = Image.new("RGBA", (img_width, img_height), (0, 0, 0, 0))
             draw_on_overlay = ImageDraw.Draw(overlay_pil_image)
@@ -112,25 +192,18 @@ class AddTextToImage:
             sized_font: FreeTypeFont | None = None
 
             if current_label_text:
-                current_font_size_iter = font_size
                 min_font_size = 8
+                max_text_width = img_width - margin * 2
                 
-                while True: 
-                    sized_font = base_font_object.font_variant(size=current_font_size_iter)
-                    try:
-                        text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
-                    except (TypeError, ValueError): 
-                        text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing)
-                    actual_text_width = text_bbox[2] - text_bbox[0]
-                    
-                    if actual_text_width <= (img_width - margin * 2): break
-                    if current_font_size_iter <= min_font_size:
-                        try:
-                            text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
-                        except (TypeError, ValueError):
-                            text_bbox = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing)
-                        break
-                    current_font_size_iter -= 1
+                sized_font, text_bbox = self._find_optimal_font_size(
+                    draw=draw_on_overlay,
+                    text=current_label_text,
+                    base_font=base_font_object,
+                    max_width=max_text_width,
+                    initial_size=font_size,
+                    min_size=min_font_size,
+                    line_spacing=line_spacing
+                )
                 
                 text_draw_x, text_draw_y = 0.0, 0.0
                 final_anchor = "lt"
@@ -152,11 +225,9 @@ class AddTextToImage:
                         temp_text_bbox_for_fallback = draw_on_overlay.multiline_textbbox((0,0), current_label_text, font=sized_font, spacing=line_spacing, align="center")
                         fb_actual_text_width = temp_text_bbox_for_fallback[2] - temp_text_bbox_for_fallback[0]
                         fb_actual_text_height = temp_text_bbox_for_fallback[3] - temp_text_bbox_for_fallback[1]
-                        fb_x1, fb_y1 = text_draw_x, text_draw_y
-                        if final_anchor[0] == 'm': fb_x1 -= fb_actual_text_width / 2
-                        elif final_anchor[0] == 'r': fb_x1 -= fb_actual_text_width
-                        if final_anchor[1] == 'm': fb_y1 -= fb_actual_text_height / 2
-                        elif final_anchor[1] == 's' or final_anchor[1] == 'd': fb_y1 -= fb_actual_text_height
+                        fb_x1, fb_y1 = self._calculate_anchor_offset(
+                            final_anchor, fb_actual_text_width, fb_actual_text_height, text_draw_x, text_draw_y
+                        )
                         final_text_pixel_bbox = (fb_x1, fb_y1, fb_x1 + fb_actual_text_width, fb_y1 + fb_actual_text_height)
 
                     bg_x1 = final_text_pixel_bbox[0] - background_padding
@@ -183,13 +254,9 @@ class AddTextToImage:
                         actual_w = temp_text_bbox[2] - temp_text_bbox[0]
                         actual_h = temp_text_bbox[3] - temp_text_bbox[1]
                         
-                        draw_x, draw_y = text_draw_x, text_draw_y
-                        
-                        if final_anchor[0] == 'm': draw_x -= actual_w / 2
-                        elif final_anchor[0] == 'r': draw_x -= actual_w
-                        
-                        if final_anchor[1] == 'm': draw_y -= actual_h / 2
-                        elif final_anchor[1] == 's' or final_anchor[1] == 'd': draw_y -= actual_h
+                        draw_x, draw_y = self._calculate_anchor_offset(
+                            final_anchor, actual_w, actual_h, text_draw_x, text_draw_y
+                        )
                         
                         draw_on_overlay.multiline_text(xy=(draw_x, draw_y), text=current_label_text, fill=parsed_text_color, font=sized_font, spacing=line_spacing, align="center")
 
@@ -203,9 +270,9 @@ class AddTextToImage:
         try:
             stacked_images_bchw = torch.stack(processed_pil_images_chw, dim=0)
             final_output_tensor_bhwc = stacked_images_bchw.permute(0, 2, 3, 1)
-            print(f"  Batch processed successfully. Output shape: {final_output_tensor_bhwc.shape}")
-            print(f"[AddTextToImage EXECUTE_DRAW_ON_BATCH END]")
+            logger.debug(f"Batch processed successfully. Output shape: {final_output_tensor_bhwc.shape}")
+            logger.debug("EXECUTE_DRAW_ON_BATCH END")
             return (final_output_tensor_bhwc,)
         except RuntimeError as e:
-            print(f"[AddTextToImage ERROR] Failed to stack processed images: {e}")
+            logger.error(f"Failed to stack processed images: {e}")
             return (image,)
