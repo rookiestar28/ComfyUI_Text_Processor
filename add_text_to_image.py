@@ -14,6 +14,21 @@ logger = logging.getLogger(__name__)
 
 class AddTextToImage:
     fonts = FontCollection()
+    INPUT_IS_LIST = True
+    OUTPUT_IS_LIST = (True,)
+
+    @staticmethod
+    def _slice_or_last(values, i: int, default=None):
+        if isinstance(values, (list, tuple)):
+            if len(values) == 0:
+                return default
+            return values[i] if i < len(values) else values[-1]
+        return values
+
+    @staticmethod
+    def _list_max_len(*values) -> int:
+        lengths = [len(v) for v in values if isinstance(v, (list, tuple))]
+        return max(lengths) if lengths else 0
 
     def _parse_color_with_alpha(self, color_hex: str, default_alpha: int = 255) -> Tuple[int, int, int, int]:
         color_hex = color_hex.lstrip('#')
@@ -276,6 +291,69 @@ class AddTextToImage:
     CATEGORY = "ComfyUI Text Processor/Image"
 
     def execute_draw_on_batch(
+        self,
+        image,
+        font_name,
+        text_position,
+        background_mode,
+        font_size,
+        margin,
+        line_spacing,
+        text_color_hex,
+        background_color_hex,
+        background_padding,
+        auto_adapt=True,
+        min_font_size=8,
+        label_text=None,
+    ):
+        max_len = self._list_max_len(
+            image,
+            font_name,
+            text_position,
+            background_mode,
+            font_size,
+            margin,
+            line_spacing,
+            text_color_hex,
+            background_color_hex,
+            background_padding,
+            auto_adapt,
+            min_font_size,
+            label_text,
+        )
+        if max_len == 0:
+            max_len = 1
+
+        outputs: List[Tensor] = []
+        for i in range(max_len):
+            image_i = self._slice_or_last(image, i)
+            if image_i is None:
+                logger.warning("Input image is None. Returning placeholder image.")
+                outputs.append(torch.zeros((1, 64, 64, 3), dtype=torch.float32))
+                continue
+
+            label_text_i = self._slice_or_last(label_text, i, default=None)
+
+            out, = self._execute_draw_on_batch_single(
+                image=image_i,
+                font_name=self._slice_or_last(font_name, i),
+                text_position=self._slice_or_last(text_position, i),
+                background_mode=self._slice_or_last(background_mode, i),
+                font_size=self._slice_or_last(font_size, i),
+                margin=self._slice_or_last(margin, i),
+                line_spacing=self._slice_or_last(line_spacing, i),
+                text_color_hex=self._slice_or_last(text_color_hex, i),
+                background_color_hex=self._slice_or_last(background_color_hex, i),
+                background_padding=self._slice_or_last(background_padding, i),
+                auto_adapt=self._slice_or_last(auto_adapt, i),
+                min_font_size=self._slice_or_last(min_font_size, i),
+                label_text=label_text_i,
+            )
+            outputs.append(out)
+
+        return (outputs,)
+
+    def _execute_draw_on_batch_single(
         self,
         image: Tensor,
         font_name: str,
