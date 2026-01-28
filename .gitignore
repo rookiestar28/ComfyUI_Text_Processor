@@ -12,3 +12,4 @@ wildcards/*
 !wildcards/.gitkeep
 !wildcards/example_format.txt
 REFERENCE/
+AGENT_CONTEXT.md

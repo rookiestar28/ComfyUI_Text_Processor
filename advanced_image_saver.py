@@ -308,14 +308,21 @@ class AdvancedImageSaver:
                     if minimal_meta:
                         items_to_save["parameters"] = json.dumps(minimal_meta)
                 else:
-                    if prompt is not None:
-                        items_to_save["prompt"] = json.dumps(prompt)
+                    # When embed_workflow is disabled, avoid writing workflow-related data
+                    # (prompt graph + extra_pnginfo) even if metadata_mode is "full".
+                    if embed_workflow_bool:
+                        if prompt is not None:
+                            items_to_save["prompt"] = json.dumps(prompt)
 
-                    if extra_pnginfo is not None:
-                        for key, value in extra_pnginfo.items():
-                            if key == 'workflow' and not embed_workflow_bool:
-                                continue
-                            items_to_save[key] = json.dumps(value)
+                        if extra_pnginfo is not None:
+                            for key, value in extra_pnginfo.items():
+                                if key == 'workflow' and not embed_workflow_bool:
+                                    continue
+                                items_to_save[key] = json.dumps(value)
+                    else:
+                        minimal_meta = self.extract_minimal_metadata(prompt)
+                        if minimal_meta:
+                            items_to_save["parameters"] = json.dumps(minimal_meta)
 
                 if extension == 'webp':
                     img_exif = img.getexif()
@@ -359,17 +366,28 @@ class AdvancedImageSaver:
                 full_file_path = os.path.join(full_output_folder, file_name)
                 
                 if extension in ["jpg", "jpeg"]:
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
                     img.save(full_file_path, quality=quality, optimize=optimize_image, dpi=(dpi, dpi))
                 elif extension == 'webp':
-                    img.save(full_file_path, quality=quality, lossless=lossless_webp, exif=exif_data)
+                    save_kwargs = {"quality": quality, "lossless": lossless_webp}
+                    if exif_data is not None:
+                        save_kwargs["exif"] = exif_data
+                    img.save(full_file_path, **save_kwargs)
                 elif extension == 'png':
-                    img.save(full_file_path, pnginfo=exif_data, optimize=optimize_image, dpi=(dpi, dpi))
+                    save_kwargs = {"optimize": optimize_image, "dpi": (dpi, dpi)}
+                    if exif_data is not None:
+                        save_kwargs["pnginfo"] = exif_data
+                    img.save(full_file_path, **save_kwargs)
                 elif extension == 'bmp':
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
                     img.save(full_file_path)
                 elif extension == 'tiff':
-                    img.save(full_file_path, quality=quality, optimize=optimize_image)
+                    # TIFF does not reliably support Pillow's optimize/quality params across versions.
+                    img.save(full_file_path, compression="tiff_deflate")
                 else:
-                    img.save(full_file_path, pnginfo=exif_data, optimize=optimize_image)
+                    img.save(full_file_path)
 
                 print(f"[AdvancedImageSaver] Saved: {full_file_path}")
                 output_files.append(full_file_path)
