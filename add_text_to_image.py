@@ -81,11 +81,60 @@ class AddTextToImage:
     ) -> str:
         """
         Wrap text to fit within max_width by inserting line breaks.
-        Uses character-by-character measurement for accuracy with CJK characters.
+        Uses word-based wrapping for whitespace-separated languages, with a
+        character fallback for CJK/long tokens (URLs, no-space strings).
         """
         if not text:
             return text
         
+        def _measure_width(s: str) -> float:
+            try:
+                bbox = draw.textbbox((0, 0), s, font=font)
+                return bbox[2] - bbox[0]
+            except (TypeError, ValueError):
+                return len(s) * font.size  # Rough estimate
+
+        def _wrap_by_chars(s: str) -> list[str]:
+            out: list[str] = []
+            current = ""
+            for ch in s:
+                test = current + ch
+                if current == "" or _measure_width(test) <= max_width:
+                    current = test
+                else:
+                    out.append(current)
+                    current = ch
+            if current:
+                out.append(current)
+            return out
+
+        def _wrap_by_words(line: str) -> list[str]:
+            words = re.findall(r"\S+", line)
+            if not words:
+                return [""]
+
+            out: list[str] = []
+            current = ""
+            for word in words:
+                candidate = word if not current else f"{current} {word}"
+                if _measure_width(candidate) <= max_width:
+                    current = candidate
+                    continue
+
+                if current:
+                    out.append(current)
+                    current = ""
+
+                # Word itself may be too long; fall back to character wrapping.
+                if _measure_width(word) > max_width:
+                    out.extend(_wrap_by_chars(word))
+                else:
+                    current = word
+
+            if current:
+                out.append(current)
+            return out
+
         lines = text.split('\n')
         wrapped_lines = []
         
@@ -95,35 +144,17 @@ class AddTextToImage:
                 continue
             
             # Measure line width
-            try:
-                bbox = draw.textbbox((0, 0), line, font=font)
-                line_width = bbox[2] - bbox[0]
-            except (TypeError, ValueError):
-                line_width = len(line) * font.size  # Rough estimate
+            line_width = _measure_width(line)
             
             if line_width <= max_width:
                 wrapped_lines.append(line)
                 continue
             
-            # Need to wrap - use character-by-character approach for CJK support
-            current_line = ""
-            for char in line:
-                test_line = current_line + char
-                try:
-                    bbox = draw.textbbox((0, 0), test_line, font=font)
-                    test_width = bbox[2] - bbox[0]
-                except (TypeError, ValueError):
-                    test_width = len(test_line) * font.size
-                
-                if test_width <= max_width:
-                    current_line = test_line
-                else:
-                    if current_line:
-                        wrapped_lines.append(current_line)
-                    current_line = char
-            
-            if current_line:
-                wrapped_lines.append(current_line)
+            # Prefer word wrapping for whitespace-separated text to avoid breaking English mid-word.
+            if re.search(r"\s", line):
+                wrapped_lines.extend(_wrap_by_words(line))
+            else:
+                wrapped_lines.extend(_wrap_by_chars(line))
         
         return '\n'.join(wrapped_lines)
 
