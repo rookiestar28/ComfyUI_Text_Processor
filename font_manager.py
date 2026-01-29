@@ -32,10 +32,20 @@ class FontCollection(dict):
             except Exception as e:
                 logging.warning(f"[FontCollection] Font directory missing and could not be created: {e}")
         else:
-            # 掃描 .ttf 和 .otf 檔案 (包含大小寫)
-            extensions = ["*.ttf", "*.TTF", "*.otf", "*.OTF"]
-            for ext in extensions:
-                paths.extend([f for f in font_directory.rglob(ext) if f.is_file()])
+            # 掃描 .ttf 和 .otf 檔案 (大小寫不敏感)，並避免在 Windows 上因為檔案系統
+            # 大小寫不敏感導致同一檔案被重複計數/載入 (例如 *.ttf 與 *.TTF)。
+            candidates: List[Path] = []
+            for f in font_directory.rglob("*"):
+                if f.is_file() and f.suffix.lower() in (".ttf", ".otf"):
+                    candidates.append(f)
+
+            seen: set[str] = set()
+            for f in candidates:
+                key = str(f.resolve()).replace("\\", "/").casefold()
+                if key in seen:
+                    continue
+                seen.add(key)
+                paths.append(f)
         
         logging.info(f"[FontCollection] Found {len(paths)} font files.")
 

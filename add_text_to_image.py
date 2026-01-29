@@ -1,4 +1,5 @@
 import logging
+import re
 import textwrap
 from typing import Tuple, List, Optional
 
@@ -16,6 +17,43 @@ class AddTextToImage:
     fonts = FontCollection()
     INPUT_IS_LIST = True
     OUTPUT_IS_LIST = (True,)
+
+    @classmethod
+    def _resolve_font_key(cls, font_name: object) -> Optional[str]:
+        """
+        Backward-compatible font lookup.
+        Some workflows may store font names like 'Aileron_Regular' while FontCollection
+        keys are 'Aileron Regular' (family + style). Try common normalizations.
+        """
+        if not isinstance(font_name, str):
+            return None
+        requested = font_name.strip()
+        if not requested:
+            return None
+
+        if requested in cls.fonts:
+            return requested
+
+        requested2 = requested.replace("_", " ")
+        if requested2 in cls.fonts:
+            return requested2
+
+        req_cf = requested.casefold()
+        req2_cf = requested2.casefold()
+        for key in cls.fonts.keys():
+            if isinstance(key, str):
+                kcf = key.casefold()
+                if kcf == req_cf or kcf == req2_cf:
+                    return key
+
+        # Fallback for workflows referencing a font that isn't available in this environment.
+        if req_cf == "aileron regular":
+            if hasattr(cls.fonts, "default_font_name") and cls.fonts.default_font_name in cls.fonts:
+                return cls.fonts.default_font_name
+            if len(cls.fonts) > 0:
+                return next(iter(cls.fonts.keys()))
+
+        return None
 
     @staticmethod
     def _slice_or_last(values, i: int, default=None):
@@ -292,6 +330,11 @@ class AddTextToImage:
             font_names.append("No fonts available")
             default_font_for_ui = "No fonts available"
 
+        # Backward-compat: keep common font name selectable so older workflows don't error
+        # during prompt validation even if it's not present in this plugin's fonts folder.
+        if "Aileron Regular" not in font_names:
+            font_names.append("Aileron Regular")
+
         return {
             "required": {
                 "image": ("IMAGE",),
@@ -421,11 +464,12 @@ class AddTextToImage:
         batch_size = image.shape[0]
         processed_pil_images_chw: List[Tensor] = []
 
-        try:
-            base_font_object = self.fonts[font_name]
-        except KeyError:
+        resolved_font_key = self._resolve_font_key(font_name)
+        if resolved_font_key is None:
             logger.warning(f"Font '{font_name}' not found in FontCollection. Returning original image.")
-            return (image,) 
+            return (image,)
+
+        base_font_object = self.fonts[resolved_font_key]
 
         parsed_text_color = self._parse_color_with_alpha(text_color_hex, 255)
         parsed_bg_color_tuple = self._parse_color_with_alpha(background_color_hex, 128)
