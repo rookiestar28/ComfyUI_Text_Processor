@@ -1,6 +1,11 @@
 import re
 from typing import Tuple, Optional, Any
 
+
+class _IntentionalFilterError(ValueError):
+    pass
+
+
 class AdvancedTextFilter:
     """
     ComfyUI Text Processor Node (Enhanced Version 1.2.0)
@@ -98,7 +103,7 @@ class AdvancedTextFilter:
         
         def handle_not_found(original: str, reason: str):
             if if_not_found == "trigger error":
-                raise ValueError(f"[AdvancedTextFilter] {reason}")
+                raise _IntentionalFilterError(f"[AdvancedTextFilter] {reason}")
             elif if_not_found == "return empty string":
                 if "extract" in operation or "find all" in operation or "LLM" in operation:
                     return ("", original)
@@ -291,6 +296,9 @@ class AdvancedTextFilter:
         except re.error as e:
             print(f"[AdvancedTextFilter] Regex Error: {e}")
             return (original_text_input, f"REGEX ERROR: {e}")
+
+        except _IntentionalFilterError:
+            raise
 
         except Exception as e:
             print(f"[AdvancedTextFilter] Generic Error: {e}")
