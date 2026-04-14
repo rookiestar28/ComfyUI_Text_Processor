@@ -63,6 +63,8 @@ Run tracked unittest regression tests when present:
 conda run -n comfyui python -m unittest discover -s tests -p "test_*.py"
 ```
 
+The tracked unittest suite includes a package registration smoke test using a lightweight `folder_paths` stub. Run it as part of the normal unittest command above.
+
 ## Linux / WSL Procedure
 
 Use the Python interpreter that ComfyUI uses.
@@ -108,6 +110,12 @@ conda run -n comfyui python -c "import importlib.util, pathlib; spec = importlib
 ```
 
 If this fails because the package is not being imported from ComfyUI's `custom_nodes` parent, record the import-context limitation and run focused changed-node assertions instead.
+
+For local CI-style validation without a full ComfyUI checkout, use:
+
+```powershell
+conda run -n comfyui python -m unittest tests.test_node_registration
+```
 
 ## Changed-node Assertion Requirements
 

@@ -9,7 +9,7 @@ This document is the source-of-truth local verification workflow for **ComfyUI T
 - Registered node modules live as root-level `.py` files.
 - There is no frontend extension, no `package.json`, and no Playwright harness in this repository at the time this SOP was written.
 - `reference/` contains reference material only and is ignored; it is not part of the product validation target.
-- `.pre-commit-config.yaml` is not present at the time this SOP was written.
+- `.pre-commit-config.yaml` is present and defines local `detect-secrets` and Python compile hooks.
 
 ## Repository-specific E2E Policy
 
@@ -43,11 +43,6 @@ Required gate for this repository:
 3. Python compile/import smoke checks for tracked product modules
 4. Focused unit or tensor behavior checks for changed nodes
 5. ComfyUI custom-node smoke/integration lane per `tests/E2E_TESTING_SOP.md`
-
-Current known blocker:
-
-- steps 1 and 2 cannot run until `.pre-commit-config.yaml` exists.
-- when blocked, the implementation record must show the attempted command and the exact failure.
 
 ## Documentation-only Exception
 
@@ -95,6 +90,34 @@ advanced_image_saver.py
 image_cropper.py
 mask_nodes.py
 Image_concat_advanced.py
+```
+
+## One-command Full Test Scripts
+
+Use these scripts for the standard full local gate. They run from the repository root and use the active Python environment unless `PYTHON` / `-Python` is provided.
+
+Windows:
+
+```powershell
+powershell -File scripts/run_full_tests_windows.ps1
+```
+
+Windows with an explicit ComfyUI Python:
+
+```powershell
+powershell -File scripts/run_full_tests_windows.ps1 -Python "C:\path\to\python.exe"
+```
+
+Linux / WSL:
+
+```bash
+bash scripts/run_full_tests_linux.sh
+```
+
+Linux / WSL with an explicit Python:
+
+```bash
+PYTHON=/path/to/python bash scripts/run_full_tests_linux.sh
 ```
 
 ## Manual Staged Workflow
