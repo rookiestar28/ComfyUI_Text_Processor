@@ -99,7 +99,7 @@ Fetches and formats headlines from any URL. Ideal for injecting real-time contex
 
 * **Simple Interface:** Just input a URL string.
 * **Smart Parsing:** Uses heuristics to identify headlines (`h1`-`h4`, class names).
-* **Safe:** Includes timeouts and error handling to prevent workflow freezing.
+* **Safe:** Allows only HTTP/HTTPS public targets by default, blocks local/private network addresses, and includes timeouts to prevent workflow freezing.
 
 ### Text Storage Nodes (Reader & Writer)
 

@@ -1,4 +1,7 @@
+import ipaddress
+import socket
 import sys
+from urllib.parse import urlparse
 
 try:
     import requests
@@ -8,6 +11,21 @@ except ImportError:
     pass
 
 from typing import List, Dict
+
+
+BLOCKED_HOSTNAMES = {"localhost", "localhost.localdomain"}
+
+
+def _is_blocked_ip(address):
+    ip = ipaddress.ip_address(address)
+    return any([
+        ip.is_private,
+        ip.is_loopback,
+        ip.is_link_local,
+        ip.is_multicast,
+        ip.is_reserved,
+        ip.is_unspecified,
+    ])
 
 class TextScraper:
     """
@@ -34,6 +52,50 @@ class TextScraper:
     RETURN_NAMES = ("text",)
     FUNCTION = "scrape_news"
     CATEGORY = "ComfyUI Text Processor"
+
+    def normalize_and_validate_url(self, url: str):
+        url = url.strip()
+        if not url:
+            return None, "Please enter a valid URL."
+
+        if "://" not in url:
+            url = "https://" + url
+
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            return None, "Blocked URL: only http and https URLs are allowed."
+
+        hostname = parsed.hostname
+        if not hostname:
+            return None, "Please enter a valid URL."
+
+        normalized_host = hostname.rstrip(".").lower()
+        if normalized_host in BLOCKED_HOSTNAMES:
+            return None, "Blocked URL: private or local network addresses are not allowed."
+
+        # CRITICAL: validate workflow-controlled URLs before requests.get to reduce SSRF exposure.
+        try:
+            try:
+                if _is_blocked_ip(normalized_host):
+                    return None, "Blocked URL: private or local network addresses are not allowed."
+                return url, None
+            except ValueError:
+                pass
+
+            port = parsed.port or (443 if parsed.scheme == "https" else 80)
+            resolved = socket.getaddrinfo(normalized_host, port, type=socket.SOCK_STREAM)
+        except (OSError, ValueError) as e:
+            return None, f"URL validation error: {str(e)}"
+
+        for entry in resolved:
+            address = entry[4][0]
+            try:
+                if _is_blocked_ip(address):
+                    return None, "Blocked URL: private or local network addresses are not allowed."
+            except ValueError:
+                return None, "URL validation error: unresolved address."
+
+        return url, None
 
     def scrape_headlines(self, url: str) -> List[Dict[str, str]]:
         """
@@ -88,11 +150,9 @@ class TextScraper:
         """
         Main function. 'seed' is used purely to force execution on each run.
         """
-        if not url.strip():
-             return ("Please enter a valid URL.",)
-        
-        if not url.startswith(("http://", "https://")):
-            url = "https://" + url
+        url, validation_error = self.normalize_and_validate_url(url)
+        if validation_error:
+             return (validation_error,)
 
         print(f"[TextScraper] Scraping {url} (Run ID: {seed})")
 
