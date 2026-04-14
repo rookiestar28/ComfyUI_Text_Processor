@@ -204,6 +204,8 @@ class TextStorageReader:
     def INPUT_TYPES(cls):
         handler = TextStorageHandler()
         keys = handler.get_all_keys()
+        if not keys:
+            keys = ["No texts saved yet"]
         return {"required": {"text_key": (sorted(keys),)}}
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text_content",)
