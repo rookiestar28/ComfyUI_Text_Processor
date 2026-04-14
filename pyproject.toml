@@ -20,7 +20,14 @@ license = {file = "LICENSE"}
 #     "Environment :: GPU :: Apple Metal",    # Apple Metal support
 # ]
 
-dependencies = ["simpleeval"]
+dependencies = [
+    "simpleeval",
+    "requests",
+    "beautifulsoup4",
+]
+
+[project.optional-dependencies]
+aesthetic = ["aesthetic-predictor-v2-5"]
 
 [project.urls]
 Repository = "https://github.com/rookiestar28/ComfyUI_Text_Processor"

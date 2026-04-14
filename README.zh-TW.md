@@ -255,6 +255,12 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
     pip install -r requirements.txt
     ```
 
+    可選的美學評分支援：
+
+    ```bash
+    pip install aesthetic-predictor-v2-5
+    ```
+
 4. **重新啟動 ComfyUI**。
 
 ---

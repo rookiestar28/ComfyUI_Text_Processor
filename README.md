@@ -258,6 +258,12 @@ If you prefer terminal commands or don't use the Manager:
     pip install -r requirements.txt
     ```
 
+    Optional aesthetic scoring support:
+
+    ```bash
+    pip install aesthetic-predictor-v2-5
+    ```
+
 4. **Restart ComfyUI**.
 
 ---
