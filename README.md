@@ -291,6 +291,12 @@ If you prefer terminal commands or don't use the Manager:
 * **Fonts:** Place your `.ttf` or `.otf` files in `ComfyUI/custom_nodes/ComfyUI_Text_Processor/fonts/` for the *Add Text to Image* node.
 * **Wildcards:** Place your wildcard text files in `ComfyUI/wildcards/` or `ComfyUI/custom_nodes/ComfyUI_Text_Processor/wildcards/`.
 
+---
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
+
 <details>
 <summary><strong>Click to see handy Regex Patterns (Cheat Sheet)</strong></summary>
 

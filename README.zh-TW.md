@@ -288,6 +288,12 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 * **字型檔：** 請將 `.ttf` 或 `.otf` 檔案放入 `ComfyUI/custom_nodes/ComfyUI_Text_Processor/fonts/` 資料夾中（用於圖片加字節點）。
 * **Wildcards (外掛卡)：** 將您的外掛卡文字檔放入 `ComfyUI/wildcards/` 或插件目錄下的 `wildcards/` 中。
 
+---
+
+## 授權
+
+本專案採用 MIT License。詳細內容請見 `LICENSE`。
+
 <details>
 <summary><strong>點擊查看常用 Regex 範例 (Regex 速查表)</strong></summary>
 
