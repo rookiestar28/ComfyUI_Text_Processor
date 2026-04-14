@@ -99,7 +99,7 @@ A smart text combiner that merges up to 7 text sources into a single string.
 Fetches and formats headlines from any URL. Ideal for injecting real-time context into LLMs.
 
 * **Simple Interface:** Just input a URL string.
-* **Smart Parsing:** Uses heuristics to identify headlines (`h1`-`h4`, class names).
+* **Smart Parsing:** Uses heuristics to identify headlines from `h1`-`h3`, headline-like class names, and matching links.
 * **Safe:** Allows only HTTP/HTTPS public targets by default, blocks local/private network addresses, and includes timeouts to prevent workflow freezing.
 
 ### Text Storage Nodes (Reader & Writer)
@@ -187,14 +187,15 @@ A professional-grade image export node with advanced quality control and aesthet
   * Number-first or number-last format (`0001_prefix` vs `prefix_0001`).
   * Overwrite mode: use prefix as static filename.
 * **Multi-Format Support:**
-  * **PNG**: Full metadata embedding (workflow + prompt) via PngInfo.
+  * **PNG**: Stores node-controlled metadata through PngInfo.
   * **JPEG/JPG**: Quality control (1-100) with DPI settings.
-  * **WebP**: Lossless mode support, EXIF metadata embedding.
+  * **WebP**: Lossless mode support with EXIF metadata storage.
   * **BMP/TIFF**: Additional fallback formats.
 * **Metadata Management:**
-  * Toggle workflow embedding (reduce file size for production).
+  * `metadata_mode` controls `full / minimal / none`.
+  * `embed_workflow` controls whether ComfyUI-restorable `prompt` / `workflow` graph data is written where supported.
   * When workflow embedding is disabled, saved metadata will not include ComfyUI-restorable `prompt` or `workflow` graph entries.
-  * Save prompts and generation parameters in image metadata.
+  * `minimal` mode preserves the current `parameters` summary for downstream metadata readers.
   * JPEG/JPG metadata support is intentionally limited; use PNG or WebP when metadata must be read back.
   * WebP: Stores metadata in EXIF tags (Make/ImageDescription).
 * **Output Control:**
@@ -206,8 +207,18 @@ A professional-grade image export node with advanced quality control and aesthet
 
 A handy utility to crop images directly within your workflow.
 
-* **Targeted Cropping:** Easily remove unwanted borders or focus on specific subjects.
+* **Targeted Cropping:** Crop by fixed side length, aspect ratio, alignment, and XY offsets.
+* **Mask-guided Centering:** Can use an optional mask to bias the crop center toward the masked subject.
+* **Optional Rescaling:** Can rescale the cropped result by longest side, shortest side, width, or height.
 * **Batch Processing:** Supports cropping for image batches.
+
+### Save Mask / Load Mask
+
+Mask IO utilities for workflows that need to persist or re-use mask data.
+
+* **Save Mask:** Writes masks to the ComfyUI output directory as PNG files.
+* **Load Mask:** Loads supported image files from the ComfyUI input directory and converts them to `MASK`.
+* **ComfyUI Integration:** Uses ComfyUI input/output path helpers when available.
 
 ### Image Concat Advanced
 
@@ -223,10 +234,11 @@ Concatenate images from a batch (or list) into a directional grid.
 
 Renders text onto images with advanced formatting options.
 
-* **Auto-Scaling:** Text size automatically adjusts to fit the image width.
-* **Background Box:** Supports semi-transparent background colors with padding.
+* **Adaptive Text Layout:** `auto_adapt` wraps and shrinks text to fit both width and height; the non-adaptive path truncates with ellipsis.
+* **Flexible Placement:** Supports center/corner anchors, margins, text-box or full-width-strip backgrounds, and per-line spacing.
 * **Batch Support:** Can process image batches; text labels loop automatically if fewer than images.
-* **Compatibility:** Outputs standard RGB images to ensure compatibility with Video/VAE nodes.
+* **Font Fallbacks:** Handles missing stored font names by resolving compatible fonts from the current environment when possible.
+* **Compatibility:** Always outputs standard RGB images for downstream image/video nodes.
 
 ---
 
