@@ -4,9 +4,16 @@ import re
 import folder_paths
 
 
+PLUGIN_WILDCARD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wildcards')
+
+
+def get_comfyui_base_path():
+    return getattr(folder_paths, "base_path", os.getcwd())
+
+
 def get_wildcard_dir():
     """Get or create the wildcards directory safely."""
-    wildcard_path = os.path.join(folder_paths.base_path, 'wildcards')
+    wildcard_path = os.path.join(get_comfyui_base_path(), 'wildcards')
     if not os.path.exists(wildcard_path):
         try:
             os.makedirs(wildcard_path, exist_ok=True)
@@ -14,20 +21,74 @@ def get_wildcard_dir():
             pass
     return wildcard_path
 
+def get_wildcard_dirs():
+    """Return wildcard search roots in precedence order."""
+    roots = [get_wildcard_dir(), PLUGIN_WILDCARD_DIR]
+    unique_roots = []
+    seen = set()
+    for root in roots:
+        real_root = os.path.realpath(root)
+        if real_root not in seen:
+            seen.add(real_root)
+            unique_roots.append(real_root)
+    return unique_roots
+
+def _normalize_wildcard_name(wildcard_name):
+    wildcard_name = str(wildcard_name).strip().replace('\\', '/')
+    if wildcard_name.endswith('.txt'):
+        wildcard_name = wildcard_name[:-4]
+    wildcard_name = wildcard_name.strip('/')
+
+    if not wildcard_name or os.path.isabs(wildcard_name):
+        return None
+    if re.search(r'[<>:"|?*\x00-\x1f]', wildcard_name):
+        return None
+
+    parts = wildcard_name.split('/')
+    if any(part in {"", ".", ".."} for part in parts):
+        return None
+
+    return "/".join(parts)
+
+def _is_within_directory(path, base_directory):
+    try:
+        base_directory = os.path.realpath(base_directory)
+        path = os.path.realpath(path)
+        return os.path.commonpath([path, base_directory]) == base_directory
+    except (OSError, ValueError):
+        return False
+
+def resolve_wildcard_path(wildcard_name):
+    normalized_name = _normalize_wildcard_name(wildcard_name)
+    if normalized_name is None:
+        return None
+
+    relative_parts = normalized_name.split('/')
+    for root in get_wildcard_dirs():
+        candidate = os.path.realpath(os.path.join(root, *relative_parts) + ".txt")
+        # CRITICAL: wildcard names are workflow-controlled; never allow traversal outside roots.
+        if _is_within_directory(candidate, root) and os.path.exists(candidate):
+            return candidate
+
+    return None
+
 def get_all_wildcards():
     """
-    Scan for .txt files in the wildcards directory.
+    Scan for .txt files in all configured wildcard directories.
     """
-    wildcards_path = get_wildcard_dir()
-    files_list = []
-    if os.path.exists(wildcards_path):
-        for root, dirs, files in os.walk(wildcards_path):
-            for file in files:
-                if file.endswith('.txt'):
-                    full_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(full_path, wildcards_path)
-                    clean_name = os.path.splitext(rel_path)[0].replace('\\', '/')
-                    files_list.append(clean_name)
+    files_list = set()
+    for wildcards_path in get_wildcard_dirs():
+        if os.path.exists(wildcards_path):
+            for root, dirs, files in os.walk(wildcards_path):
+                dirs[:] = [d for d in dirs if d not in {".", ".."}]
+                for file in files:
+                    if file.endswith('.txt'):
+                        full_path = os.path.join(root, file)
+                        rel_path = os.path.relpath(full_path, wildcards_path)
+                        clean_name = os.path.splitext(rel_path)[0].replace('\\', '/')
+                        normalized_name = _normalize_wildcard_name(clean_name)
+                        if normalized_name:
+                            files_list.add(normalized_name)
     return sorted(files_list)
 
 def process_random_options(text, seed):
@@ -55,11 +116,9 @@ def find_and_replace_wildcards(prompt, offset_seed, debug=False, recursion_depth
         nonlocal wildcard_count
         wildcard_name = match.group(1) 
         
-        base_dir = get_wildcard_dir()
+        file_path = resolve_wildcard_path(wildcard_name)
         
-        file_path = os.path.join(base_dir, f"{wildcard_name}.txt")
-        
-        if os.path.exists(file_path):
+        if file_path:
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     lines = [line.strip() for line in f.readlines() if line.strip()]

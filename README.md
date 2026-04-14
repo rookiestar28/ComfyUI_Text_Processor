@@ -145,6 +145,8 @@ Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and ran
     Each input slot uses a unique internal seed offset. This ensures that even if you use the same `{A|B}` syntax in multiple slots, they won't rigidly output the same result.
 * **Cross-Platform**:
     Fully supports nested subdirectories and handles Windows/Linux/macOS file paths correctly.
+* **Wildcard Sources**:
+    Looks in `ComfyUI/wildcards/` first, then this plugin's `wildcards/`; duplicate names are resolved from the ComfyUI root folder first.
 
 ---
 
