@@ -168,6 +168,7 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 
 * **美學評分過濾:**
   * 內建支援 **Aesthetic Predictor V2.5** 評分模型(自動 CUDA 加速)。
+  * 使用 trusted remote code 的模型載入預設停用，必須啟用 `allow_aesthetic_remote_code`。
   * 為每張圖片計算美學分數，自動過濾低於閾值的圖像。
   * 支援外部評分輸入，可與其他評分節點整合使用。
 * **靈活的輸出路徑:**

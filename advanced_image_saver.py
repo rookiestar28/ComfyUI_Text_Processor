@@ -46,6 +46,7 @@ class AdvancedImageSaver:
                 "show_previews": (["true", "false"],),
                 "metadata_mode": (["full", "minimal", "none"],),
                 "calculate_aesthetic_score": (["false", "true"],),
+                "allow_aesthetic_remote_code": (["false", "true"],),
                 "aesthetic_threshold": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 10.0, "step": 0.1}),
             },
             "optional": {
@@ -223,10 +224,14 @@ class AdvancedImageSaver:
 
         return items_to_save
 
-    def load_predictor(self):
+    def load_predictor(self, allow_remote_code=False):
         """加載評分模型，如果尚未加載"""
         if self.predictor_model is not None:
             return True
+
+        if not allow_remote_code:
+            print("[AdvancedImageSaver] Aesthetic scoring requires allow_aesthetic_remote_code=true.")
+            return False
         
         if not AESTHETIC_AVAILABLE:
             print("[AdvancedImageSaver] Aesthetic scoring unavailable: aesthetic_predictor_v2_5 module not installed.")
@@ -235,6 +240,7 @@ class AdvancedImageSaver:
 
         print("[AdvancedImageSaver] Loading Aesthetic Predictor V2.5 model...")
         try:
+            # CRITICAL: this call uses trust_remote_code; keep it behind the explicit UI opt-in.
             self.predictor_model, self.predictor_preprocessor = convert_v2_5_from_siglip(
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
@@ -274,7 +280,8 @@ class AdvancedImageSaver:
                     extension='png', dpi=300, quality=100, optimize_image="true", lossless_webp="false", 
                     prompt=None, extra_pnginfo=None, overwrite_mode='false', filename_number_padding=4, 
                     filename_number_start='false', embed_workflow="true", show_previews="true", 
-                    metadata_mode="full", calculate_aesthetic_score="false", aesthetic_threshold=5.0,
+                    metadata_mode="full", calculate_aesthetic_score="false",
+                    allow_aesthetic_remote_code="false", aesthetic_threshold=5.0,
                     aesthetic_score=None):
 
         delimiter = filename_delimiter
@@ -283,10 +290,14 @@ class AdvancedImageSaver:
         optimize_image = (optimize_image == "true")
         embed_workflow_bool = (embed_workflow == "true")
         calculate_score_bool = (calculate_aesthetic_score == "true")
+        allow_aesthetic_remote_code_bool = (allow_aesthetic_remote_code == "true")
         # metadata_mode: "full" | "minimal" | "none"
 
         if calculate_score_bool:
-            if not self.load_predictor():
+            if not allow_aesthetic_remote_code_bool:
+                calculate_score_bool = False
+                print("[AdvancedImageSaver] Aesthetic scoring disabled; allow_aesthetic_remote_code must be true.")
+            elif not self.load_predictor(allow_remote_code=True):
                 calculate_score_bool = False
                 print("[AdvancedImageSaver] Aesthetic scoring disabled for this run.")
 

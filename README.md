@@ -171,6 +171,7 @@ A professional-grade image export node with advanced quality control and aesthet
 
 * **Aesthetic Score Filtering:**
   * Built-in support for **Aesthetic Predictor V2.5** model (automatic CUDA acceleration).
+  * Model loading that uses trusted remote code is disabled by default and requires `allow_aesthetic_remote_code`.
   * Calculate aesthetic scores for each image and automatically filter outputs below threshold.
   * External score input support for integration with other evaluation nodes.
 * **Flexible Output Path:**
