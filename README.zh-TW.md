@@ -28,6 +28,7 @@
   * [New] LLM 輸出解析 (JSON, 程式碼區塊)
 * **強大的錯誤處理 (v1.1.5)**：新增 `if_not_found` 選項，允許您設定當找不到匹配項時的行為（返回原文本、返回空字串或報錯），有效防止批次工作流中斷。
 * **強大的 Regex 支援**：`use_regex` 開關可將所有查找和分割操作切換為使用正規表示式，實現複雜的模式匹配。**現已支援 `DOTALL` 模式**（可跨行匹配）。
+  * Regex 擷取時，單一 capture group 會直接輸出該群組文字；多個 capture groups 會以 `group1 | group2` 形式組合。
 * **多關鍵字處理**：`Find/Replace` 操作支援在 `optional_text_input` 欄位中使用逗號 (`,`) 分隔多個查找目標。
 * **輸入靈活性**：可選的 `external_text` 輸入，允許您在處理前將兩段文本（如 B-box 數據和提示詞）進行合併。
 * **預處理**：內建 `to UPPERCASE` / `to lowercase` 功能，在執行任何操作前統一大小寫。

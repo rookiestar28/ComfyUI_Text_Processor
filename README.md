@@ -28,6 +28,7 @@ Whether you need to precisely extract sections from a large text block, batch re
   * [New] LLM Output Parsing (JSON, Code blocks)
 * Robust Error Handling (v1.1.5): The new `if_not_found` option allows you to choose the fallback behavior (return original, return empty, or trigger error) when a pattern isn't found, preventing batch workflow failures.
 * **Powerful Regex Support**: A `use_regex` toggle switches all find and split operations to use Regular Expressions. **Now supports `DOTALL` mode** for multi-line matching.
+  * Regex extract with one capture group returns the captured text; multiple capture groups are joined as `group1 | group2`.
 * **Multi-Keyword Handling**: `Find/Replace` operations support multiple, comma-separated (`,`) targets in the `optional_text_input` field.
 * **Input Flexibility**: An optional `external_text` input allows you to concatenate two text sources (like B-box data and a prompt) before processing.
 * **Pre-processing**: Built-in `to UPPERCASE` / `to lowercase` functions to normalize case before any operation.

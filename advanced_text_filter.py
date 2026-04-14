@@ -6,6 +6,16 @@ class _IntentionalFilterError(ValueError):
     pass
 
 
+def _normalize_regex_matches(matches):
+    normalized = []
+    for match in matches:
+        if isinstance(match, tuple):
+            normalized.append(" | ".join("" if part is None else str(part) for part in match))
+        else:
+            normalized.append(str(match))
+    return normalized
+
+
 class AdvancedTextFilter:
     """
     ComfyUI Text Processor Node (Enhanced Version 1.2.0)
@@ -203,7 +213,7 @@ class AdvancedTextFilter:
                     remaining_output = text_to_process
                     for pattern in patterns:
                         if use_regex:
-                            found = re.findall(pattern, text_to_process, re.DOTALL)
+                            found = _normalize_regex_matches(re.findall(pattern, text_to_process, re.DOTALL))
                             all_found_matches.extend(found)
                             remaining_output = re.sub(pattern, "", remaining_output, flags=re.DOTALL)
                         else:
@@ -225,7 +235,7 @@ class AdvancedTextFilter:
 
                     for pattern in patterns:
                         if use_regex:
-                            found = re.findall(pattern, temp_processed_text, re.DOTALL)
+                            found = _normalize_regex_matches(re.findall(pattern, temp_processed_text, re.DOTALL))
                             all_found_matches.extend(found)
                             temp_processed_text, count = re.subn(pattern, replace_str, temp_processed_text, flags=re.DOTALL)
                             match_count_total += count
