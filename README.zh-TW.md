@@ -186,7 +186,9 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
   * **BMP/TIFF**: 額外的備用格式選擇。
 * **中繼資料管理:**
   * 可切換工作流嵌入(減少檔案大小)。
+  * 停用工作流嵌入時，輸出 metadata 不會包含可讓 ComfyUI 復原原始工作流的 `prompt` 或 `workflow` graph。
   * 將提示詞與生成參數儲存進圖像中繼資料。
+  * JPEG/JPG 的 metadata 支援刻意維持有限；需要回讀 metadata 時請使用 PNG 或 WebP。
   * WebP 格式:將資料儲存於 EXIF 標籤(Make/ImageDescription)。
 * **輸出控制:**
   * **三組輸出**: `filtered_images` (IMAGE)、`files` (檔案路徑列表)、`scores` (美學分數列表)。

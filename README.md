@@ -189,7 +189,9 @@ A professional-grade image export node with advanced quality control and aesthet
   * **BMP/TIFF**: Additional fallback formats.
 * **Metadata Management:**
   * Toggle workflow embedding (reduce file size for production).
+  * When workflow embedding is disabled, saved metadata will not include ComfyUI-restorable `prompt` or `workflow` graph entries.
   * Save prompts and generation parameters in image metadata.
+  * JPEG/JPG metadata support is intentionally limited; use PNG or WebP when metadata must be read back.
   * WebP: Stores metadata in EXIF tags (Make/ImageDescription).
 * **Output Control:**
   * **Three Outputs**: `filtered_images` (IMAGE), `files` (paths), `scores` (aesthetic scores).

@@ -190,6 +190,39 @@ class AdvancedImageSaver:
             print(f"[AdvancedImageSaver] Error extracting minimal metadata: {e}")
             return {}
 
+    def build_metadata_items(self, prompt, extra_pnginfo, metadata_mode, embed_workflow):
+        if metadata_mode == "none":
+            return {}
+
+        items_to_save = {}
+        minimal_meta = self.extract_minimal_metadata(prompt)
+
+        if metadata_mode == "minimal":
+            if minimal_meta:
+                items_to_save["parameters"] = json.dumps(minimal_meta)
+            return items_to_save
+
+        if embed_workflow:
+            if prompt is not None:
+                items_to_save["prompt"] = json.dumps(prompt)
+
+            if extra_pnginfo is not None:
+                for key, value in extra_pnginfo.items():
+                    items_to_save[key] = json.dumps(value)
+            return items_to_save
+
+        # CRITICAL: embed_workflow=false must suppress ComfyUI-restorable graph keys in every metadata mode.
+        if minimal_meta:
+            items_to_save["parameters"] = json.dumps(minimal_meta)
+
+        if extra_pnginfo is not None:
+            for key, value in extra_pnginfo.items():
+                if key in {"prompt", "workflow"}:
+                    continue
+                items_to_save[key] = json.dumps(value)
+
+        return items_to_save
+
     def load_predictor(self):
         """加載評分模型，如果尚未加載"""
         if self.predictor_model is not None:
@@ -335,43 +368,30 @@ class AdvancedImageSaver:
 
             exif_data = None
             if metadata_mode != "none":
-                items_to_save = {}
-                
-                if metadata_mode == "minimal":
-                    minimal_meta = self.extract_minimal_metadata(prompt)
-                    if minimal_meta:
-                        items_to_save["parameters"] = json.dumps(minimal_meta)
-                else:
-                    # When embed_workflow is disabled, avoid writing workflow-related data
-                    # (prompt graph + extra_pnginfo) even if metadata_mode is "full".
-                    if embed_workflow_bool:
-                        if prompt is not None:
-                            items_to_save["prompt"] = json.dumps(prompt)
-
-                        if extra_pnginfo is not None:
-                            for key, value in extra_pnginfo.items():
-                                if key == 'workflow' and not embed_workflow_bool:
-                                    continue
-                                items_to_save[key] = json.dumps(value)
-                    else:
-                        minimal_meta = self.extract_minimal_metadata(prompt)
-                        if minimal_meta:
-                            items_to_save["parameters"] = json.dumps(minimal_meta)
+                items_to_save = self.build_metadata_items(
+                    prompt=prompt,
+                    extra_pnginfo=extra_pnginfo,
+                    metadata_mode=metadata_mode,
+                    embed_workflow=embed_workflow_bool,
+                )
 
                 if extension == 'webp':
                     img_exif = img.getexif()
-                    if metadata_mode == "minimal" and "parameters" in items_to_save:
+                    if "parameters" in items_to_save:
                         img_exif[0x010f] = "Parameters:" + items_to_save["parameters"]
                     elif "prompt" in items_to_save:
                         img_exif[0x010f] = "Prompt:" + items_to_save["prompt"]
                     
-                    workflow_metadata = ""
-                    for key, value in items_to_save.items():
-                        if key in ["prompt", "parameters"]: continue
-                        workflow_metadata += value
-                    
-                    if workflow_metadata:
-                        img_exif[0x010e] = "Workflow:" + workflow_metadata
+                    secondary_metadata = {
+                        key: value
+                        for key, value in items_to_save.items()
+                        if key not in ["prompt", "parameters"]
+                    }
+
+                    if "workflow" in secondary_metadata:
+                        img_exif[0x010e] = "Workflow:" + secondary_metadata["workflow"]
+                    elif secondary_metadata:
+                        img_exif[0x010e] = "Metadata:" + json.dumps(secondary_metadata)
                         
                     exif_data = img_exif.tobytes()
                 else:
