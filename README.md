@@ -205,10 +205,12 @@ A handy utility to crop images directly within your workflow.
 
 ### Image Concat Advanced
 
-Concatenate images from a batch (or list) into a single image strip.
+Concatenate images from a batch (or list) into a directional grid.
 
-* **Direction:** `right / down / left / up`.
-* **Resize:** Always resizes each image to match the first image (keeps aspect ratio).
+* **Direction:** `left_to_right / right_to_left / top_to_bottom / bottom_to_top`.
+* **Wrap Limit:** `max_images_per_line` controls when the layout wraps to the next row or column.
+* **Resize:** Each cell uses the first image size; other images are resized to fit while keeping aspect ratio.
+* **Blank Fill:** Incomplete final rows or columns are filled with blank cells.
 * **Output Channels:** Force `rgb` (default), `rgba`, or `auto`.
 
 ### Add Text to Image

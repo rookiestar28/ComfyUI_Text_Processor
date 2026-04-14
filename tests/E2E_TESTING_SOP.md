@@ -1,0 +1,150 @@
+# E2E Testing SOP
+
+This SOP defines the ComfyUI custom-node smoke/integration workflow for **ComfyUI Text Processor**.
+
+## Scope
+
+This is not a frontend Playwright workflow.
+
+This repository is a Python ComfyUI custom node pack, so the E2E boundary is:
+
+- ComfyUI can discover and import the node package.
+- `NODE_CLASS_MAPPINGS` and `NODE_DISPLAY_NAME_MAPPINGS` expose expected nodes.
+- Changed node classes can execute representative workflows with deterministic inputs.
+- Output tensor/string/file contracts match the node definitions.
+
+## Requirements
+
+- Python 3.10+ in the same environment used by ComfyUI.
+- ComfyUI dependencies importable in that environment, including `folder_paths`.
+- For image/tensor nodes: `torch`, `torchvision`, `Pillow`, and `numpy`.
+- For text scraper checks: mockable `requests` and `beautifulsoup4`.
+- No Node.js or npm requirement exists unless a tracked frontend harness is added later.
+
+## Windows Procedure
+
+Use the ComfyUI Python environment. Example with conda:
+
+```powershell
+conda run -n comfyui python --version
+conda run -n comfyui python -c "import torch; print(torch.__version__)"
+```
+
+Compile product modules:
+
+```powershell
+conda run -n comfyui python -m py_compile `
+  __init__.py `
+  advanced_text_filter.py `
+  text_input.py `
+  text_scraper.py `
+  text_storage.py `
+  wildcards.py `
+  simple_eval.py `
+  add_text_to_image.py `
+  font_manager.py `
+  advanced_image_saver.py `
+  image_cropper.py `
+  mask_nodes.py `
+  Image_concat_advanced.py
+```
+
+Run focused changed-node assertions.
+
+Example for `Image_concat_advanced.py`:
+
+```powershell
+conda run -n comfyui python -c "import torch; from Image_concat_advanced import TP_ImageConcatenateMulti; node = TP_ImageConcatenateMulti(); img = lambda v: torch.full((1, 2, 2, 3), float(v)); out, = node.concatenate([img(1), img(2), img(3)], 'left_to_right', 2, 'nearest', 'rgb'); assert tuple(out.shape) == (1, 4, 4, 3); print('ok')"
+```
+
+Run tracked unittest regression tests when present:
+
+```powershell
+conda run -n comfyui python -m unittest discover -s tests -p "test_*.py"
+```
+
+## Linux / WSL Procedure
+
+Use the Python interpreter that ComfyUI uses.
+
+```bash
+python --version
+python - <<'PY'
+try:
+    import torch
+    print(torch.__version__)
+except Exception as exc:
+    print(f"torch unavailable: {exc}")
+PY
+```
+
+Compile product modules:
+
+```bash
+python -m py_compile \
+  __init__.py \
+  advanced_text_filter.py \
+  text_input.py \
+  text_scraper.py \
+  text_storage.py \
+  wildcards.py \
+  simple_eval.py \
+  add_text_to_image.py \
+  font_manager.py \
+  advanced_image_saver.py \
+  image_cropper.py \
+  mask_nodes.py \
+  Image_concat_advanced.py
+```
+
+Run focused changed-node assertions with deterministic inputs.
+
+## Node Registration Smoke
+
+When ComfyUI runtime imports are available, verify node registration:
+
+```powershell
+conda run -n comfyui python -c "import importlib.util, pathlib; spec = importlib.util.spec_from_file_location('ComfyUI_Text_Processor', pathlib.Path('__init__.py')); module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module); print(sorted(module.NODE_CLASS_MAPPINGS.keys()))"
+```
+
+If this fails because the package is not being imported from ComfyUI's `custom_nodes` parent, record the import-context limitation and run focused changed-node assertions instead.
+
+## Changed-node Assertion Requirements
+
+Each implementation must include assertions matching the changed node type:
+
+- `STRING` nodes: exact output tuple values for normal and edge cases.
+- `IMAGE` nodes: tensor shape, dtype/device preservation where relevant, channel count, and content placement.
+- `MASK` nodes: mask shape and value range.
+- output nodes that write files: isolated path, filename behavior, and metadata behavior where applicable.
+- network nodes: mocked success, timeout/error behavior, and blocked unsafe input behavior.
+
+## Non-applicable Frontend E2E
+
+Do not run these commands for the current repo state:
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+They become applicable only after a tracked frontend harness and `package.json` are added.
+
+## Troubleshooting
+
+- `ModuleNotFoundError: folder_paths`: run from the ComfyUI environment or record that full ComfyUI import smoke is blocked by missing ComfyUI runtime context.
+- `ModuleNotFoundError: torch`: use the ComfyUI Python environment for image/tensor node checks.
+- `ModuleNotFoundError` for optional dependencies: record whether the changed node requires the optional dependency or is expected to degrade gracefully.
+- Very large image grids can allocate large tensors; use tiny deterministic tensors for automated assertions.
+
+## Evidence Recording
+
+Record:
+
+- exact Python executable
+- Python version
+- relevant package versions
+- commands run
+- assertion coverage summary
+- final pass/fail/blocked status

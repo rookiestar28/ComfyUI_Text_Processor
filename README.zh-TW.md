@@ -202,10 +202,12 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 
 ### Image Concat Advanced (多圖拼接)
 
-將一個 batch（或 list）的多張圖片依序拼接成一張圖。
+將一個 batch（或 list）的多張圖片拼接成可指定方向的網格圖。
 
-* **方向：** `right / down / left / up`。
-* **縮放：** 會強制自動縮放以匹配第一張圖片（保留長寬比）。
+* **方向：** `left_to_right / right_to_left / top_to_bottom / bottom_to_top`。
+* **換行限制：** `max_images_per_line` 控制超過幾張後換到下一列或下一欄。
+* **縮放：** 每個格子使用第一張圖片尺寸；其他圖片會保留長寬比自動縮放置中。
+* **空缺補齊：** 最後一列或欄不足時會自動補空白格。
 * **輸出通道：** 可強制 `rgb`（預設）、`rgba` 或 `auto`。
 
 ### Add Text to Image (圖片加字)

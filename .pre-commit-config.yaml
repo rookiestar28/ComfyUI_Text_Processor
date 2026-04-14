@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: detect-secrets
+        name: detect-secrets
+        entry: detect-secrets-hook
+        language: python
+        additional_dependencies:
+          - detect-secrets==1.5.0
+        types:
+          - text
+      - id: python-compile-product-modules
+        name: python compile product modules
+        entry: python -m py_compile __init__.py advanced_text_filter.py text_input.py text_scraper.py text_storage.py wildcards.py simple_eval.py add_text_to_image.py font_manager.py advanced_image_saver.py image_cropper.py mask_nodes.py Image_concat_advanced.py
+        language: system
+        pass_filenames: false
+        types:
+          - python
