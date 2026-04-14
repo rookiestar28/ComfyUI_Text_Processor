@@ -31,6 +31,7 @@ class AdvancedImageSaver:
             "required": {
                 "images": ("IMAGE", ),
                 "output_path": ("STRING", {"default": '[time(%Y-%m-%d)]', "multiline": False}),
+                "allow_absolute_output_path": (["false", "true"],),
                 "filename_prefix": ("STRING", {"default": "ComfyUI"}),
                 "filename_delimiter": ("STRING", {"default":"_"}),
                 "filename_number_padding": ("INT", {"default":4, "min":1, "max":9, "step":1}),
@@ -75,6 +76,42 @@ class AdvancedImageSaver:
                 return match.group(0)
         text = re.sub(r'\[time\((.*?)\)\]', replace_time, text)
         return text
+
+    def _is_within_directory(self, path, base_directory):
+        try:
+            base_directory = os.path.realpath(base_directory)
+            path = os.path.realpath(path)
+            return os.path.commonpath([path, base_directory]) == base_directory
+        except (OSError, ValueError):
+            return False
+
+    def resolve_output_folder(self, output_path, allow_absolute_output_path=False):
+        output_path = self.parse_name(output_path)
+        output_dir = os.path.realpath(self.output_dir)
+
+        if output_path in [None, '', "none", "."]:
+            return output_dir
+
+        # CRITICAL: workflow-controlled paths must not escape ComfyUI output unless explicit opt-in is set.
+        if os.path.isabs(output_path):
+            if allow_absolute_output_path:
+                return os.path.realpath(output_path)
+            print("[AdvancedImageSaver] Absolute output_path blocked; using ComfyUI output directory.")
+            return output_dir
+
+        candidate = os.path.realpath(os.path.join(output_dir, output_path))
+        if not self._is_within_directory(candidate, output_dir):
+            print("[AdvancedImageSaver] Unsafe output_path blocked; using ComfyUI output directory.")
+            return output_dir
+
+        return candidate
+
+    def sanitize_filename_prefix(self, filename_prefix):
+        filename_prefix = self.parse_name(filename_prefix)
+        filename_prefix = re.sub(r'[\\/]+', "_", filename_prefix)
+        filename_prefix = re.sub(r'[<>:"|?*\x00-\x1f]+', "", filename_prefix)
+        filename_prefix = filename_prefix.strip().strip(".")
+        return filename_prefix or "ComfyUI"
 
     def extract_minimal_metadata(self, prompt):
         """從 prompt 中提取關鍵生成參數"""
@@ -199,11 +236,13 @@ class AdvancedImageSaver:
             print(f"[AdvancedImageSaver] Prediction failed: {e}")
             return 0.0
 
-    def save_images(self, images, output_path='', filename_prefix="ComfyUI", filename_delimiter='_',
+    def save_images(self, images, output_path='', allow_absolute_output_path="false",
+                    filename_prefix="ComfyUI", filename_delimiter='_',
                     extension='png', dpi=300, quality=100, optimize_image="true", lossless_webp="false", 
                     prompt=None, extra_pnginfo=None, overwrite_mode='false', filename_number_padding=4, 
                     filename_number_start='false', embed_workflow="true", show_previews="true", 
-                    metadata_mode="full", calculate_aesthetic_score="false", aesthetic_threshold=5.0, aesthetic_score=None):
+                    metadata_mode="full", calculate_aesthetic_score="false", aesthetic_threshold=5.0,
+                    aesthetic_score=None):
 
         delimiter = filename_delimiter
         number_padding = filename_number_padding
@@ -218,16 +257,11 @@ class AdvancedImageSaver:
                 calculate_score_bool = False
                 print("[AdvancedImageSaver] Aesthetic scoring disabled for this run.")
 
-        filename_prefix = self.parse_name(filename_prefix)
-        output_path = self.parse_name(output_path)
-
-        if output_path in [None, '', "none", "."]:
-            full_output_folder = self.output_dir
-        else:
-            if os.path.isabs(output_path):
-                full_output_folder = output_path
-            else:
-                full_output_folder = os.path.join(self.output_dir, output_path)
+        filename_prefix = self.sanitize_filename_prefix(filename_prefix)
+        full_output_folder = self.resolve_output_folder(
+            output_path,
+            allow_absolute_output_path=(allow_absolute_output_path == "true"),
+        )
         
         if not os.path.exists(full_output_folder):
             try:

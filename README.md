@@ -175,7 +175,7 @@ A professional-grade image export node with advanced quality control and aesthet
   * External score input support for integration with other evaluation nodes.
 * **Flexible Output Path:**
   * Dynamic path parsing with time formatting (e.g., `[time(%Y-%m-%d)]` → `2025-12-25`).
-  * Support for both relative (under ComfyUI output) and absolute paths.
+  * Relative paths are kept under ComfyUI output; absolute paths require the explicit `allow_absolute_output_path` opt-in.
   * Auto-create directories if they don't exist.
 * **Smart Filename Generation:**
   * Customizable prefix, delimiter, and number padding.
