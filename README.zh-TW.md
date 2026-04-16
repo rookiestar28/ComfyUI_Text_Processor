@@ -95,7 +95,7 @@
 
 ### Text Scraper Node (網頁爬蟲)
 
-從指定網址抓取標題並格式化，適合用於為 LLM 提供即時上下文。
+從公開的 HTTP/HTTPS 網址抓取標題並格式化，適合用於為 LLM 提供即時上下文。
 
 * **簡單易用：** 僅需輸入 URL 字串。
 * **智慧解析：** 會從 `h1`-`h3`、headline 類型的 class 名稱與對應連結中尋找標題。
@@ -170,19 +170,21 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 專業級圖片輸出節點，具備進階品質控制與美學評分過濾功能。
 
 * **美學評分過濾:**
-  * 內建支援 **Aesthetic Predictor V2.5** 評分模型(自動 CUDA 加速)。
-  * 使用 trusted remote code 的模型載入預設停用，必須啟用 `allow_aesthetic_remote_code`。
-  * 為每張圖片計算美學分數，自動過濾低於閾值的圖像。
-  * 支援外部評分輸入，可與其他評分節點整合使用。
+  * 可選擇使用 **Aesthetic Predictor V2.5** 評分模型；若要啟用請先執行 `pip install aesthetic-predictor-v2-5`。
+  * `calculate_aesthetic_score` 會啟用節點內建的逐張圖片評分。
+  * 內建評分的模型載入流程需要 trusted remote code，因此 `allow_aesthetic_remote_code` 預設停用，必須明確啟用後才會載入模型。
+  * 若評分器可用，會在可用時自動使用 CUDA 加速。
+  * 可選的 `aesthetic_score` 輸入可直接接收外部評分，不需載入內建評分模型。
+  * 低於 `aesthetic_threshold` 的圖片會從輸出中濾除。
 * **靈活的輸出路徑:**
   * 動態路徑解析，支援時間格式化(如 `[time(%Y-%m-%d)]` → `2025-12-25`)。
   * 相對路徑會限制在 ComfyUI output 目錄內；絕對路徑必須明確啟用 `allow_absolute_output_path`。
   * 資料夾不存在時自動建立。
 * **智慧檔名生成:**
-  * 可自訂前綴、分隔符號、數字補零位數。
+  * 可自訂 `filename_prefix`、`filename_delimiter` 與 `filename_number_padding`。
   * 自動遞增計數器，並偵測檔名衝突。
-  * 支援數字在前或在後格式(`0001_前綴` 或 `前綴_0001`)。
-  * 覆蓋模式:使用前綴作為靜態檔名。
+  * `filename_number_start` 可切換數字在前或在後格式(`0001_前綴` 或 `前綴_0001`)。
+  * `overwrite_mode = prefix_as_filename` 會直接使用前綴作為靜態檔名。
 * **多格式支援:**
   * **PNG**: 透過 PngInfo 儲存節點控制的 metadata。
   * **JPEG/JPG**: 品質控制(1-100)，支援 DPI 設定。
@@ -273,7 +275,7 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
     pip install -r requirements.txt
     ```
 
-    可選的美學評分支援：
+    可選的內建美學評分支援：
 
     ```bash
     pip install aesthetic-predictor-v2-5

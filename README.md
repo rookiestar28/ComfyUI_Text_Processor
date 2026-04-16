@@ -96,7 +96,7 @@ A smart text combiner that merges up to 7 text sources into a single string.
 
 ### Text Scraper Node
 
-Fetches and formats headlines from any URL. Ideal for injecting real-time context into LLMs.
+Fetches and formats headlines from public HTTP/HTTPS URLs. Ideal for injecting real-time context into LLMs.
 
 * **Simple Interface:** Just input a URL string.
 * **Smart Parsing:** Uses heuristics to identify headlines from `h1`-`h3`, headline-like class names, and matching links.
@@ -173,19 +173,21 @@ Perform mathematical calculations or string manipulations without writing comple
 A professional-grade image export node with advanced quality control and aesthetic filtering.
 
 * **Aesthetic Score Filtering:**
-  * Built-in support for **Aesthetic Predictor V2.5** model (automatic CUDA acceleration).
-  * Model loading that uses trusted remote code is disabled by default and requires `allow_aesthetic_remote_code`.
-  * Calculate aesthetic scores for each image and automatically filter outputs below threshold.
-  * External score input support for integration with other evaluation nodes.
+  * Optional support for the **Aesthetic Predictor V2.5** model; install it with `pip install aesthetic-predictor-v2-5`.
+  * `calculate_aesthetic_score` enables built-in scoring for each image.
+  * Built-in scoring uses a loader that requires trusted remote code, so `allow_aesthetic_remote_code` is disabled by default and must be explicitly enabled before the model will load.
+  * When the predictor is available, scoring uses CUDA automatically when available.
+  * The optional `aesthetic_score` input lets you supply external scores without loading the built-in predictor.
+  * Images scoring below `aesthetic_threshold` are filtered from the outputs.
 * **Flexible Output Path:**
   * Dynamic path parsing with time formatting (e.g., `[time(%Y-%m-%d)]` → `2025-12-25`).
   * Relative paths are kept under ComfyUI output; absolute paths require the explicit `allow_absolute_output_path` opt-in.
   * Auto-create directories if they don't exist.
 * **Smart Filename Generation:**
-  * Customizable prefix, delimiter, and number padding.
+  * Customizable `filename_prefix`, `filename_delimiter`, and `filename_number_padding`.
   * Auto-increment counter with conflict detection.
-  * Number-first or number-last format (`0001_prefix` vs `prefix_0001`).
-  * Overwrite mode: use prefix as static filename.
+  * `filename_number_start` switches between number-first and number-last formats (`0001_prefix` vs `prefix_0001`).
+  * `overwrite_mode = prefix_as_filename` uses the prefix as a static filename.
 * **Multi-Format Support:**
   * **PNG**: Stores node-controlled metadata through PngInfo.
   * **JPEG/JPG**: Quality control (1-100) with DPI settings.
@@ -276,7 +278,7 @@ If you prefer terminal commands or don't use the Manager:
     pip install -r requirements.txt
     ```
 
-    Optional aesthetic scoring support:
+    Optional built-in aesthetic scoring support:
 
     ```bash
     pip install aesthetic-predictor-v2-5
