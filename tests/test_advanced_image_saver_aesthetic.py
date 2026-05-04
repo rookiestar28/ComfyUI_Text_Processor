@@ -132,7 +132,6 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
         self.assertIsNone(node.predictor_preprocessor)
         self.assertEqual("unloaded", node.aesthetic_status)
 
-    @unittest.expectedFailure
     def test_external_multiline_aesthetic_scores_apply_per_image(self):
         with tempfile.TemporaryDirectory() as tmp:
             node = self.make_node(Path(tmp) / "output")
@@ -151,7 +150,6 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
         self.assertEqual(["7.1250", "8.2500"], result["result"][2])
         self.assertEqual(2, len(result["result"][1]))
 
-    @unittest.expectedFailure
     def test_image_tensor_normalization_accepts_singleton_batch_and_float16(self):
         node = AdvancedImageSaver()
         image = torch.tensor(
@@ -165,7 +163,6 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
         self.assertEqual("RGB", pil_image.mode)
         self.assertEqual((2, 2), pil_image.size)
 
-    @unittest.expectedFailure
     def test_prediction_failure_returns_diagnostic_instead_of_numeric_low_score(self):
         node = AdvancedImageSaver()
         node.predictor_model = Mock(side_effect=RuntimeError("simulated inference failure"))

@@ -3,6 +3,7 @@ import json
 import re
 import numpy as np
 import torch
+from dataclasses import dataclass
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from datetime import datetime
@@ -16,6 +17,13 @@ except ImportError:
     AESTHETIC_AVAILABLE = False
     print("[AdvancedImageSaver] Warning: aesthetic_predictor_v2_5 module not found.")
     print("[AdvancedImageSaver] To enable aesthetic scoring, run: pip install aesthetic-predictor-v2-5")
+
+
+@dataclass
+class AestheticScoreResult:
+    value: float | None = None
+    error: str = ""
+
 
 class AdvancedImageSaver:
     def __init__(self):
@@ -401,27 +409,126 @@ class AdvancedImageSaver:
         print(f"[AdvancedImageSaver] Error loading model: {self.aesthetic_last_error}")
         return False
 
+    def _image_tensor_to_pil(self, image_tensor, force_rgb=False):
+        if not isinstance(image_tensor, torch.Tensor):
+            raise TypeError("image must be a torch.Tensor")
+
+        tensor = image_tensor.detach()
+        if tensor.ndim == 4:
+            if tensor.shape[0] != 1:
+                raise ValueError(f"expected a single image tensor, got batch size {tensor.shape[0]}")
+            tensor = tensor[0]
+        if tensor.ndim == 2:
+            tensor = tensor.unsqueeze(-1)
+        if tensor.ndim != 3:
+            raise ValueError(f"expected HWC image tensor, got rank {tensor.ndim}")
+
+        channels = tensor.shape[-1]
+        if channels not in (1, 3, 4):
+            raise ValueError(f"expected 1, 3, or 4 image channels, got {channels}")
+
+        # IMPORTANT: cast before numpy; bfloat16 tensors cannot be converted directly on CPU.
+        tensor = tensor.to(device="cpu", dtype=torch.float32)
+        tensor = torch.nan_to_num(tensor, nan=0.0, posinf=1.0, neginf=0.0)
+        tensor = tensor.clamp(0.0, 1.0)
+        array = (tensor.numpy() * 255.0).round().astype(np.uint8)
+        array = np.ascontiguousarray(array)
+
+        if channels == 1:
+            image = Image.fromarray(array[:, :, 0], mode="L")
+        else:
+            image = Image.fromarray(array)
+
+        if force_rgb and image.mode != "RGB":
+            image = image.convert("RGB")
+        return image
+
+    def _aesthetic_tensor_to_pil(self, image_tensor):
+        return self._image_tensor_to_pil(image_tensor, force_rgb=True)
+
+    def _parse_aesthetic_scores(self, aesthetic_score):
+        if aesthetic_score is None:
+            return []
+
+        if isinstance(aesthetic_score, (int, float)):
+            return [float(aesthetic_score)]
+
+        raw_items = aesthetic_score if isinstance(aesthetic_score, (list, tuple)) else [aesthetic_score]
+        scores = []
+        for item in raw_items:
+            if isinstance(item, (int, float)):
+                scores.append(float(item))
+                continue
+            if item is None:
+                continue
+            text = str(item).strip()
+            if not text:
+                continue
+            text = text.strip("[]()")
+            for token in re.split(r"[\s,;]+", text):
+                if not token:
+                    continue
+                try:
+                    scores.append(float(token))
+                except ValueError:
+                    print(f"[AdvancedImageSaver] Ignoring invalid aesthetic score token: {token}")
+        return scores
+
+    def _aesthetic_score_for_index(self, parsed_scores, idx):
+        if not parsed_scores:
+            return None
+        if idx < len(parsed_scores):
+            return parsed_scores[idx]
+        return parsed_scores[-1]
+
+    def _coerce_score_result(self, score_result):
+        if isinstance(score_result, AestheticScoreResult):
+            return score_result
+        if score_result is None:
+            return AestheticScoreResult(value=None)
+        try:
+            return AestheticScoreResult(value=float(score_result))
+        except (TypeError, ValueError):
+            return AestheticScoreResult(value=None, error=str(score_result))
+
     def get_aesthetic_score(self, image_tensor):
         """計算單張圖片的美學分數"""
         try:
-            # Convert to numpy, scale to 255, uint8
-            img_np = (image_tensor.cpu().numpy() * 255).astype(np.uint8)
-            image = Image.fromarray(img_np).convert("RGB")
+            image = self._aesthetic_tensor_to_pil(image_tensor)
             
             # Preprocess
             pixel_values = self.predictor_preprocessor(images=image, return_tensors="pt").pixel_values
 
-            if torch.cuda.is_available():
-                pixel_values = pixel_values.to(torch.bfloat16).cuda()
+            if isinstance(pixel_values, torch.Tensor):
+                target_device = None if self.aesthetic_device == "unloaded" else self.aesthetic_device
+                dtype_map = {
+                    "bfloat16": torch.bfloat16,
+                    "float16": torch.float16,
+                    "float32": torch.float32,
+                }
+                target_dtype = dtype_map.get(self.aesthetic_dtype)
+                to_kwargs = {}
+                if target_device is not None:
+                    to_kwargs["device"] = target_device
+                if target_dtype is not None:
+                    to_kwargs["dtype"] = target_dtype
+                if to_kwargs:
+                    pixel_values = pixel_values.to(**to_kwargs)
 
             # Predict
             with torch.inference_mode():
-                score = self.predictor_model(pixel_values).logits.squeeze().float().cpu().numpy()
+                model_output = self.predictor_model(pixel_values)
+                logits = getattr(model_output, "logits", model_output)
+                if isinstance(logits, torch.Tensor):
+                    logits = logits.squeeze().float().detach().cpu()
+                    score = logits.reshape(-1)[0].item()
+                else:
+                    score = np.asarray(logits).squeeze().reshape(-1)[0]
             
-            return float(score)
+            return AestheticScoreResult(value=float(score))
         except Exception as e:
             print(f"[AdvancedImageSaver] Prediction failed: {e}")
-            return 0.0
+            return AestheticScoreResult(value=None, error=str(e))
 
     def save_images(self, images, output_path='', allow_absolute_output_path="false",
                     filename_prefix="ComfyUI", filename_delimiter='_',
@@ -494,27 +601,25 @@ class AdvancedImageSaver:
         output_files = list()
         saved_scores = list()
         valid_images_list = list() 
+        parsed_aesthetic_scores = self._parse_aesthetic_scores(aesthetic_score)
 
         for idx, image in enumerate(images):
             
             should_save = True
             current_score_val = None
+            current_score_error = ""
 
             if calculate_score_bool and self.predictor_model is not None:
-                current_score_val = self.get_aesthetic_score(image)
-                print(f"[AdvancedImageSaver] Image {idx} Score: {current_score_val:.4f}")
+                score_result = self._coerce_score_result(self.get_aesthetic_score(image))
+                current_score_val = score_result.value
+                current_score_error = score_result.error
+                if current_score_val is not None:
+                    print(f"[AdvancedImageSaver] Image {idx} Score: {current_score_val:.4f}")
+                elif current_score_error:
+                    print(f"[AdvancedImageSaver] Image {idx} Score unavailable: {current_score_error}")
 
-            elif aesthetic_score is not None:
-                try:
-                    if isinstance(aesthetic_score, list):
-                        if idx < len(aesthetic_score):
-                            current_score_val = float(aesthetic_score[idx])
-                        else:
-                            current_score_val = float(aesthetic_score[-1])
-                    else:
-                        current_score_val = float(aesthetic_score)
-                except (ValueError, TypeError):
-                    pass
+            elif parsed_aesthetic_scores:
+                current_score_val = self._aesthetic_score_for_index(parsed_aesthetic_scores, idx)
             
             if current_score_val is not None:
                 if current_score_val < aesthetic_threshold:
@@ -523,11 +628,12 @@ class AdvancedImageSaver:
             valid_images_list.append(image)
             if current_score_val is not None:
                 saved_scores.append(f"{current_score_val:.4f}")
+            elif current_score_error:
+                saved_scores.append(f"ERROR: {current_score_error}")
             else:
                 saved_scores.append("N/A")
 
-            i = 255. * image.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            img = self._image_tensor_to_pil(image)
 
             exif_data = None
             if metadata_mode != "none":
