@@ -66,7 +66,6 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
         self.assertTrue(loaded)
         converter.assert_called_once_with(low_cpu_mem_usage=True, trust_remote_code=True)
 
-    @unittest.expectedFailure
     def test_failed_device_move_does_not_leave_half_initialized_predictor(self):
         node = AdvancedImageSaver()
         model = Mock()
@@ -82,7 +81,6 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
         self.assertIsNone(node.predictor_model)
         self.assertIsNone(node.predictor_preprocessor)
 
-    @unittest.expectedFailure
     def test_input_types_expose_precision_and_lifecycle_controls(self):
         required = AdvancedImageSaver.INPUT_TYPES()["required"]
 
@@ -90,6 +88,49 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
         self.assertIn("keep_aesthetic_model_loaded", required)
         self.assertIn("fp16", required["aesthetic_precision"][0])
         self.assertIn("auto", required["aesthetic_precision"][0])
+
+    def test_bf16_setup_failure_falls_back_to_fp16(self):
+        node = AdvancedImageSaver()
+        model = Mock()
+        model.to.side_effect = [RuntimeError("bf16 failed"), model]
+        preprocessor = Mock()
+
+        with patch.object(advanced_image_saver, "AESTHETIC_AVAILABLE", True):
+            with patch.object(advanced_image_saver, "convert_v2_5_from_siglip", return_value=(model, preprocessor)):
+                with patch.object(advanced_image_saver.torch.cuda, "is_available", return_value=True):
+                    with patch.object(advanced_image_saver.torch.cuda, "is_bf16_supported", return_value=True):
+                        loaded = node.load_predictor(allow_remote_code=True, aesthetic_precision="auto")
+
+        self.assertTrue(loaded)
+        self.assertIs(node.predictor_model, model)
+        self.assertIs(node.predictor_preprocessor, preprocessor)
+        self.assertEqual("ready", node.aesthetic_status)
+        self.assertIn("float16", node.aesthetic_dtype)
+        self.assertEqual(2, model.to.call_count)
+
+    def test_keep_aesthetic_model_loaded_false_clears_predictor_after_save(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            node = self.make_node(Path(tmp) / "output")
+            node.predictor_model = object()
+            node.predictor_preprocessor = object()
+            node.aesthetic_status = "ready"
+            node.get_aesthetic_score = Mock(return_value=9.0)
+
+            result = node.save_images(
+                torch.zeros((1, 2, 2, 3), dtype=torch.float32),
+                output_path=".",
+                filename_prefix="clear_predictor",
+                show_previews="false",
+                metadata_mode="none",
+                calculate_aesthetic_score="true",
+                allow_aesthetic_remote_code="true",
+                keep_aesthetic_model_loaded="false",
+            )
+
+        self.assertEqual(["9.0000"], result["result"][2])
+        self.assertIsNone(node.predictor_model)
+        self.assertIsNone(node.predictor_preprocessor)
+        self.assertEqual("unloaded", node.aesthetic_status)
 
     @unittest.expectedFailure
     def test_external_multiline_aesthetic_scores_apply_per_image(self):

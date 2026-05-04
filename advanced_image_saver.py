@@ -6,6 +6,7 @@ import torch
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from datetime import datetime
+from importlib import import_module
 import folder_paths
 
 try:
@@ -24,6 +25,11 @@ class AdvancedImageSaver:
         
         self.predictor_model = None
         self.predictor_preprocessor = None
+        self.aesthetic_status = "unloaded"
+        self.aesthetic_last_error = ""
+        self.aesthetic_device = "unloaded"
+        self.aesthetic_dtype = "unloaded"
+        self.aesthetic_precision = "auto"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -47,6 +53,8 @@ class AdvancedImageSaver:
                 "metadata_mode": (["full", "minimal", "none"],),
                 "calculate_aesthetic_score": (["false", "true"],),
                 "allow_aesthetic_remote_code": (["false", "true"],),
+                "aesthetic_precision": (["auto", "bf16", "fp16", "fp32", "cpu_fp32"], {"default": "auto"}),
+                "keep_aesthetic_model_loaded": (["true", "false"],),
                 "aesthetic_threshold": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 10.0, "step": 0.1}),
             },
             "optional": {
@@ -224,34 +232,174 @@ class AdvancedImageSaver:
 
         return items_to_save
 
-    def load_predictor(self, allow_remote_code=False):
+    def _get_comfy_model_management(self):
+        try:
+            return import_module("comfy.model_management")
+        except Exception:
+            return None
+
+    def _get_aesthetic_device(self):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "get_torch_device"):
+            try:
+                return mm.get_torch_device()
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI device lookup failed: {e}")
+
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        return torch.device("cpu")
+
+    def _should_use_bf16(self, device):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "should_use_bf16"):
+            try:
+                return bool(mm.should_use_bf16(device))
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI BF16 capability check failed: {e}")
+
+        if getattr(device, "type", None) == "cuda" and hasattr(torch.cuda, "is_bf16_supported"):
+            try:
+                return bool(torch.cuda.is_bf16_supported())
+            except Exception:
+                return False
+        return False
+
+    def _should_use_fp16(self, device):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "should_use_fp16"):
+            try:
+                return bool(mm.should_use_fp16(device=device))
+            except TypeError:
+                try:
+                    return bool(mm.should_use_fp16(device))
+                except Exception as e:
+                    print(f"[AdvancedImageSaver] ComfyUI FP16 capability check failed: {e}")
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI FP16 capability check failed: {e}")
+
+        return getattr(device, "type", None) in {"cuda", "mps", "xpu"}
+
+    def _soft_empty_cache(self):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "soft_empty_cache"):
+            try:
+                mm.soft_empty_cache()
+                return
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI cache cleanup failed: {e}")
+
+        if torch.cuda.is_available():
+            try:
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+
+    def _aesthetic_precision_candidates(self, aesthetic_precision="auto"):
+        device = self._get_aesthetic_device()
+        device_type = getattr(device, "type", "cpu")
+
+        if aesthetic_precision == "cpu_fp32":
+            return [(torch.device("cpu"), torch.float32, "cpu_fp32")]
+        if aesthetic_precision == "fp32":
+            return [(device, torch.float32, "fp32")]
+        if aesthetic_precision == "fp16":
+            return [(device, torch.float16, "fp16")]
+        if aesthetic_precision == "bf16":
+            return [(device, torch.bfloat16, "bf16")]
+
+        candidates = []
+        if device_type != "cpu":
+            if self._should_use_bf16(device):
+                candidates.append((device, torch.bfloat16, "bf16"))
+            if self._should_use_fp16(device):
+                candidates.append((device, torch.float16, "fp16"))
+            candidates.append((device, torch.float32, "fp32"))
+        candidates.append((torch.device("cpu"), torch.float32, "cpu_fp32"))
+
+        seen = set()
+        unique = []
+        for candidate_device, candidate_dtype, label in candidates:
+            key = (str(candidate_device), str(candidate_dtype))
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append((candidate_device, candidate_dtype, label))
+        return unique
+
+    def clear_aesthetic_predictor(self):
+        self.predictor_model = None
+        self.predictor_preprocessor = None
+        self.aesthetic_status = "unloaded"
+        self.aesthetic_device = "unloaded"
+        self.aesthetic_dtype = "unloaded"
+        self.aesthetic_precision = "auto"
+        self._soft_empty_cache()
+
+    def load_predictor(self, allow_remote_code=False, aesthetic_precision="auto"):
         """加載評分模型，如果尚未加載"""
         if self.predictor_model is not None:
-            return True
+            if self.aesthetic_precision == aesthetic_precision or aesthetic_precision == "auto":
+                return True
+            self.clear_aesthetic_predictor()
 
         if not allow_remote_code:
+            self.aesthetic_status = "failed"
+            self.aesthetic_last_error = "Aesthetic scoring requires allow_aesthetic_remote_code=true."
             print("[AdvancedImageSaver] Aesthetic scoring requires allow_aesthetic_remote_code=true.")
             return False
         
         if not AESTHETIC_AVAILABLE:
+            self.aesthetic_status = "failed"
+            self.aesthetic_last_error = "aesthetic_predictor_v2_5 module not installed."
             print("[AdvancedImageSaver] Aesthetic scoring unavailable: aesthetic_predictor_v2_5 module not installed.")
             print("[AdvancedImageSaver] To install, run: pip install aesthetic-predictor-v2-5")
             return False
 
         print("[AdvancedImageSaver] Loading Aesthetic Predictor V2.5 model...")
+        self.aesthetic_status = "loading"
+        self.aesthetic_last_error = ""
+        model = None
+        preprocessor = None
         try:
             # CRITICAL: this call uses trust_remote_code; keep it behind the explicit UI opt-in.
-            self.predictor_model, self.predictor_preprocessor = convert_v2_5_from_siglip(
+            model, preprocessor = convert_v2_5_from_siglip(
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
             )
-            if torch.cuda.is_available():
-                self.predictor_model = self.predictor_model.to(torch.bfloat16).cuda()
-            print("[AdvancedImageSaver] Model loaded successfully.")
-            return True
         except Exception as e:
+            self.clear_aesthetic_predictor()
+            self.aesthetic_status = "failed"
+            self.aesthetic_last_error = f"model acquisition failed: {e}"
             print(f"[AdvancedImageSaver] Error loading model: {e}")
             return False
+
+        last_error = ""
+        for device, dtype, label in self._aesthetic_precision_candidates(aesthetic_precision):
+            try:
+                if hasattr(model, "to"):
+                    model = model.to(device=device, dtype=dtype)
+                self.predictor_model = model
+                self.predictor_preprocessor = preprocessor
+                self.aesthetic_status = "ready"
+                self.aesthetic_last_error = ""
+                self.aesthetic_device = str(device)
+                self.aesthetic_dtype = str(dtype).replace("torch.", "")
+                self.aesthetic_precision = aesthetic_precision
+                print(f"[AdvancedImageSaver] Model loaded successfully ({label} on {device}).")
+                return True
+            except Exception as e:
+                last_error = f"{label} on {device}: {e}"
+                print(f"[AdvancedImageSaver] Aesthetic precision candidate failed: {last_error}")
+                self.predictor_model = None
+                self.predictor_preprocessor = None
+                self._soft_empty_cache()
+
+        self.clear_aesthetic_predictor()
+        self.aesthetic_status = "failed"
+        self.aesthetic_last_error = f"device/dtype setup failed: {last_error}"
+        print(f"[AdvancedImageSaver] Error loading model: {self.aesthetic_last_error}")
+        return False
 
     def get_aesthetic_score(self, image_tensor):
         """計算單張圖片的美學分數"""
@@ -281,7 +429,8 @@ class AdvancedImageSaver:
                     prompt=None, extra_pnginfo=None, overwrite_mode='false', filename_number_padding=4, 
                     filename_number_start='false', embed_workflow="true", show_previews="true", 
                     metadata_mode="full", calculate_aesthetic_score="false",
-                    allow_aesthetic_remote_code="false", aesthetic_threshold=5.0,
+                    allow_aesthetic_remote_code="false", aesthetic_precision="auto",
+                    keep_aesthetic_model_loaded="true", aesthetic_threshold=5.0,
                     aesthetic_score=None):
 
         delimiter = filename_delimiter
@@ -297,7 +446,10 @@ class AdvancedImageSaver:
             if not allow_aesthetic_remote_code_bool:
                 calculate_score_bool = False
                 print("[AdvancedImageSaver] Aesthetic scoring disabled; allow_aesthetic_remote_code must be true.")
-            elif not self.load_predictor(allow_remote_code=True):
+            elif not self.load_predictor(
+                allow_remote_code=True,
+                aesthetic_precision=aesthetic_precision,
+            ):
                 calculate_score_bool = False
                 print("[AdvancedImageSaver] Aesthetic scoring disabled for this run.")
 
@@ -479,6 +631,9 @@ class AdvancedImageSaver:
         else:
 
             filtered_images_out = torch.empty((0, 1, 1, 3))
+
+        if keep_aesthetic_model_loaded == "false":
+            self.clear_aesthetic_predictor()
 
         if show_previews == 'true':
             return {"ui": {"images": results, "files": output_files}, "result": (filtered_images_out, output_files, saved_scores)}
