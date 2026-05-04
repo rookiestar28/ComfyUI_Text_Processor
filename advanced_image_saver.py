@@ -599,7 +599,8 @@ class AdvancedImageSaver:
 
         results = list()
         output_files = list()
-        saved_scores = list()
+        score_outputs = list()
+        filtered_scores = list()
         valid_images_list = list() 
         parsed_aesthetic_scores = self._parse_aesthetic_scores(aesthetic_score)
 
@@ -622,16 +623,19 @@ class AdvancedImageSaver:
                 current_score_val = self._aesthetic_score_for_index(parsed_aesthetic_scores, idx)
             
             if current_score_val is not None:
+                score_label = f"{current_score_val:.4f}"
+            elif current_score_error:
+                score_label = f"ERROR: {current_score_error}"
+            else:
+                score_label = "N/A"
+            score_outputs.append(score_label)
+
+            if current_score_val is not None:
                 if current_score_val < aesthetic_threshold:
+                    filtered_scores.append(score_label)
                     continue 
             
             valid_images_list.append(image)
-            if current_score_val is not None:
-                saved_scores.append(f"{current_score_val:.4f}")
-            elif current_score_error:
-                saved_scores.append(f"ERROR: {current_score_error}")
-            else:
-                saved_scores.append("N/A")
 
             img = self._image_tensor_to_pil(image)
 
@@ -741,7 +745,14 @@ class AdvancedImageSaver:
         if keep_aesthetic_model_loaded == "false":
             self.clear_aesthetic_predictor()
 
+        ui_payload = {
+            "images": results if show_previews == 'true' else [],
+            "files": output_files,
+            "scores": score_outputs,
+            "filtered_scores": filtered_scores,
+        }
+
         if show_previews == 'true':
-            return {"ui": {"images": results, "files": output_files}, "result": (filtered_images_out, output_files, saved_scores)}
+            return {"ui": ui_payload, "result": (filtered_images_out, output_files, score_outputs)}
         else:
-            return {"ui": {"images": []}, "result": (filtered_images_out, output_files, saved_scores)}
+            return {"ui": ui_payload, "result": (filtered_images_out, output_files, score_outputs)}

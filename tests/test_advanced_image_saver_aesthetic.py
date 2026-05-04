@@ -150,6 +150,27 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
         self.assertEqual(["7.1250", "8.2500"], result["result"][2])
         self.assertEqual(2, len(result["result"][1]))
 
+    def test_threshold_filtered_scores_are_exposed_in_ui_history_payload(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            node = self.make_node(Path(tmp) / "output")
+            images = torch.zeros((2, 2, 2, 3), dtype=torch.float32)
+
+            result = node.save_images(
+                images,
+                output_path=".",
+                filename_prefix="filtered_scores",
+                show_previews="false",
+                metadata_mode="none",
+                aesthetic_threshold=8.0,
+                aesthetic_score="7.125\n8.25",
+            )
+
+        self.assertEqual(["7.1250", "8.2500"], result["result"][2])
+        self.assertEqual(["7.1250", "8.2500"], result["ui"]["scores"])
+        self.assertEqual(["7.1250"], result["ui"]["filtered_scores"])
+        self.assertEqual(1, len(result["result"][1]))
+        self.assertEqual(1, result["result"][0].shape[0])
+
     def test_image_tensor_normalization_accepts_singleton_batch_and_float16(self):
         node = AdvancedImageSaver()
         image = torch.tensor(
