@@ -3,9 +3,11 @@ import json
 import re
 import numpy as np
 import torch
+from dataclasses import dataclass
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from datetime import datetime
+from importlib import import_module
 import folder_paths
 
 try:
@@ -16,6 +18,13 @@ except ImportError:
     print("[AdvancedImageSaver] Warning: aesthetic_predictor_v2_5 module not found.")
     print("[AdvancedImageSaver] To enable aesthetic scoring, run: pip install aesthetic-predictor-v2-5")
 
+
+@dataclass
+class AestheticScoreResult:
+    value: float | None = None
+    error: str = ""
+
+
 class AdvancedImageSaver:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
@@ -24,6 +33,11 @@ class AdvancedImageSaver:
         
         self.predictor_model = None
         self.predictor_preprocessor = None
+        self.aesthetic_status = "unloaded"
+        self.aesthetic_last_error = ""
+        self.aesthetic_device = "unloaded"
+        self.aesthetic_dtype = "unloaded"
+        self.aesthetic_precision = "auto"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -47,6 +61,8 @@ class AdvancedImageSaver:
                 "metadata_mode": (["full", "minimal", "none"],),
                 "calculate_aesthetic_score": (["false", "true"],),
                 "allow_aesthetic_remote_code": (["false", "true"],),
+                "aesthetic_precision": (["auto", "bf16", "fp16", "fp32", "cpu_fp32"], {"default": "auto"}),
+                "keep_aesthetic_model_loaded": (["true", "false"],),
                 "aesthetic_threshold": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 10.0, "step": 0.1}),
             },
             "optional": {
@@ -224,56 +240,295 @@ class AdvancedImageSaver:
 
         return items_to_save
 
-    def load_predictor(self, allow_remote_code=False):
+    def _get_comfy_model_management(self):
+        try:
+            return import_module("comfy.model_management")
+        except Exception:
+            return None
+
+    def _get_aesthetic_device(self):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "get_torch_device"):
+            try:
+                return mm.get_torch_device()
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI device lookup failed: {e}")
+
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        return torch.device("cpu")
+
+    def _should_use_bf16(self, device):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "should_use_bf16"):
+            try:
+                return bool(mm.should_use_bf16(device))
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI BF16 capability check failed: {e}")
+
+        if getattr(device, "type", None) == "cuda" and hasattr(torch.cuda, "is_bf16_supported"):
+            try:
+                return bool(torch.cuda.is_bf16_supported())
+            except Exception:
+                return False
+        return False
+
+    def _should_use_fp16(self, device):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "should_use_fp16"):
+            try:
+                return bool(mm.should_use_fp16(device=device))
+            except TypeError:
+                try:
+                    return bool(mm.should_use_fp16(device))
+                except Exception as e:
+                    print(f"[AdvancedImageSaver] ComfyUI FP16 capability check failed: {e}")
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI FP16 capability check failed: {e}")
+
+        return getattr(device, "type", None) in {"cuda", "mps", "xpu"}
+
+    def _soft_empty_cache(self):
+        mm = self._get_comfy_model_management()
+        if mm is not None and hasattr(mm, "soft_empty_cache"):
+            try:
+                mm.soft_empty_cache()
+                return
+            except Exception as e:
+                print(f"[AdvancedImageSaver] ComfyUI cache cleanup failed: {e}")
+
+        if torch.cuda.is_available():
+            try:
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+
+    def _aesthetic_precision_candidates(self, aesthetic_precision="auto"):
+        device = self._get_aesthetic_device()
+        device_type = getattr(device, "type", "cpu")
+
+        if aesthetic_precision == "cpu_fp32":
+            return [(torch.device("cpu"), torch.float32, "cpu_fp32")]
+        if aesthetic_precision == "fp32":
+            return [(device, torch.float32, "fp32")]
+        if aesthetic_precision == "fp16":
+            return [(device, torch.float16, "fp16")]
+        if aesthetic_precision == "bf16":
+            return [(device, torch.bfloat16, "bf16")]
+
+        candidates = []
+        if device_type != "cpu":
+            if self._should_use_bf16(device):
+                candidates.append((device, torch.bfloat16, "bf16"))
+            if self._should_use_fp16(device):
+                candidates.append((device, torch.float16, "fp16"))
+            candidates.append((device, torch.float32, "fp32"))
+        candidates.append((torch.device("cpu"), torch.float32, "cpu_fp32"))
+
+        seen = set()
+        unique = []
+        for candidate_device, candidate_dtype, label in candidates:
+            key = (str(candidate_device), str(candidate_dtype))
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append((candidate_device, candidate_dtype, label))
+        return unique
+
+    def clear_aesthetic_predictor(self):
+        self.predictor_model = None
+        self.predictor_preprocessor = None
+        self.aesthetic_status = "unloaded"
+        self.aesthetic_device = "unloaded"
+        self.aesthetic_dtype = "unloaded"
+        self.aesthetic_precision = "auto"
+        self._soft_empty_cache()
+
+    def load_predictor(self, allow_remote_code=False, aesthetic_precision="auto"):
         """加載評分模型，如果尚未加載"""
         if self.predictor_model is not None:
-            return True
+            if self.aesthetic_precision == aesthetic_precision or aesthetic_precision == "auto":
+                return True
+            self.clear_aesthetic_predictor()
 
         if not allow_remote_code:
+            self.aesthetic_status = "failed"
+            self.aesthetic_last_error = "Aesthetic scoring requires allow_aesthetic_remote_code=true."
             print("[AdvancedImageSaver] Aesthetic scoring requires allow_aesthetic_remote_code=true.")
             return False
         
         if not AESTHETIC_AVAILABLE:
+            self.aesthetic_status = "failed"
+            self.aesthetic_last_error = "aesthetic_predictor_v2_5 module not installed."
             print("[AdvancedImageSaver] Aesthetic scoring unavailable: aesthetic_predictor_v2_5 module not installed.")
             print("[AdvancedImageSaver] To install, run: pip install aesthetic-predictor-v2-5")
             return False
 
         print("[AdvancedImageSaver] Loading Aesthetic Predictor V2.5 model...")
+        self.aesthetic_status = "loading"
+        self.aesthetic_last_error = ""
+        model = None
+        preprocessor = None
         try:
             # CRITICAL: this call uses trust_remote_code; keep it behind the explicit UI opt-in.
-            self.predictor_model, self.predictor_preprocessor = convert_v2_5_from_siglip(
+            model, preprocessor = convert_v2_5_from_siglip(
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
             )
-            if torch.cuda.is_available():
-                self.predictor_model = self.predictor_model.to(torch.bfloat16).cuda()
-            print("[AdvancedImageSaver] Model loaded successfully.")
-            return True
         except Exception as e:
+            self.clear_aesthetic_predictor()
+            self.aesthetic_status = "failed"
+            self.aesthetic_last_error = f"model acquisition failed: {e}"
             print(f"[AdvancedImageSaver] Error loading model: {e}")
             return False
+
+        last_error = ""
+        for device, dtype, label in self._aesthetic_precision_candidates(aesthetic_precision):
+            try:
+                if hasattr(model, "to"):
+                    model = model.to(device=device, dtype=dtype)
+                self.predictor_model = model
+                self.predictor_preprocessor = preprocessor
+                self.aesthetic_status = "ready"
+                self.aesthetic_last_error = ""
+                self.aesthetic_device = str(device)
+                self.aesthetic_dtype = str(dtype).replace("torch.", "")
+                self.aesthetic_precision = aesthetic_precision
+                print(f"[AdvancedImageSaver] Model loaded successfully ({label} on {device}).")
+                return True
+            except Exception as e:
+                last_error = f"{label} on {device}: {e}"
+                print(f"[AdvancedImageSaver] Aesthetic precision candidate failed: {last_error}")
+                self.predictor_model = None
+                self.predictor_preprocessor = None
+                self._soft_empty_cache()
+
+        self.clear_aesthetic_predictor()
+        self.aesthetic_status = "failed"
+        self.aesthetic_last_error = f"device/dtype setup failed: {last_error}"
+        print(f"[AdvancedImageSaver] Error loading model: {self.aesthetic_last_error}")
+        return False
+
+    def _image_tensor_to_pil(self, image_tensor, force_rgb=False):
+        if not isinstance(image_tensor, torch.Tensor):
+            raise TypeError("image must be a torch.Tensor")
+
+        tensor = image_tensor.detach()
+        if tensor.ndim == 4:
+            if tensor.shape[0] != 1:
+                raise ValueError(f"expected a single image tensor, got batch size {tensor.shape[0]}")
+            tensor = tensor[0]
+        if tensor.ndim == 2:
+            tensor = tensor.unsqueeze(-1)
+        if tensor.ndim != 3:
+            raise ValueError(f"expected HWC image tensor, got rank {tensor.ndim}")
+
+        channels = tensor.shape[-1]
+        if channels not in (1, 3, 4):
+            raise ValueError(f"expected 1, 3, or 4 image channels, got {channels}")
+
+        # IMPORTANT: cast before numpy; bfloat16 tensors cannot be converted directly on CPU.
+        tensor = tensor.to(device="cpu", dtype=torch.float32)
+        tensor = torch.nan_to_num(tensor, nan=0.0, posinf=1.0, neginf=0.0)
+        tensor = tensor.clamp(0.0, 1.0)
+        array = (tensor.numpy() * 255.0).round().astype(np.uint8)
+        array = np.ascontiguousarray(array)
+
+        if channels == 1:
+            image = Image.fromarray(array[:, :, 0], mode="L")
+        else:
+            image = Image.fromarray(array)
+
+        if force_rgb and image.mode != "RGB":
+            image = image.convert("RGB")
+        return image
+
+    def _aesthetic_tensor_to_pil(self, image_tensor):
+        return self._image_tensor_to_pil(image_tensor, force_rgb=True)
+
+    def _parse_aesthetic_scores(self, aesthetic_score):
+        if aesthetic_score is None:
+            return []
+
+        if isinstance(aesthetic_score, (int, float)):
+            return [float(aesthetic_score)]
+
+        raw_items = aesthetic_score if isinstance(aesthetic_score, (list, tuple)) else [aesthetic_score]
+        scores = []
+        for item in raw_items:
+            if isinstance(item, (int, float)):
+                scores.append(float(item))
+                continue
+            if item is None:
+                continue
+            text = str(item).strip()
+            if not text:
+                continue
+            text = text.strip("[]()")
+            for token in re.split(r"[\s,;]+", text):
+                if not token:
+                    continue
+                try:
+                    scores.append(float(token))
+                except ValueError:
+                    print(f"[AdvancedImageSaver] Ignoring invalid aesthetic score token: {token}")
+        return scores
+
+    def _aesthetic_score_for_index(self, parsed_scores, idx):
+        if not parsed_scores:
+            return None
+        if idx < len(parsed_scores):
+            return parsed_scores[idx]
+        return parsed_scores[-1]
+
+    def _coerce_score_result(self, score_result):
+        if isinstance(score_result, AestheticScoreResult):
+            return score_result
+        if score_result is None:
+            return AestheticScoreResult(value=None)
+        try:
+            return AestheticScoreResult(value=float(score_result))
+        except (TypeError, ValueError):
+            return AestheticScoreResult(value=None, error=str(score_result))
 
     def get_aesthetic_score(self, image_tensor):
         """計算單張圖片的美學分數"""
         try:
-            # Convert to numpy, scale to 255, uint8
-            img_np = (image_tensor.cpu().numpy() * 255).astype(np.uint8)
-            image = Image.fromarray(img_np).convert("RGB")
+            image = self._aesthetic_tensor_to_pil(image_tensor)
             
             # Preprocess
             pixel_values = self.predictor_preprocessor(images=image, return_tensors="pt").pixel_values
 
-            if torch.cuda.is_available():
-                pixel_values = pixel_values.to(torch.bfloat16).cuda()
+            if isinstance(pixel_values, torch.Tensor):
+                target_device = None if self.aesthetic_device == "unloaded" else self.aesthetic_device
+                dtype_map = {
+                    "bfloat16": torch.bfloat16,
+                    "float16": torch.float16,
+                    "float32": torch.float32,
+                }
+                target_dtype = dtype_map.get(self.aesthetic_dtype)
+                to_kwargs = {}
+                if target_device is not None:
+                    to_kwargs["device"] = target_device
+                if target_dtype is not None:
+                    to_kwargs["dtype"] = target_dtype
+                if to_kwargs:
+                    pixel_values = pixel_values.to(**to_kwargs)
 
             # Predict
             with torch.inference_mode():
-                score = self.predictor_model(pixel_values).logits.squeeze().float().cpu().numpy()
+                model_output = self.predictor_model(pixel_values)
+                logits = getattr(model_output, "logits", model_output)
+                if isinstance(logits, torch.Tensor):
+                    logits = logits.squeeze().float().detach().cpu()
+                    score = logits.reshape(-1)[0].item()
+                else:
+                    score = np.asarray(logits).squeeze().reshape(-1)[0]
             
-            return float(score)
+            return AestheticScoreResult(value=float(score))
         except Exception as e:
             print(f"[AdvancedImageSaver] Prediction failed: {e}")
-            return 0.0
+            return AestheticScoreResult(value=None, error=str(e))
 
     def save_images(self, images, output_path='', allow_absolute_output_path="false",
                     filename_prefix="ComfyUI", filename_delimiter='_',
@@ -281,7 +536,8 @@ class AdvancedImageSaver:
                     prompt=None, extra_pnginfo=None, overwrite_mode='false', filename_number_padding=4, 
                     filename_number_start='false', embed_workflow="true", show_previews="true", 
                     metadata_mode="full", calculate_aesthetic_score="false",
-                    allow_aesthetic_remote_code="false", aesthetic_threshold=5.0,
+                    allow_aesthetic_remote_code="false", aesthetic_precision="auto",
+                    keep_aesthetic_model_loaded="true", aesthetic_threshold=5.0,
                     aesthetic_score=None):
 
         delimiter = filename_delimiter
@@ -297,7 +553,10 @@ class AdvancedImageSaver:
             if not allow_aesthetic_remote_code_bool:
                 calculate_score_bool = False
                 print("[AdvancedImageSaver] Aesthetic scoring disabled; allow_aesthetic_remote_code must be true.")
-            elif not self.load_predictor(allow_remote_code=True):
+            elif not self.load_predictor(
+                allow_remote_code=True,
+                aesthetic_precision=aesthetic_precision,
+            ):
                 calculate_score_bool = False
                 print("[AdvancedImageSaver] Aesthetic scoring disabled for this run.")
 
@@ -340,42 +599,45 @@ class AdvancedImageSaver:
 
         results = list()
         output_files = list()
-        saved_scores = list()
+        score_outputs = list()
+        filtered_scores = list()
         valid_images_list = list() 
+        parsed_aesthetic_scores = self._parse_aesthetic_scores(aesthetic_score)
 
         for idx, image in enumerate(images):
             
             should_save = True
             current_score_val = None
+            current_score_error = ""
 
             if calculate_score_bool and self.predictor_model is not None:
-                current_score_val = self.get_aesthetic_score(image)
-                print(f"[AdvancedImageSaver] Image {idx} Score: {current_score_val:.4f}")
+                score_result = self._coerce_score_result(self.get_aesthetic_score(image))
+                current_score_val = score_result.value
+                current_score_error = score_result.error
+                if current_score_val is not None:
+                    print(f"[AdvancedImageSaver] Image {idx} Score: {current_score_val:.4f}")
+                elif current_score_error:
+                    print(f"[AdvancedImageSaver] Image {idx} Score unavailable: {current_score_error}")
 
-            elif aesthetic_score is not None:
-                try:
-                    if isinstance(aesthetic_score, list):
-                        if idx < len(aesthetic_score):
-                            current_score_val = float(aesthetic_score[idx])
-                        else:
-                            current_score_val = float(aesthetic_score[-1])
-                    else:
-                        current_score_val = float(aesthetic_score)
-                except (ValueError, TypeError):
-                    pass
+            elif parsed_aesthetic_scores:
+                current_score_val = self._aesthetic_score_for_index(parsed_aesthetic_scores, idx)
             
             if current_score_val is not None:
+                score_label = f"{current_score_val:.4f}"
+            elif current_score_error:
+                score_label = f"ERROR: {current_score_error}"
+            else:
+                score_label = "N/A"
+            score_outputs.append(score_label)
+
+            if current_score_val is not None:
                 if current_score_val < aesthetic_threshold:
+                    filtered_scores.append(score_label)
                     continue 
             
             valid_images_list.append(image)
-            if current_score_val is not None:
-                saved_scores.append(f"{current_score_val:.4f}")
-            else:
-                saved_scores.append("N/A")
 
-            i = 255. * image.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            img = self._image_tensor_to_pil(image)
 
             exif_data = None
             if metadata_mode != "none":
@@ -480,7 +742,17 @@ class AdvancedImageSaver:
 
             filtered_images_out = torch.empty((0, 1, 1, 3))
 
+        if keep_aesthetic_model_loaded == "false":
+            self.clear_aesthetic_predictor()
+
+        ui_payload = {
+            "images": results if show_previews == 'true' else [],
+            "files": output_files,
+            "scores": score_outputs,
+            "filtered_scores": filtered_scores,
+        }
+
         if show_previews == 'true':
-            return {"ui": {"images": results, "files": output_files}, "result": (filtered_images_out, output_files, saved_scores)}
+            return {"ui": ui_payload, "result": (filtered_images_out, output_files, score_outputs)}
         else:
-            return {"ui": {"images": []}, "result": (filtered_images_out, output_files, saved_scores)}
+            return {"ui": ui_payload, "result": (filtered_images_out, output_files, score_outputs)}
