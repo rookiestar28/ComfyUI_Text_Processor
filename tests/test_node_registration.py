@@ -22,7 +22,7 @@ EXPECTED_NODE_IDS = {
     "TP_SaveMask",
     "TP_LoadMask",
     "image_concat_advanced",
-    "Load Image Batch",
+    "LoadImageBatch",
 }
 
 
@@ -63,6 +63,7 @@ class NodeRegistrationTests(unittest.TestCase):
 
             self.assertEqual(EXPECTED_NODE_IDS, set(module.NODE_CLASS_MAPPINGS))
             self.assertEqual(EXPECTED_NODE_IDS, set(module.NODE_DISPLAY_NAME_MAPPINGS))
+            self.assertEqual("Load Image Batch", module.NODE_DISPLAY_NAME_MAPPINGS["LoadImageBatch"])
             for node_id, node_class in module.NODE_CLASS_MAPPINGS.items():
                 self.assertTrue(callable(node_class), node_id)
                 self.assertTrue(
@@ -72,7 +73,7 @@ class NodeRegistrationTests(unittest.TestCase):
                 )
 
             metadata_expectations = {
-                "Load Image Batch": ("DESCRIPTION", "SEARCH_ALIASES"),
+                "LoadImageBatch": ("DESCRIPTION", "SEARCH_ALIASES"),
                 "TP_LoadMask": ("DESCRIPTION", "SEARCH_ALIASES"),
                 "TP_SaveMask": ("DESCRIPTION", "SEARCH_ALIASES"),
             }

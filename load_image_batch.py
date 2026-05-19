@@ -158,9 +158,10 @@ class LoadImageBatch:
 
 
 NODE_CLASS_MAPPINGS = {
-    "Load Image Batch": LoadImageBatch,
+    # IMPORTANT: keep the node id distinct from WAS Suite's "Load Image Batch" id to avoid ComfyUI registration collisions.
+    "LoadImageBatch": LoadImageBatch,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Load Image Batch": "Load Image Batch",
+    "LoadImageBatch": "Load Image Batch",
 }

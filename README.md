@@ -216,7 +216,7 @@ A handy utility to crop images directly within your workflow.
 
 Image and mask IO utilities for workflows that need to load batch images or persist mask data.
 
-* **Load Image Batch:** Loads one `IMAGE` from a directory by `path` + relative `pattern`, with single, incremental, or seeded-random selection.
+* **Load Image Batch:** Loads one `IMAGE` from a directory by `path` + relative `pattern`, with single, incremental, or seeded-random selection. Registered as `LoadImageBatch`.
 * **Save Mask:** Writes masks to the ComfyUI output directory as PNG files.
 * **Load Mask:** Loads supported image files from the ComfyUI input directory and converts them to `MASK`.
 * **ComfyUI Integration:** Uses ComfyUI input/output path helpers when available.
