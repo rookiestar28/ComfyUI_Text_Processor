@@ -22,6 +22,7 @@ EXPECTED_NODE_IDS = {
     "TP_SaveMask",
     "TP_LoadMask",
     "image_concat_advanced",
+    "Load Image Batch",
 }
 
 

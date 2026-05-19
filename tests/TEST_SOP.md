@@ -90,6 +90,7 @@ advanced_image_saver.py
 image_cropper.py
 mask_nodes.py
 Image_concat_advanced.py
+load_image_batch.py
 ```
 
 ## One-command Full Test Scripts
@@ -156,7 +157,8 @@ python -m py_compile `
   advanced_image_saver.py `
   image_cropper.py `
   mask_nodes.py `
-  Image_concat_advanced.py
+  Image_concat_advanced.py `
+  load_image_batch.py
 ```
 
 Bash:
@@ -175,7 +177,8 @@ python -m py_compile \
   advanced_image_saver.py \
   image_cropper.py \
   mask_nodes.py \
-  Image_concat_advanced.py
+  Image_concat_advanced.py \
+  load_image_batch.py
 ```
 
 ### 4. Focused changed-node checks
