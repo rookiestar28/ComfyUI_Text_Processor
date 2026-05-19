@@ -51,7 +51,8 @@ conda run -n comfyui python -m py_compile `
   advanced_image_saver.py `
   image_cropper.py `
   mask_nodes.py `
-  Image_concat_advanced.py
+  Image_concat_advanced.py `
+  load_image_batch.py
 ```
 
 Run focused changed-node assertions.
@@ -101,7 +102,8 @@ python -m py_compile \
   advanced_image_saver.py \
   image_cropper.py \
   mask_nodes.py \
-  Image_concat_advanced.py
+  Image_concat_advanced.py \
+  load_image_batch.py
 ```
 
 Run focused changed-node assertions with deterministic inputs.

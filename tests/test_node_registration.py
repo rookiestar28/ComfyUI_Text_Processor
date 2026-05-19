@@ -22,6 +22,7 @@ EXPECTED_NODE_IDS = {
     "TP_SaveMask",
     "TP_LoadMask",
     "image_concat_advanced",
+    "LoadImageBatch",
 }
 
 
@@ -62,8 +63,25 @@ class NodeRegistrationTests(unittest.TestCase):
 
             self.assertEqual(EXPECTED_NODE_IDS, set(module.NODE_CLASS_MAPPINGS))
             self.assertEqual(EXPECTED_NODE_IDS, set(module.NODE_DISPLAY_NAME_MAPPINGS))
+            self.assertEqual("Load Image Batch", module.NODE_DISPLAY_NAME_MAPPINGS["LoadImageBatch"])
             for node_id, node_class in module.NODE_CLASS_MAPPINGS.items():
                 self.assertTrue(callable(node_class), node_id)
+                self.assertTrue(
+                    node_class.CATEGORY == "ComfyUI Text Processor"
+                    or node_class.CATEGORY.startswith("ComfyUI Text Processor/"),
+                    f"{node_id} has unexpected category {node_class.CATEGORY!r}",
+                )
+
+            metadata_expectations = {
+                "LoadImageBatch": ("DESCRIPTION", "SEARCH_ALIASES"),
+                "TP_LoadMask": ("DESCRIPTION", "SEARCH_ALIASES"),
+                "TP_SaveMask": ("DESCRIPTION", "SEARCH_ALIASES"),
+            }
+            for node_id, attributes in metadata_expectations.items():
+                node_class = module.NODE_CLASS_MAPPINGS[node_id]
+                for attribute in attributes:
+                    value = getattr(node_class, attribute, None)
+                    self.assertTrue(value, f"{node_id} missing {attribute}")
 
 
 if __name__ == "__main__":
