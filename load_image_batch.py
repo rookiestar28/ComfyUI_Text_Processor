@@ -42,6 +42,8 @@ class LoadImageBatch:
     RETURN_NAMES = ("image", "filename_text")
     FUNCTION = "load_batch_images"
     CATEGORY = "ComfyUI Text Processor/Image"
+    DESCRIPTION = "Loads one image from a directory batch using single, incremental, or seeded-random selection."
+    SEARCH_ALIASES = ["load image batch", "batch image loader", "image directory", "load folder images"]
 
     @classmethod
     def clear_state(cls):

@@ -4,6 +4,43 @@ import torch
 from PIL import Image, ImageOps
 import folder_paths
 
+
+SUPPORTED_MASK_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.bmp', '.webp', '.tiff'}
+
+
+def _walk_input_images(input_dir):
+    files = []
+    if not os.path.exists(input_dir):
+        return files
+
+    for root, _dirs, filenames in os.walk(input_dir):
+        for filename in filenames:
+            if os.path.splitext(filename)[1].lower() in SUPPORTED_MASK_IMAGE_EXTENSIONS:
+                filepath = os.path.join(root, filename)
+                rel_path = os.path.relpath(filepath, input_dir)
+                files.append(rel_path.replace("\\", "/"))
+    return files
+
+
+def _filter_by_supported_extension(files):
+    return [
+        file
+        for file in files
+        if os.path.splitext(file)[1].lower() in SUPPORTED_MASK_IMAGE_EXTENSIONS
+    ]
+
+
+def _list_input_images(input_dir):
+    try:
+        files = folder_paths.get_filename_list("input")
+        # IMPORTANT: keep the fallback path; older ComfyUI stubs may not expose MIME filtering.
+        content_filter = getattr(folder_paths, "filter_files_content_types", None)
+        if callable(content_filter):
+            return content_filter(files, ["image"])
+        return _filter_by_supported_extension(files)
+    except (KeyError, AttributeError):
+        return _walk_input_images(input_dir)
+
 class TP_SaveMask:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
@@ -23,6 +60,8 @@ class TP_SaveMask:
     FUNCTION = "save_mask"
     OUTPUT_NODE = True
     CATEGORY = "ComfyUI Text Processor/Image"
+    DESCRIPTION = "Writes MASK tensors to the ComfyUI output directory as PNG files."
+    SEARCH_ALIASES = ["save mask", "mask output", "export mask", "write mask"]
 
     def save_mask(self, mask, filename_prefix="Mask_Output"):
         full_output_folder, filename, counter, subfolder, filename_prefix = \
@@ -48,22 +87,7 @@ class TP_LoadMask:
     @classmethod
     def INPUT_TYPES(s):
         input_dir = folder_paths.get_input_directory()
-        files = []
-        
-        try:
-            files = folder_paths.get_filename_list("input")
-        except (KeyError, AttributeError):
-            if os.path.exists(input_dir):
-                supported_ext = {'.png', '.jpg', '.jpeg', '.bmp', '.webp', '.tiff'}
-                for root, dirs, filenames in os.walk(input_dir):
-                    for filename in filenames:
-                        if os.path.splitext(filename)[1].lower() in supported_ext:
-                            filepath = os.path.join(root, filename)
-                            rel_path = os.path.relpath(filepath, input_dir)
-                            rel_path = rel_path.replace("\\", "/") 
-                            files.append(rel_path)
-            else:
-                files = []
+        files = _list_input_images(input_dir)
         
         return {
             "required": {
@@ -74,6 +98,8 @@ class TP_LoadMask:
     CATEGORY = "ComfyUI Text Processor/Image"
     RETURN_TYPES = ("MASK", )
     FUNCTION = "load_mask"
+    DESCRIPTION = "Loads an image from the ComfyUI input directory and converts it to a MASK."
+    SEARCH_ALIASES = ["load mask", "import mask", "open mask", "image to mask", "alpha mask"]
 
     def load_mask(self, image):
         image_path = folder_paths.get_annotated_filepath(image)

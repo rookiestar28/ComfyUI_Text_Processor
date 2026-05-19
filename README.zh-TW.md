@@ -209,10 +209,11 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 * **可選縮放：** 裁切後可再依最長邊、最短邊、寬或高做縮放。
 * **批量處理：** 支援對批量圖片 (Image Batches) 進行裁切。
 
-### Save Mask / Load Mask
+### Image and Mask IO (圖片與遮罩輸入輸出)
 
-提供遮罩輸入輸出的工具節點，便於在工作流中重複使用 mask。
+提供圖片與遮罩輸入輸出的工具節點，便於載入批次圖片或在工作流中重複使用 mask。
 
+* **Load Image Batch：** 依 `path` 與相對 `pattern` 從資料夾載入一張 `IMAGE`，支援固定索引、逐張遞增與可重現隨機選取。
 * **Save Mask：** 將 `MASK` 以 PNG 形式寫入 ComfyUI output 目錄。
 * **Load Mask：** 從 ComfyUI input 目錄載入支援的圖片檔並轉成 `MASK`。
 * **ComfyUI 整合：** 優先使用 ComfyUI 的 input/output 路徑輔助函式。

@@ -79,6 +79,42 @@ class MaskNodeBehaviorTests(unittest.TestCase):
         self.assertLessEqual(float(mask.max()), 1.0)
         self.assertAlmostEqual(float(mask[0, 1, 0]), 1.0)
 
+    def test_load_mask_input_types_prefers_comfyui_content_type_filter(self):
+        folder_paths = sys.modules["folder_paths"]
+        calls = []
+        folder_paths.get_filename_list = lambda _category: ["mask.png", "notes.txt", "photo.webp"]
+
+        def filter_files_content_types(files, content_types):
+            calls.append((list(files), list(content_types)))
+            return [file for file in files if file.endswith((".png", ".webp"))]
+
+        folder_paths.filter_files_content_types = filter_files_content_types
+
+        input_types = self.mask_nodes.TP_LoadMask.INPUT_TYPES()
+
+        self.assertEqual([(["mask.png", "notes.txt", "photo.webp"], ["image"])], calls)
+        self.assertEqual(["mask.png", "photo.webp"], input_types["required"]["image"][0])
+
+    def test_load_mask_input_types_filters_extensions_when_content_type_helper_is_missing(self):
+        folder_paths = sys.modules["folder_paths"]
+        folder_paths.get_filename_list = lambda _category: ["mask.png", "notes.txt", "photo.webp"]
+
+        input_types = self.mask_nodes.TP_LoadMask.INPUT_TYPES()
+
+        self.assertEqual(["mask.png", "photo.webp"], input_types["required"]["image"][0])
+
+    def test_load_mask_input_types_keeps_recursive_extension_fallback(self):
+        folder_paths = sys.modules["folder_paths"]
+        folder_paths.get_filename_list = lambda _category: (_ for _ in ()).throw(AttributeError("missing"))
+        nested = self.input_dir / "nested"
+        nested.mkdir()
+        Image.new("RGB", (1, 1), (1, 2, 3)).save(nested / "mask.png")
+        (nested / "notes.txt").write_text("not an image", encoding="utf-8")
+
+        input_types = self.mask_nodes.TP_LoadMask.INPUT_TYPES()
+
+        self.assertEqual(["nested/mask.png"], input_types["required"]["image"][0])
+
 
 class ImageCropperBehaviorTests(unittest.TestCase):
     def setUp(self):

@@ -80,7 +80,7 @@ class AdvancedImageSaver:
 
     OUTPUT_NODE = True
 
-    CATEGORY = "Text Processor/IO"
+    CATEGORY = "ComfyUI Text Processor/IO"
 
     def parse_name(self, text):
         if not text:
