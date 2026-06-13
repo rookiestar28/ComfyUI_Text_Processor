@@ -8,6 +8,8 @@
 
 **01/2026 更新：** 在 add_text_to_image 節點新增智慧文字自適應功能 `auto_adapt` 開關 - 自動換行過長文字並調整字體大小以符合圖片尺寸，另提供截斷模式搭配省略號以固定字體渲染。現已同步強制高度與寬度檢查。
 
+**06/2026 相容性更新：** 已為目前 ComfyUI 搜尋與說明介面補上節點 metadata。Advanced Image Saver 在明確允許輸出到 ComfyUI output 以外的絕對路徑時，仍會於 `files` 回傳已儲存路徑，但不再產生 ComfyUI 預覽。Load Image Batch 與 Load Mask 會在 ComfyUI 支援時提供 validation hooks；Text Storage 會優先使用 ComfyUI user directory，並維持對舊版 plugin-local 資料的讀取相容性。
+
 專為 ComfyUI 打造的進階自動化工具套件，連結原始數據與生成式 AI。具備批量文字清洗（針對圖生文工作流）、LLM 輸出解析、動態通配符以及邏輯運算功能，旨在簡化複雜的提示工程工作流。
 
 ---
@@ -116,7 +118,7 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
   * `mode`:
     * **Add New (Auto Rename)**: 新增模式。若檔名重複會自動更名 (例如 `Log_2024-11-26_001.txt`)，避免覆蓋。
     * **Overwrite Existing**: 覆蓋模式。若檔名存在則直接覆蓋內容。
-    * **Delete**: 刪除模式。移除指定的檔案或鍵值。
+    * **Delete**: 刪除模式。若新舊儲存位置都存在同名資料，會同時移除目前 user directory storage 與舊版 plugin-local storage 中的指定檔案或鍵值。
   * **`storage_format` (新功能!)**:
     * `json`: 作為鍵值對 (Key-Value) 儲存在內部的 `text_storage.json` 資料庫中。
     * `txt`: 儲存為獨立的 `.txt` 文字檔，方便外部編輯或查看。
@@ -173,7 +175,8 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
   * 可選擇使用 **Aesthetic Predictor V2.5** 評分模型；若要啟用請先執行 `pip install aesthetic-predictor-v2-5`。
   * `calculate_aesthetic_score` 會啟用節點內建的逐張圖片評分。
   * 內建評分的模型載入流程需要 trusted remote code，因此 `allow_aesthetic_remote_code` 預設停用，必須明確啟用後才會載入模型。
-  * 若評分器可用，會在可用時自動使用 CUDA 加速。
+  * `aesthetic_precision` 支援 `auto`、`bf16`、`fp16`、`fp32` 與 `cpu_fp32`；`auto` 會選用目前支援的最佳 device/precision，並在需要時自動 fallback。
+  * `keep_aesthetic_model_loaded` 控制評分器是否在單次執行後保留於快取中。
   * 可選的 `aesthetic_score` 輸入可直接接收外部評分，不需載入內建評分模型。
   * 低於 `aesthetic_threshold` 的圖片會從輸出中濾除。
 * **靈活的輸出路徑:**

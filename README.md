@@ -10,6 +10,8 @@ An advanced automation toolkit for ComfyUI, bridging the gap between raw data an
 
 **01/2026 update:** Add Text to Image node now supports intelligent text adaptation with `auto_adapt` toggle - automatically wraps long text and adjusts font size to fit image dimensions, plus truncation mode with ellipsis for fixed-size rendering. Height constraints are now enforced alongside width checks.
 
+**06/2026 compatibility update:** Host-facing node metadata has been added for current ComfyUI search/help surfaces. Advanced Image Saver now omits previews for explicitly allowed absolute output paths outside ComfyUI output while still returning saved paths in `files`. Load Image Batch and Load Mask expose validation hooks where ComfyUI supports them, and Text Storage prefers the ComfyUI user directory while keeping legacy plugin-local entries readable.
+
 ---
 
 ## 1. Advanced Text Filter Node (Core)
@@ -117,7 +119,7 @@ Saves text content to a file or internal database.
   * `mode`:
     * **Add New (Auto Rename)**: Automatically avoids conflicts by renaming (e.g., `Log_2024-11-26_001.txt`).
     * **Overwrite Existing**: Replaces content if the name exists.
-    * **Delete**: Removes the specified file/key.
+    * **Delete**: Removes the specified file/key from both the current user-directory storage and legacy plugin-local storage when both exist.
   * **`storage_format` (New!)**:
     * `json`: Saves as a key inside the internal `text_storage.json` database.
     * `txt`: Saves as a standalone `.txt` file for easy external editing.
@@ -176,7 +178,8 @@ A professional-grade image export node with advanced quality control and aesthet
   * Optional support for the **Aesthetic Predictor V2.5** model; install it with `pip install aesthetic-predictor-v2-5`.
   * `calculate_aesthetic_score` enables built-in scoring for each image.
   * Built-in scoring uses a loader that requires trusted remote code, so `allow_aesthetic_remote_code` is disabled by default and must be explicitly enabled before the model will load.
-  * When the predictor is available, scoring uses CUDA automatically when available.
+  * `aesthetic_precision` supports `auto`, `bf16`, `fp16`, `fp32`, and `cpu_fp32`; `auto` uses the best supported device/precision and falls back when needed.
+  * `keep_aesthetic_model_loaded` controls whether the scorer remains cached after a run.
   * The optional `aesthetic_score` input lets you supply external scores without loading the built-in predictor.
   * Images scoring below `aesthetic_threshold` are filtered from the outputs.
 * **Flexible Output Path:**
