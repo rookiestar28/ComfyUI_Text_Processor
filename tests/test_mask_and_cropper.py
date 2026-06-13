@@ -115,6 +115,22 @@ class MaskNodeBehaviorTests(unittest.TestCase):
 
         self.assertEqual(["nested/mask.png"], input_types["required"]["image"][0])
 
+    def test_load_mask_validate_inputs_uses_host_existence_helper(self):
+        folder_paths = sys.modules["folder_paths"]
+        checked = []
+
+        def exists_annotated_filepath(name):
+            checked.append(name)
+            return name == "mask.png"
+
+        folder_paths.exists_annotated_filepath = exists_annotated_filepath
+
+        self.assertTrue(self.mask_nodes.TP_LoadMask.VALIDATE_INPUTS("mask.png"))
+        invalid = self.mask_nodes.TP_LoadMask.VALIDATE_INPUTS("missing.png")
+        self.assertIsInstance(invalid, str)
+        self.assertIn("Invalid mask image file", invalid)
+        self.assertEqual(["mask.png", "missing.png"], checked)
+
 
 class ImageCropperBehaviorTests(unittest.TestCase):
     def setUp(self):

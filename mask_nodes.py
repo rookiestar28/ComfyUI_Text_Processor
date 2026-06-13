@@ -102,6 +102,22 @@ class TP_LoadMask:
     SEARCH_ALIASES = ["load mask", "import mask", "open mask", "image to mask", "alpha mask"]
     OUTPUT_TOOLTIPS = ("Loaded grayscale mask tensor.",)
 
+    @classmethod
+    def VALIDATE_INPUTS(s, image):
+        exists_annotated = getattr(folder_paths, "exists_annotated_filepath", None)
+        if callable(exists_annotated):
+            if not exists_annotated(image):
+                return f"Invalid mask image file: {image}"
+            return True
+
+        try:
+            image_path = folder_paths.get_annotated_filepath(image)
+        except Exception:
+            return True
+        if image_path and os.path.exists(image_path):
+            return True
+        return f"Invalid mask image file: {image}"
+
     def load_mask(self, image):
         image_path = folder_paths.get_annotated_filepath(image)
         i = Image.open(image_path)

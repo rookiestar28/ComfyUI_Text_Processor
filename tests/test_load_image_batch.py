@@ -157,6 +157,55 @@ class LoadImageBatchTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Failed to load image"):
             self.node.load_batch_images(path=str(self.root), pattern="*.png")
 
+    def test_validate_inputs_accepts_valid_static_image_match(self):
+        _save_image(self.root / "a.png", (1, 2, 3))
+
+        result = LoadImageBatch.VALIDATE_INPUTS(
+            path=str(self.root),
+            pattern="*.png",
+            index=0,
+            mode="single_image",
+        )
+
+        self.assertTrue(result)
+
+    def test_validate_inputs_reports_missing_empty_unsafe_and_index_errors(self):
+        missing = LoadImageBatch.VALIDATE_INPUTS(path=str(self.root / "missing"), pattern="*.png")
+        self.assertIsInstance(missing, str)
+        self.assertIn("does not exist", missing)
+
+        empty = LoadImageBatch.VALIDATE_INPUTS(path=str(self.root), pattern="*.png")
+        self.assertIsInstance(empty, str)
+        self.assertIn("No images found", empty)
+
+        unsafe = LoadImageBatch.VALIDATE_INPUTS(path=str(self.root), pattern="../*.png")
+        self.assertIsInstance(unsafe, str)
+        self.assertIn("Unsafe image pattern", unsafe)
+
+        _save_image(self.root / "a.png", (1, 2, 3))
+        invalid_index = LoadImageBatch.VALIDATE_INPUTS(
+            path=str(self.root),
+            pattern="*.png",
+            index=5,
+            mode="single_image",
+        )
+        self.assertIsInstance(invalid_index, str)
+        self.assertIn("Invalid image index", invalid_index)
+
+    def test_validate_inputs_does_not_advance_incremental_state(self):
+        _save_image(self.root / "a.png", (1, 2, 3))
+        _save_image(self.root / "b.png", (4, 5, 6))
+
+        result = LoadImageBatch.VALIDATE_INPUTS(
+            path=str(self.root),
+            pattern="*.png",
+            mode="incremental_image",
+            label="batch",
+        )
+
+        self.assertTrue(result)
+        self.assertEqual({}, LoadImageBatch._incremental_state)
+
 
 if __name__ == "__main__":
     unittest.main()

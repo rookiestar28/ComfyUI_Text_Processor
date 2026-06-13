@@ -47,6 +47,18 @@ class LoadImageBatch:
     OUTPUT_TOOLTIPS = ("Loaded image tensor.", "Selected filename text.")
 
     @classmethod
+    def VALIDATE_INPUTS(cls, path, pattern="*", index=0, mode="single_image", **_kwargs):
+        try:
+            image_paths = cls._list_image_paths(str(path), str(pattern))
+            if str(mode) == "single_image":
+                selected_index = int(index)
+                if selected_index < 0 or selected_index >= len(image_paths):
+                    return f"Invalid image index {selected_index}; valid range is 0..{len(image_paths) - 1}."
+            return True
+        except (TypeError, ValueError) as exc:
+            return str(exc)
+
+    @classmethod
     def clear_state(cls):
         cls._incremental_state.clear()
 
