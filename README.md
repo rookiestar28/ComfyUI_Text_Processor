@@ -202,7 +202,7 @@ A professional-grade image export node with advanced quality control and aesthet
   * WebP: Stores metadata in EXIF tags (Make/ImageDescription).
 * **Output Control:**
   * **Three Outputs**: `filtered_images` (IMAGE), `files` (paths), `scores` (aesthetic scores).
-  * Optional preview toggle for headless workflows.
+  * Optional preview toggle for headless workflows. When saving to an absolute path outside ComfyUI output, the file is still returned in `files`, but ComfyUI previews are omitted because `/view` only serves host-managed output paths.
   * Returns only images that pass aesthetic threshold for downstream nodes.
 
 ### Image Cropper

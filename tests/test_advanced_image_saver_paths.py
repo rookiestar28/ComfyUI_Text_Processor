@@ -80,6 +80,49 @@ class AdvancedImageSaverPathTests(unittest.TestCase):
             self.assertEqual(saved_path.parent, output_dir.resolve())
             self.assertIn("_bad_name", saved_path.name)
 
+    def test_preview_payload_is_kept_for_output_directory_save(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "output"
+            node = self.make_node(output_dir)
+            image = torch.zeros((1, 2, 2, 3), dtype=torch.float32)
+
+            result = node.save_images(
+                image,
+                output_path="nested",
+                filename_prefix="preview",
+                show_previews="true",
+                metadata_mode="none",
+                extension="png",
+            )
+
+            images = result["ui"]["images"]
+            self.assertEqual(1, len(images))
+            self.assertEqual("nested", images[0]["subfolder"])
+            self.assertEqual("output", images[0]["type"])
+            self.assertNotIn("..", Path(images[0]["subfolder"]).parts)
+
+    def test_preview_payload_is_omitted_for_external_absolute_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "output"
+            external_dir = Path(tmp) / "external"
+            node = self.make_node(output_dir)
+            image = torch.zeros((1, 2, 2, 3), dtype=torch.float32)
+
+            result = node.save_images(
+                image,
+                output_path=str(external_dir),
+                allow_absolute_output_path="true",
+                filename_prefix="external_preview",
+                show_previews="true",
+                metadata_mode="none",
+                extension="png",
+            )
+
+            self.assertEqual([], result["ui"]["images"])
+            output_files = result["ui"]["files"]
+            self.assertEqual(1, len(output_files))
+            self.assertEqual(external_dir.resolve(), Path(output_files[0]).parent.resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

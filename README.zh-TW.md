@@ -199,7 +199,7 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
   * WebP 格式:將資料儲存於 EXIF 標籤(Make/ImageDescription)。
 * **輸出控制:**
   * **三組輸出**: `filtered_images` (IMAGE)、`files` (檔案路徑列表)、`scores` (美學分數列表)。
-  * 可選的預覽開關，適用於無頭工作流。
+  * 可選的預覽開關，適用於無頭工作流。若儲存到 ComfyUI output 以外的絕對路徑，檔案仍會從 `files` 回傳，但不產生 ComfyUI 預覽，因為 `/view` 只會服務宿主管理的 output 路徑。
   * 僅回傳通過美學閾值的圖片給下游節點。
 
 ### Image Cropper (圖片裁切)

@@ -130,6 +130,22 @@ class AdvancedImageSaver:
         filename_prefix = filename_prefix.strip().strip(".")
         return filename_prefix or "ComfyUI"
 
+    def build_preview_entry(self, full_output_folder, file_name):
+        # IMPORTANT: ComfyUI /view and asset enrichment only serve host-managed output paths.
+        output_dir = os.path.realpath(self.output_dir)
+        full_output_folder = os.path.realpath(full_output_folder)
+        if not self._is_within_directory(full_output_folder, output_dir):
+            return None
+
+        subfolder = os.path.relpath(full_output_folder, output_dir)
+        if subfolder == ".":
+            subfolder = ""
+        return {
+            "filename": file_name,
+            "subfolder": subfolder,
+            "type": self.type,
+        }
+
     def extract_minimal_metadata(self, prompt):
         """從 prompt 中提取關鍵生成參數"""
         if prompt is None:
@@ -720,13 +736,11 @@ class AdvancedImageSaver:
                 output_files.append(full_file_path)
 
                 if show_previews == 'true':
-                    subfolder = os.path.relpath(full_output_folder, self.output_dir)
-                    if subfolder == '.': subfolder = ""
-                    results.append({
-                        "filename": file_name,
-                        "subfolder": subfolder,
-                        "type": self.type
-                    })
+                    preview_entry = self.build_preview_entry(full_output_folder, file_name)
+                    if preview_entry is not None:
+                        results.append(preview_entry)
+                    else:
+                        print("[AdvancedImageSaver] Preview omitted; output path is outside ComfyUI output directory.")
 
             except OSError as e:
                 print(f"[AdvancedImageSaver] OSError: Unable to save file to {full_file_path}: {e}")
