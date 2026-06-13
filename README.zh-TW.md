@@ -103,7 +103,7 @@
 
 ### Text Storage Nodes (文字倉庫 - 讀寫分離版)
 
-ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會話之間保存與讀取文字數據，所有資料皆安全儲存在節點目錄下的 `text_storage/` 資料夾中。
+ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會話之間保存與讀取文字數據；目前版本在可用時會把新資料寫入 ComfyUI user directory，並保留對節點目錄下舊版 `text_storage/` 資料的讀取相容性。
 
 #### **Text Storage (Writer / 寫入器)**
 

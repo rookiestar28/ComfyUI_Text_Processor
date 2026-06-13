@@ -104,7 +104,7 @@ Fetches and formats headlines from public HTTP/HTTPS URLs. Ideal for injecting r
 
 ### Text Storage Nodes (Reader & Writer)
 
-A persistent "clipboard" for ComfyUI. These nodes allow you to save and retrieve text data across different workflows or sessions. All data is securely stored in the `text_storage/` directory within the node folder.
+A persistent "clipboard" for ComfyUI. These nodes allow you to save and retrieve text data across different workflows or sessions. Current ComfyUI installs store new entries under the ComfyUI user directory when available, while legacy entries in this node's `text_storage/` folder remain readable.
 
 #### **Text Storage (Writer)**
 

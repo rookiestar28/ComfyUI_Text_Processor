@@ -4,6 +4,24 @@ import time
 import re
 import glob
 from datetime import datetime
+from importlib import import_module
+
+
+PLUGIN_STORAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "text_storage")
+USER_STORAGE_SUBDIR = os.path.join("ComfyUI_Text_Processor", "text_storage")
+
+
+def _resolve_user_storage_dir():
+    try:
+        folder_paths = import_module("folder_paths")
+        get_user_directory = getattr(folder_paths, "get_user_directory", None)
+        if callable(get_user_directory):
+            user_dir = get_user_directory()
+            if user_dir:
+                return os.path.join(user_dir, USER_STORAGE_SUBDIR)
+    except Exception:
+        pass
+    return None
 
 class SimpleFileLock:
 
@@ -40,10 +58,26 @@ class TextStorageHandler:
     storage_version = 0
     
     def __init__(self):
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        self.storage_dir = os.path.join(base_path, "text_storage")
+        self.legacy_storage_dir = PLUGIN_STORAGE_DIR
+        self.storage_dir = _resolve_user_storage_dir() or self.legacy_storage_dir
         self.json_file = os.path.join(self.storage_dir, "text_storage.json")
+        self.legacy_json_file = os.path.join(self.legacy_storage_dir, "text_storage.json")
         self._ensure_storage_exists()
+
+    def _storage_dirs(self):
+        dirs = []
+        for storage_dir in [getattr(self, "storage_dir", None), getattr(self, "legacy_storage_dir", None)]:
+            if not storage_dir:
+                continue
+            real_dir = os.path.realpath(storage_dir)
+            if real_dir not in dirs:
+                dirs.append(real_dir)
+        return dirs
+
+    def _json_file_for_dir(self, storage_dir):
+        if os.path.realpath(storage_dir) == os.path.realpath(getattr(self, "storage_dir", "")):
+            return self.json_file
+        return os.path.join(storage_dir, "text_storage.json")
     
     def _ensure_storage_exists(self):
         if not os.path.exists(self.storage_dir):
@@ -56,44 +90,49 @@ class TextStorageHandler:
     def _sanitize_filename(self, name):
         return re.sub(r'[\\/?:|"<>]+', "", name).strip()
 
-    def load_json_data(self):
+    def _load_json_file(self, json_file):
         try:
-            if os.path.exists(self.json_file):
-                with open(self.json_file, 'r', encoding='utf-8') as f:
+            if os.path.exists(json_file):
+                with open(json_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             return {}
         return {}
 
+    def load_json_data(self):
+        return self._load_json_file(self.json_file)
+
     def get_all_keys(self):
         keys = set()
-        json_data = self.load_json_data()
-        keys.update(json_data.keys())
-        
-        txt_files = glob.glob(os.path.join(self.storage_dir, "*.txt"))
-        for f in txt_files:
-            filename = os.path.basename(f)
-            name_without_ext = os.path.splitext(filename)[0]
-            keys.add(name_without_ext)
+        for storage_dir in self._storage_dirs():
+            json_data = self._load_json_file(self._json_file_for_dir(storage_dir))
+            keys.update(json_data.keys())
+
+            txt_files = glob.glob(os.path.join(storage_dir, "*.txt"))
+            for f in txt_files:
+                filename = os.path.basename(f)
+                name_without_ext = os.path.splitext(filename)[0]
+                keys.add(name_without_ext)
             
         return sorted(list(keys))
 
     def read_content(self, key):
         safe_name = key 
-        txt_path = os.path.join(self.storage_dir, f"{safe_name}.txt")
-        
-        if os.path.exists(txt_path):
-            try:
-                with open(txt_path, 'r', encoding='utf-8') as f:
-                    print(f"[TextReader] Loaded from TXT: {safe_name}.txt")
-                    return f.read()
-            except Exception as e:
-                print(f"[TextReader] Error reading txt: {e}")
-        
-        json_data = self.load_json_data()
-        if key in json_data:
-            print(f"[TextReader] Loaded from JSON key: {key}")
-            return json_data[key]
+        for storage_dir in self._storage_dirs():
+            txt_path = os.path.join(storage_dir, f"{safe_name}.txt")
+
+            if os.path.exists(txt_path):
+                try:
+                    with open(txt_path, 'r', encoding='utf-8') as f:
+                        print(f"[TextReader] Loaded from TXT: {safe_name}.txt")
+                        return f.read()
+                except Exception as e:
+                    print(f"[TextReader] Error reading txt: {e}")
+
+            json_data = self._load_json_file(self._json_file_for_dir(storage_dir))
+            if key in json_data:
+                print(f"[TextReader] Loaded from JSON key: {key}")
+                return json_data[key]
         return ""
 
     def _parse_time_tags(self, pattern):
@@ -145,23 +184,25 @@ class TextStorageHandler:
             if mode == "delete":
                 target_name = clean_pattern
                 deleted = False
-                
-                txt_path = os.path.join(self.storage_dir, f"{target_name}.txt")
-                if os.path.exists(txt_path):
-                    try:
-                        os.remove(txt_path)
-                        print(f"[TextStorage] Deleted file: {target_name}.txt")
-                        deleted = True
-                    except Exception as e:
-                        print(f"[TextStorage] Error deleting txt: {e}")
 
-                data = self.load_json_data()
-                if target_name in data:
-                    del data[target_name]
-                    with open(self.json_file, 'w', encoding='utf-8') as f:
-                        json.dump(data, f, indent=2)
-                    print(f"[TextStorage] Deleted key from JSON: {target_name}")
-                    deleted = True
+                for storage_dir in self._storage_dirs():
+                    txt_path = os.path.join(storage_dir, f"{target_name}.txt")
+                    if os.path.exists(txt_path):
+                        try:
+                            os.remove(txt_path)
+                            print(f"[TextStorage] Deleted file: {target_name}.txt")
+                            deleted = True
+                        except Exception as e:
+                            print(f"[TextStorage] Error deleting txt: {e}")
+
+                    json_file = self._json_file_for_dir(storage_dir)
+                    data = self._load_json_file(json_file)
+                    if target_name in data:
+                        del data[target_name]
+                        with open(json_file, 'w', encoding='utf-8') as f:
+                            json.dump(data, f, indent=2)
+                        print(f"[TextStorage] Deleted key from JSON: {target_name}")
+                        deleted = True
                 
                 if not deleted:
                     print(f"[TextStorage] Warning: '{target_name}' not found.")
