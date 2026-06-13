@@ -81,6 +81,13 @@ class AdvancedImageSaver:
     OUTPUT_NODE = True
 
     CATEGORY = "ComfyUI Text Processor/IO"
+    DESCRIPTION = "Saves images with flexible paths, metadata controls, optional previews, and aesthetic score filtering."
+    SEARCH_ALIASES = ["advanced image saver", "save image", "aesthetic saver", "image output", "metadata saver"]
+    OUTPUT_TOOLTIPS = (
+        "Images that passed optional filtering and remain available for downstream nodes.",
+        "Saved file paths.",
+        "Aesthetic scores or score diagnostics for input images.",
+    )
 
     def parse_name(self, text):
         if not text:

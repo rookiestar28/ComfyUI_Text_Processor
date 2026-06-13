@@ -72,16 +72,31 @@ class NodeRegistrationTests(unittest.TestCase):
                     f"{node_id} has unexpected category {node_class.CATEGORY!r}",
                 )
 
-            metadata_expectations = {
-                "LoadImageBatch": ("DESCRIPTION", "SEARCH_ALIASES"),
-                "TP_LoadMask": ("DESCRIPTION", "SEARCH_ALIASES"),
-                "TP_SaveMask": ("DESCRIPTION", "SEARCH_ALIASES"),
-            }
-            for node_id, attributes in metadata_expectations.items():
-                node_class = module.NODE_CLASS_MAPPINGS[node_id]
-                for attribute in attributes:
-                    value = getattr(node_class, attribute, None)
-                    self.assertTrue(value, f"{node_id} missing {attribute}")
+            for node_id, node_class in module.NODE_CLASS_MAPPINGS.items():
+                description = getattr(node_class, "DESCRIPTION", "")
+                self.assertIsInstance(description, str, f"{node_id} DESCRIPTION must be a string")
+                self.assertTrue(description.strip(), f"{node_id} missing DESCRIPTION")
+
+                aliases = getattr(node_class, "SEARCH_ALIASES", [])
+                self.assertIsInstance(aliases, (list, tuple), f"{node_id} SEARCH_ALIASES must be a list or tuple")
+                self.assertTrue(aliases, f"{node_id} missing SEARCH_ALIASES")
+                self.assertTrue(
+                    all(isinstance(alias, str) and alias.strip() for alias in aliases),
+                    f"{node_id} SEARCH_ALIASES must contain non-empty strings",
+                )
+
+                return_types = getattr(node_class, "RETURN_TYPES", ())
+                if return_types:
+                    tooltips = getattr(node_class, "OUTPUT_TOOLTIPS", ())
+                    self.assertEqual(
+                        len(return_types),
+                        len(tooltips),
+                        f"{node_id} OUTPUT_TOOLTIPS must match RETURN_TYPES length",
+                    )
+                    self.assertTrue(
+                        all(isinstance(tooltip, str) and tooltip.strip() for tooltip in tooltips),
+                        f"{node_id} OUTPUT_TOOLTIPS must contain non-empty strings",
+                    )
 
 
 if __name__ == "__main__":

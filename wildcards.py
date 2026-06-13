@@ -161,6 +161,9 @@ class WildcardsNode:
     RETURN_TYPES = ('STRING',)
     FUNCTION = 'process'
     CATEGORY = "ComfyUI Text Processor"
+    DESCRIPTION = "Expands wildcard files and inline random-choice syntax across seven prompt slots."
+    SEARCH_ALIASES = ["wildcards", "dynamic prompt", "random prompt", "prompt mixer", "wildcard processor"]
+    OUTPUT_TOOLTIPS = ("Combined prompt text after wildcard and random-choice expansion.",)
 
     @classmethod
     def INPUT_TYPES(cls):

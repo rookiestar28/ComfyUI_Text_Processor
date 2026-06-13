@@ -30,6 +30,9 @@ class EvaluateInts:
     OUTPUT_NODE = True
     FUNCTION = "evaluate"
     CATEGORY = "ComfyUI Text Processor/Logic"
+    DESCRIPTION = "Evaluates a numeric expression with integer inputs and returns int, float, and string forms."
+    SEARCH_ALIASES = ["simple eval int", "integer expression", "math eval", "logic integer"]
+    OUTPUT_TOOLTIPS = ("Integer result.", "Float result.", "String representation of the result.")
 
     def evaluate(self, python_expression, print_to_console, a=0, b=0, c=0):
         names = {'a': a, 'b': b, 'c': c}
@@ -72,6 +75,9 @@ class EvaluateFloats:
     OUTPUT_NODE = True
     FUNCTION = "evaluate"
     CATEGORY = "ComfyUI Text Processor/Logic"
+    DESCRIPTION = "Evaluates a numeric expression with float inputs and returns int, float, and string forms."
+    SEARCH_ALIASES = ["simple eval float", "float expression", "math eval", "logic float"]
+    OUTPUT_TOOLTIPS = ("Integer-cast result.", "Float result.", "String representation of the result.")
 
     def evaluate(self, python_expression, print_to_console, a=0.0, b=0.0, c=0.0):
         names = {'a': a, 'b': b, 'c': c}
@@ -116,6 +122,9 @@ class EvaluateStrs:
     OUTPUT_NODE = True
     FUNCTION = "evaluate"
     CATEGORY = "ComfyUI Text Processor/Logic"
+    DESCRIPTION = "Evaluates a string expression with three string variables."
+    SEARCH_ALIASES = ["simple eval string", "string expression", "text expression", "logic string"]
+    OUTPUT_TOOLTIPS = ("String evaluation result.",)
 
     def evaluate(self, python_expression, print_to_console, a="", b="", c=""):
         names = {'a': a, 'b': b, 'c': c}

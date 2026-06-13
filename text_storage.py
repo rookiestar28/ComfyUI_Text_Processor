@@ -211,6 +211,9 @@ class TextStorageReader:
     RETURN_NAMES = ("text_content",)
     FUNCTION = "read_text"
     CATEGORY = "ComfyUI Text Processor"
+    DESCRIPTION = "Reads saved text entries from the Text Storage JSON or TXT store."
+    SEARCH_ALIASES = ["text storage reader", "read saved text", "load text", "clipboard reader"]
+    OUTPUT_TOOLTIPS = ("Stored text content for the selected key.",)
     @classmethod
     def IS_CHANGED(cls, **kwargs):
         return TextStorageHandler.storage_version
@@ -237,6 +240,9 @@ class TextStorageWriter:
     OUTPUT_NODE = True
     FUNCTION = "write_text"
     CATEGORY = "ComfyUI Text Processor"
+    DESCRIPTION = "Writes, overwrites, auto-renames, or deletes text entries in Text Storage."
+    SEARCH_ALIASES = ["text storage writer", "save text", "write text", "clipboard writer"]
+    OUTPUT_TOOLTIPS = ("Passthrough copy of the text input.",)
     def write_text(self, text_input, filename_prefix, save_name, mode, storage_format):
         action = "add"
         if mode == "Overwrite Existing": action = "overwrite"

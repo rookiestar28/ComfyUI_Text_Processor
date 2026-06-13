@@ -363,6 +363,9 @@ class AddTextToImage:
     RETURN_NAMES = ("image",)
     FUNCTION = "execute_draw_on_batch"
     CATEGORY = "ComfyUI Text Processor/Image"
+    DESCRIPTION = "Draws text labels onto images with positioning, background, wrapping, and adaptive sizing controls."
+    SEARCH_ALIASES = ["add text to image", "caption image", "draw label", "image text overlay", "watermark text"]
+    OUTPUT_TOOLTIPS = ("Image batch with rendered text overlays.",)
 
     def execute_draw_on_batch(
         self,

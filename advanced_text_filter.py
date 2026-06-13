@@ -85,6 +85,12 @@ class AdvancedTextFilter:
 
     FUNCTION = "process"
     CATEGORY = "ComfyUI Text Processor"
+    DESCRIPTION = "Filters, extracts, replaces, or cleans text for prompt and LLM-output workflows."
+    SEARCH_ALIASES = ["text filter", "regex extract", "find replace", "clean text", "llm parser"]
+    OUTPUT_TOOLTIPS = (
+        "Processed target text produced by the selected operation.",
+        "Remaining text or extracted match context, depending on the selected operation.",
+    )
 
     def process(self, text: str, concat_mode: str, operation: str, 
                 start_text: str, end_text: str, 

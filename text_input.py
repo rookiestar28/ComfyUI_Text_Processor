@@ -37,6 +37,9 @@ class TextInput:
     RETURN_TYPES = ("STRING",)
     FUNCTION = "join_texts"
     CATEGORY = "ComfyUI Text Processor"
+    DESCRIPTION = "Joins up to seven text inputs into one string with a configurable separator."
+    SEARCH_ALIASES = ["text input", "join text", "merge text", "combine strings", "prompt join"]
+    OUTPUT_TOOLTIPS = ("Joined text output.",)
 
     def join_texts(self, separator, text1="", text2="", text3="", text4="", text5="", text6="", text7=""):
         # Filter out empty strings

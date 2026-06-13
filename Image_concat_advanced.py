@@ -185,6 +185,9 @@ class TP_ImageConcatenateMulti:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "concatenate"
     CATEGORY = "ComfyUI Text Processor/Image"
+    DESCRIPTION = "Concatenates image batches into directional grids with wrapping, resizing, and channel control."
+    SEARCH_ALIASES = ["image concat", "image grid", "stitch images", "combine images", "contact sheet"]
+    OUTPUT_TOOLTIPS = ("Concatenated image grid.",)
 
     def concatenate(
         self,

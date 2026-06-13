@@ -44,6 +44,7 @@ class LoadImageBatch:
     CATEGORY = "ComfyUI Text Processor/Image"
     DESCRIPTION = "Loads one image from a directory batch using single, incremental, or seeded-random selection."
     SEARCH_ALIASES = ["load image batch", "batch image loader", "image directory", "load folder images"]
+    OUTPUT_TOOLTIPS = ("Loaded image tensor.", "Selected filename text.")
 
     @classmethod
     def clear_state(cls):

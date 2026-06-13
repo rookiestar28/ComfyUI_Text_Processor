@@ -33,6 +33,9 @@ def get_mask_center(mask: Image.Image):
 @register_node("ImageCropper", "Image Cropper")
 class _:
     CATEGORY = "ComfyUI Text Processor/Image"
+    DESCRIPTION = "Crops and optionally rescales image batches by side length, aspect ratio, alignment, and mask center."
+    SEARCH_ALIASES = ["image cropper", "crop image", "mask crop", "resize crop", "aspect crop"]
+    OUTPUT_TOOLTIPS = ("Cropped image batch.",)
     INPUT_TYPES = lambda: {
         "required": {
             "image": ("IMAGE",),

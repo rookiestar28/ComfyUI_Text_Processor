@@ -100,6 +100,7 @@ class TP_LoadMask:
     FUNCTION = "load_mask"
     DESCRIPTION = "Loads an image from the ComfyUI input directory and converts it to a MASK."
     SEARCH_ALIASES = ["load mask", "import mask", "open mask", "image to mask", "alpha mask"]
+    OUTPUT_TOOLTIPS = ("Loaded grayscale mask tensor.",)
 
     def load_mask(self, image):
         image_path = folder_paths.get_annotated_filepath(image)

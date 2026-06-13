@@ -52,6 +52,9 @@ class TextScraper:
     RETURN_NAMES = ("text",)
     FUNCTION = "scrape_news"
     CATEGORY = "ComfyUI Text Processor"
+    DESCRIPTION = "Fetches headline-like text from public HTTP or HTTPS pages with local/private address blocking."
+    SEARCH_ALIASES = ["web scraper", "text scraper", "headlines", "fetch url", "news scraper"]
+    OUTPUT_TOOLTIPS = ("Scraped headline text or a clear validation/network error message.",)
 
     def normalize_and_validate_url(self, url: str):
         url = url.strip()
