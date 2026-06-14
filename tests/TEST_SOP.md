@@ -98,6 +98,7 @@ image_cropper.py
 mask_nodes.py
 Image_concat_advanced.py
 load_image_batch.py
+resize_image_advanced.py
 ```
 
 ## One-command Full Test Scripts
@@ -165,7 +166,8 @@ python -m py_compile `
   image_cropper.py `
   mask_nodes.py `
   Image_concat_advanced.py `
-  load_image_batch.py
+  load_image_batch.py `
+  resize_image_advanced.py
 ```
 
 Bash:
@@ -185,7 +187,8 @@ python -m py_compile \
   image_cropper.py \
   mask_nodes.py \
   Image_concat_advanced.py \
-  load_image_batch.py
+  load_image_batch.py \
+  resize_image_advanced.py
 ```
 
 ### 4. Focused changed-node checks

@@ -7,6 +7,11 @@ $ErrorActionPreference = "Stop"
 
 Set-Location (Resolve-Path (Join-Path $PSScriptRoot ".."))
 
+if (-not $env:PRE_COMMIT_HOME) {
+    $env:PRE_COMMIT_HOME = Join-Path (Get-Location) ".tmp\pre-commit-cache"
+}
+New-Item -ItemType Directory -Force -Path $env:PRE_COMMIT_HOME | Out-Null
+
 if ($Python) {
     $PythonExe = $Python
     $PythonPrefixArgs = @()

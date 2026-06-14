@@ -217,6 +217,20 @@ A handy utility to crop images directly within your workflow.
 * **Optional Rescaling:** Can rescale the cropped result by longest side, shortest side, width, or height.
 * **Batch Processing:** Supports cropping for image batches.
 
+### Resize Image Advanced
+
+Resize image batches with direct size controls, aspect-ratio target calculation, and optional mask alignment.
+
+* **Node ID:** Registered as `ResizeImageAdvanced` with display name `Resize Image Advanced`.
+* **Resize Modes:** Use explicit width/height or automatic aspect-ratio sizing with `original`, `custom`, and common presets.
+* **Scale Targets:** `scale_to_side` supports longest side, shortest side, width, height, and total kilo-pixel targets.
+* **Fit Modes:** Supports `fill`, `stretch`, `resize`, `letterbox`, `pad`, `pad_edge`, `pad_edge_pixel`, `pillarbox_blur`, `crop`, and `total_pixels`.
+* **Methods and Device:** Preserves KJ-style `nearest-exact`, `bilinear`, `area`, `bicubic`, `lanczos`, and optional `nvidia_rtx_vsr` methods, plus CPU/GPU device selection. RTX VSR requires a compatible NVIDIA VFX runtime and GPU.
+* **Background Fill:** `background_color` controls letterbox/pad canvas fill.
+* **Multiple Alignment:** `round_to_multiple` keeps the final size divisible by a selected integer, covering the original KJ `divisible_by` behavior.
+* **Mask Alignment:** Optional `MASK` input is resized, cropped, or padded with the image and returned as an aligned mask.
+* **Workflow Helpers:** Returns `IMAGE`, final `width`, final `height`, and aligned `MASK` outputs.
+
 ### Image and Mask IO
 
 Image and mask IO utilities for workflows that need to load batch images or persist mask data.

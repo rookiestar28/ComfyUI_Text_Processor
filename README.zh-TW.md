@@ -214,6 +214,20 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 * **可選縮放：** 裁切後可再依最長邊、最短邊、寬或高做縮放。
 * **批量處理：** 支援對批量圖片 (Image Batches) 進行裁切。
 
+### Resize Image Advanced (進階圖片縮放)
+
+以直接尺寸、等比例自動換算與可選遮罩對齊來縮放圖片 batch。
+
+* **節點 ID：** 註冊為 `ResizeImageAdvanced`，顯示名稱為 `Resize Image Advanced`。
+* **縮放模式：** 可使用明確寬高，或透過 `original`、`custom` 與常見比例預設自動換算目標尺寸。
+* **目標邊長：** `scale_to_side` 支援長邊、短邊、寬、高與總像素量（kilo pixel）目標。
+* **適配模式：** 支援 `fill`、`stretch`、`resize`、`letterbox`、`pad`、`pad_edge`、`pad_edge_pixel`、`pillarbox_blur`、`crop`、`total_pixels`。
+* **縮放方法與裝置：** 保留 KJ 風格的 `nearest-exact`、`bilinear`、`area`、`bicubic`、`lanczos` 與可選 `nvidia_rtx_vsr`，並提供 CPU/GPU 裝置選擇。RTX VSR 需要相容的 NVIDIA VFX runtime 與 GPU。
+* **背景填色：** `background_color` 控制 letterbox / pad 的畫布背景色。
+* **整數倍數對齊：** `round_to_multiple` 可讓最終尺寸符合指定整數倍，涵蓋原 KJ `divisible_by` 行為。
+* **遮罩對齊：** 可選 `MASK` 會隨圖片同步縮放、裁切或補邊，並輸出對齊後的 mask。
+* **工作流輔助：** 輸出 `IMAGE`、最終 `width`、最終 `height` 與對齊後的 `MASK`，方便串接後續節點。
+
 ### Image and Mask IO (圖片與遮罩輸入輸出)
 
 提供圖片與遮罩輸入輸出的工具節點，便於載入批次圖片或在工作流中重複使用 mask。

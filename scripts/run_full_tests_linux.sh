@@ -3,6 +3,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+export PRE_COMMIT_HOME="${PRE_COMMIT_HOME:-$(pwd)/.tmp/pre-commit-cache}"
+mkdir -p "$PRE_COMMIT_HOME"
+
 if [[ -n "${PYTHON:-}" ]]; then
   python_cmd="$PYTHON"
 elif [[ -x ".venv-wsl/bin/python" ]]; then
