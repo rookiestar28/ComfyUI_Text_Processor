@@ -47,7 +47,9 @@ class LoadImageBatch:
     OUTPUT_TOOLTIPS = ("Loaded image tensor.", "Selected filename text.")
 
     @classmethod
-    def VALIDATE_INPUTS(cls, path, pattern="*", index=0, mode="single_image", **_kwargs):
+    # IMPORTANT: do not add **kwargs; ComfyUI treats it as claiming every input
+    # and skips default validation.
+    def VALIDATE_INPUTS(cls, path, pattern="*", index=0, mode="single_image"):
         try:
             image_paths = cls._list_image_paths(str(path), str(pattern))
             if str(mode) == "single_image":

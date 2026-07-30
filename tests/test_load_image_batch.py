@@ -1,3 +1,4 @@
+import inspect
 import tempfile
 import unittest
 from pathlib import Path
@@ -169,6 +170,40 @@ class LoadImageBatchTests(unittest.TestCase):
 
         self.assertTrue(result)
 
+    def test_validate_inputs_delegates_unrequested_fields_to_host(self):
+        input_types = LoadImageBatch.INPUT_TYPES()
+        available_inputs = {
+            input_name
+            for group_name in ("required", "optional")
+            for input_name in input_types.get(group_name, {})
+        }
+        parameters = inspect.signature(LoadImageBatch.VALIDATE_INPUTS).parameters
+        has_var_keyword = any(
+            parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+        explicit_inputs = {
+            parameter.name
+            for parameter in parameters.values()
+            if parameter.kind is not inspect.Parameter.VAR_KEYWORD
+        }
+        custom_validated = (
+            available_inputs
+            if has_var_keyword
+            else available_inputs & explicit_inputs
+        )
+        default_validated = available_inputs - custom_validated
+
+        self.assertFalse(
+            has_var_keyword,
+            "VAR_KEYWORD claims every available input and bypasses ComfyUI default validation",
+        )
+        self.assertEqual({"path", "pattern", "index", "mode"}, custom_validated)
+        self.assertEqual(
+            {"seed", "label", "allow_RGBA_output", "filename_text_extension"},
+            default_validated,
+        )
+
     def test_validate_inputs_reports_missing_empty_unsafe_and_index_errors(self):
         missing = LoadImageBatch.VALIDATE_INPUTS(path=str(self.root / "missing"), pattern="*.png")
         self.assertIsInstance(missing, str)
@@ -200,7 +235,6 @@ class LoadImageBatchTests(unittest.TestCase):
             path=str(self.root),
             pattern="*.png",
             mode="incremental_image",
-            label="batch",
         )
 
         self.assertTrue(result)
