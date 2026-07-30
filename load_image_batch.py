@@ -25,16 +25,48 @@ class LoadImageBatch:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mode": (["single_image", "incremental_image", "random"],),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "index": ("INT", {"default": 0, "min": 0, "max": 150000, "step": 1}),
-                "label": ("STRING", {"default": "Batch 001", "multiline": False}),
-                "path": ("STRING", {"default": "", "multiline": False}),
-                "pattern": ("STRING", {"default": "*", "multiline": False}),
-                "allow_RGBA_output": (["false", "true"],),
+                "mode": (
+                    ["single_image", "incremental_image", "random"],
+                    {"tooltip": "Select by fixed index, advance per label, or choose deterministically from seed."},
+                ),
+                "seed": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "tooltip": "Seed used by random mode.",
+                }),
+                "index": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 150000,
+                    "step": 1,
+                    "tooltip": "Zero-based image index used by single_image mode.",
+                }),
+                "label": ("STRING", {
+                    "default": "Batch 001",
+                    "multiline": False,
+                    "tooltip": "State key that keeps independent incremental positions for different loaders.",
+                }),
+                "path": ("STRING", {
+                    "default": "",
+                    "multiline": False,
+                    "tooltip": "Directory containing the image batch; paths are validated before execution.",
+                }),
+                "pattern": ("STRING", {
+                    "default": "*",
+                    "multiline": False,
+                    "tooltip": "Safe filename glob applied inside path; traversal and nested paths are rejected.",
+                }),
+                "allow_RGBA_output": (
+                    ["false", "true"],
+                    {"tooltip": "Preserve an alpha channel when present instead of returning RGB only."},
+                ),
             },
             "optional": {
-                "filename_text_extension": (["true", "false"],),
+                "filename_text_extension": (
+                    ["true", "false"],
+                    {"tooltip": "Include the selected file extension in filename_text."},
+                ),
             },
         }
 

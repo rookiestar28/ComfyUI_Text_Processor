@@ -337,25 +337,92 @@ class AddTextToImage:
 
         return {
             "required": {
-                "image": ("IMAGE",),
-                "font_name": (font_names, {"default": default_font_for_ui}),
-                "text_position": (["bottom_center", "top_center", "bottom_left", "bottom_right", "top_left", "top_right", "center_center"], {"default": "bottom_center"}),
+                "image": (
+                    "IMAGE",
+                    {"tooltip": "Image batch on which labels are rendered."},
+                ),
+                "font_name": (
+                    font_names,
+                    {
+                        "default": default_font_for_ui,
+                        "tooltip": "Font family used to render every label in the batch.",
+                    },
+                ),
+                "text_position": (
+                    ["bottom_center", "top_center", "bottom_left", "bottom_right", "top_left", "top_right", "center_center"],
+                    {
+                        "default": "bottom_center",
+                        "tooltip": "Anchor position for the text and its background.",
+                    },
+                ),
                 
-                "background_mode": (["text_box", "full_width_strip"], {"default": "text_box"}),
+                "background_mode": (
+                    ["text_box", "full_width_strip"],
+                    {
+                        "default": "text_box",
+                        "tooltip": "Draw a box around the text or a strip spanning the image width.",
+                    },
+                ),
 
-                "font_size": ("INT", {"default": 48, "min": 4, "max": 1024, "step": 1}),
-                "margin": ("INT", {"default": 24, "min": 0, "max": 256, "step": 1}),
-                "line_spacing": ("INT", {"default": 5, "min": 0, "max": 128, "step": 1}),
-                "text_color_hex": ("STRING", {"default": "#ffffff"}),
-                "background_color_hex": ("STRING", {"default": "#00000080"}),
-                "background_padding": ("INT", {"default": 10, "min": 0, "max": 50, "step": 1}),
+                "font_size": ("INT", {
+                    "default": 48,
+                    "min": 4,
+                    "max": 1024,
+                    "step": 1,
+                    "tooltip": "Initial label font size in pixels.",
+                }),
+                "margin": ("INT", {
+                    "default": 24,
+                    "min": 0,
+                    "max": 256,
+                    "step": 1,
+                    "tooltip": "Distance in pixels between the anchored text block and image edge.",
+                }),
+                "line_spacing": ("INT", {
+                    "default": 5,
+                    "min": 0,
+                    "max": 128,
+                    "step": 1,
+                    "tooltip": "Additional pixel spacing between wrapped text lines.",
+                }),
+                "text_color_hex": ("STRING", {
+                    "default": "#ffffff",
+                    "tooltip": "Text color as #RRGGBB or #RRGGBBAA.",
+                }),
+                "background_color_hex": ("STRING", {
+                    "default": "#00000080",
+                    "tooltip": "Background color as #RRGGBB or #RRGGBBAA.",
+                }),
+                "background_padding": ("INT", {
+                    "default": 10,
+                    "min": 0,
+                    "max": 50,
+                    "step": 1,
+                    "tooltip": "Padding in pixels between text and its background boundary.",
+                }),
                 
                 # New text adaptation options
-                "auto_adapt": ("BOOLEAN", {"default": True, "label_on": "Auto Wrap + Shrink", "label_off": "Truncate"}),
-                "min_font_size": ("INT", {"default": 8, "min": 4, "max": 128, "step": 1, "tooltip": "Minimum font size when auto_adapt is enabled"}),
+                "auto_adapt": ("BOOLEAN", {
+                    "default": True,
+                    "label_on": "Auto Wrap + Shrink",
+                    "label_off": "Truncate",
+                    "tooltip": "Wrap and shrink labels to fit; when disabled, truncate overflowing text.",
+                }),
+                "min_font_size": ("INT", {
+                    "default": 8,
+                    "min": 4,
+                    "max": 128,
+                    "step": 1,
+                    "tooltip": "Minimum font size used while auto_adapt shrinks text.",
+                }),
             },
             "optional": {
-                "label_text": ("STRING", {"multiline": True, "default": "Label 1\nLabel 2", "forceInput": False}),
+                "label_text": ("STRING", {
+                    "multiline": True,
+                    "default": "Label 1\nLabel 2",
+                    "forceInput": False,
+                    "tooltip": "Labels separated by newlines; labels are assigned across the image batch.",
+                }),
             },
         }
 

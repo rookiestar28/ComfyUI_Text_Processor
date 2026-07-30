@@ -55,27 +55,73 @@ class AdvancedTextFilter:
         
         return {
             "required": {
-                "text": ("STRING", {"multiline": True, "default": ""}),
-                "concat_mode": (["disabled", "prepend_external_text", "append_external_text"],),
-                "operation": (operation_modes,),
+                "text": ("STRING", {
+                    "multiline": True,
+                    "default": "",
+                    "tooltip": "Primary text processed by the selected operation.",
+                }),
+                "concat_mode": (
+                    ["disabled", "prepend_external_text", "append_external_text"],
+                    {
+                        "tooltip": "Optionally combine external_text with the primary text before processing.",
+                    },
+                ),
+                "operation": (
+                    operation_modes,
+                    {"tooltip": "Text filtering, extraction, replacement, or cleanup operation to run."},
+                ),
                 
-                "start_text": ("STRING", {"multiline": False, "default": ""}),
-                "end_text": ("STRING", {"multiline": False, "default": ""}),
+                "start_text": ("STRING", {
+                    "multiline": False,
+                    "default": "",
+                    "tooltip": "Opening boundary used by between, before, and after operations.",
+                }),
+                "end_text": ("STRING", {
+                    "multiline": False,
+                    "default": "",
+                    "tooltip": "Closing boundary used by operations that extract or remove between markers.",
+                }),
                 
-                "optional_text_input": ("STRING", {"multiline": False, "default": "", "placeholder": "Patterns separator: , (comma)"}),
-                "replace_with_text": ("STRING", {"multiline": False, "default": "", "placeholder": "For Find and Replace"}),
+                "optional_text_input": ("STRING", {
+                    "multiline": False,
+                    "default": "",
+                    "placeholder": "Patterns separator: , (comma)",
+                    "tooltip": "Search text or comma-separated patterns used by find operations.",
+                }),
+                "replace_with_text": ("STRING", {
+                    "multiline": False,
+                    "default": "",
+                    "placeholder": "For Find and Replace",
+                    "tooltip": "Replacement value used by the find-and-replace operation.",
+                }),
                 
-                "use_regex": ("BOOLEAN", {"default": False}),
-                "case_conversion": (["disabled", "to UPPERCASE", "to lowercase"],),
+                "use_regex": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Interpret search or boundary text as regular expressions where supported.",
+                }),
+                "case_conversion": (
+                    ["disabled", "to UPPERCASE", "to lowercase"],
+                    {"tooltip": "Optional case conversion applied to the processed target text."},
+                ),
                 
-                "if_not_found": (["return original text", "return empty string", "trigger error"], {"default": "return original text"}),
+                "if_not_found": (
+                    ["return original text", "return empty string", "trigger error"],
+                    {
+                        "default": "return original text",
+                        "tooltip": "Result policy when the requested marker or pattern is not found.",
+                    },
+                ),
             },
             "optional": {
-                "external_text": ("*",), 
+                "external_text": (
+                    "*",
+                    {"tooltip": "Optional upstream value converted to text and combined according to concat_mode."},
+                ),
                 "replacement_rules": ("STRING", {
                     "multiline": True, 
                     "default": "", 
-                    "placeholder": "Syntax:\nfind_text -> replace_text\nbad_tag -> good_tag\n(One rule per line)"
+                    "placeholder": "Syntax:\nfind_text -> replace_text\nbad_tag -> good_tag\n(One rule per line)",
+                    "tooltip": "One find_text -> replace_text rule per line for batch replacement.",
                 }),
             }
         }

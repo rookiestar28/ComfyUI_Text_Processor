@@ -162,7 +162,10 @@ class TP_ImageConcatenateMulti:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "images": ("IMAGE",),
+                "images": (
+                    "IMAGE",
+                    {"tooltip": "One or more image batches to arrange into a grid."},
+                ),
                 "direction": (
                     [
                         "left_to_right",
@@ -174,11 +177,32 @@ class TP_ImageConcatenateMulti:
                         "down",
                         "up",
                     ],
-                    {"default": "left_to_right"},
+                    {
+                        "default": "left_to_right",
+                        "tooltip": "Ordering direction and primary axis used to place images.",
+                    },
                 ),
-                "max_images_per_line": ("INT", {"default": 3, "min": 1, "max": 255, "step": 1}),
-                "interpolation": (["bicubic", "bilinear", "nearest"], {"default": "bicubic"}),
-                "output_channels": (["rgb", "rgba", "auto"], {"default": "rgb"}),
+                "max_images_per_line": ("INT", {
+                    "default": 3,
+                    "min": 1,
+                    "max": 255,
+                    "step": 1,
+                    "tooltip": "Maximum images in each row or column before wrapping.",
+                }),
+                "interpolation": (
+                    ["bicubic", "bilinear", "nearest"],
+                    {
+                        "default": "bicubic",
+                        "tooltip": "Sampling method used when images are resized to align in the grid.",
+                    },
+                ),
+                "output_channels": (
+                    ["rgb", "rgba", "auto"],
+                    {
+                        "default": "rgb",
+                        "tooltip": "Force RGB, force RGBA, or preserve an automatically selected channel count.",
+                    },
+                ),
             },
         }
 

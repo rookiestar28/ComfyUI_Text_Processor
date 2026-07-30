@@ -172,21 +172,75 @@ class WildcardsNode:
         
         return {
             "required": {
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "prompt_1": ("STRING", {"multiline": True, "dynamicPrompts": False}),
-                "wildcard_1": (wildcard_options,),
-                "prompt_2": ("STRING", {"multiline": True, "dynamicPrompts": False}),
-                "wildcard_2": (wildcard_options,),
-                "prompt_3": ("STRING", {"multiline": True, "dynamicPrompts": False}),
-                "wildcard_3": (wildcard_options,),
-                "prompt_4": ("STRING", {"multiline": True, "dynamicPrompts": False}),
-                "wildcard_4": (wildcard_options,),
-                "prompt_5": ("STRING", {"multiline": True, "dynamicPrompts": False}),
-                "wildcard_5": (wildcard_options,),
-                "prompt_6": ("STRING", {"multiline": True, "dynamicPrompts": False}),
-                "wildcard_6": (wildcard_options,),
-                "prompt_7": ("STRING", {"multiline": True, "dynamicPrompts": False}),
-                "wildcard_7": (wildcard_options,),
+                "seed": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "tooltip": "Base seed for deterministic inline choices and wildcard selection.",
+                }),
+                "prompt_1": ("STRING", {
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "tooltip": "First prompt segment; supports {a|b} and __wildcard__ syntax.",
+                }),
+                "wildcard_1": (
+                    wildcard_options,
+                    {"tooltip": "Optional wildcard file appended to the first prompt segment."},
+                ),
+                "prompt_2": ("STRING", {
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "tooltip": "Second prompt segment; supports {a|b} and __wildcard__ syntax.",
+                }),
+                "wildcard_2": (
+                    wildcard_options,
+                    {"tooltip": "Optional wildcard file appended to the second prompt segment."},
+                ),
+                "prompt_3": ("STRING", {
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "tooltip": "Third prompt segment; supports {a|b} and __wildcard__ syntax.",
+                }),
+                "wildcard_3": (
+                    wildcard_options,
+                    {"tooltip": "Optional wildcard file appended to the third prompt segment."},
+                ),
+                "prompt_4": ("STRING", {
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "tooltip": "Fourth prompt segment; supports {a|b} and __wildcard__ syntax.",
+                }),
+                "wildcard_4": (
+                    wildcard_options,
+                    {"tooltip": "Optional wildcard file appended to the fourth prompt segment."},
+                ),
+                "prompt_5": ("STRING", {
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "tooltip": "Fifth prompt segment; supports {a|b} and __wildcard__ syntax.",
+                }),
+                "wildcard_5": (
+                    wildcard_options,
+                    {"tooltip": "Optional wildcard file appended to the fifth prompt segment."},
+                ),
+                "prompt_6": ("STRING", {
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "tooltip": "Sixth prompt segment; supports {a|b} and __wildcard__ syntax.",
+                }),
+                "wildcard_6": (
+                    wildcard_options,
+                    {"tooltip": "Optional wildcard file appended to the sixth prompt segment."},
+                ),
+                "prompt_7": ("STRING", {
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "tooltip": "Seventh prompt segment; supports {a|b} and __wildcard__ syntax.",
+                }),
+                "wildcard_7": (
+                    wildcard_options,
+                    {"tooltip": "Optional wildcard file appended to the seventh prompt segment."},
+                ),
             }
         }
     

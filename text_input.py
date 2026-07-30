@@ -19,18 +19,36 @@ class TextInput:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "separator": ("STRING", {"default": " "})
+                "separator": (
+                    "STRING",
+                    {
+                        "default": " ",
+                        "tooltip": "Text inserted between each non-empty input.",
+                    },
+                )
             },
             "optional": {
                 # First 3 inputs as connection points
-                "text1": ("STRING",),
-                "text2": ("STRING",),
-                "text3": ("STRING",),
+                "text1": ("STRING", {"tooltip": "First optional text segment."}),
+                "text2": ("STRING", {"tooltip": "Second optional text segment."}),
+                "text3": ("STRING", {"tooltip": "Third optional text segment."}),
                 # Last 4 inputs as text fields
-                "text4": ("STRING", {"default": ""}),
-                "text5": ("STRING", {"default": ""}),
-                "text6": ("STRING", {"default": ""}),
-                "text7": ("STRING", {"default": ""})
+                "text4": ("STRING", {
+                    "default": "",
+                    "tooltip": "Fourth optional text segment.",
+                }),
+                "text5": ("STRING", {
+                    "default": "",
+                    "tooltip": "Fifth optional text segment.",
+                }),
+                "text6": ("STRING", {
+                    "default": "",
+                    "tooltip": "Sixth optional text segment.",
+                }),
+                "text7": ("STRING", {
+                    "default": "",
+                    "tooltip": "Seventh optional text segment.",
+                })
             }
         }
 

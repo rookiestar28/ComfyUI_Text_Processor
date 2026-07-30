@@ -247,7 +247,14 @@ class TextStorageReader:
         keys = handler.get_all_keys()
         if not keys:
             keys = ["No texts saved yet"]
-        return {"required": {"text_key": (sorted(keys),)}}
+        return {
+            "required": {
+                "text_key": (
+                    sorted(keys),
+                    {"tooltip": "Saved Text Storage entry to read."},
+                )
+            }
+        }
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text_content",)
     FUNCTION = "read_text"
@@ -269,11 +276,30 @@ class TextStorageWriter:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "text_input": ("STRING", {"multiline": True, "forceInput": True}),
-                "filename_prefix": ("STRING", {"default": ""}),
-                "save_name": ("STRING", {"default": "My_Data"}),
-                "mode": (["Add New (Auto Rename)", "Overwrite Existing", "Delete"],),
-                "storage_format": (["json", "txt"], {"default": "json"}),
+                "text_input": ("STRING", {
+                    "multiline": True,
+                    "forceInput": True,
+                    "tooltip": "Text to store and pass through; Delete mode ignores its content.",
+                }),
+                "filename_prefix": ("STRING", {
+                    "default": "",
+                    "tooltip": "Optional prefix added before the saved entry name.",
+                }),
+                "save_name": ("STRING", {
+                    "default": "My_Data",
+                    "tooltip": "Logical name of the entry to add, overwrite, or delete.",
+                }),
+                "mode": (
+                    ["Add New (Auto Rename)", "Overwrite Existing", "Delete"],
+                    {"tooltip": "Add with collision-safe renaming, overwrite the named entry, or delete it."},
+                ),
+                "storage_format": (
+                    ["json", "txt"],
+                    {
+                        "default": "json",
+                        "tooltip": "Store the entry in the JSON collection or as an individual text file.",
+                    },
+                ),
             }
         }
     RETURN_TYPES = ("STRING",)

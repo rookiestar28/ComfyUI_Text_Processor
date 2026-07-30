@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "web_directory": "./web",
+  "expected_node_count": 17,
+  "expected_visible_input_count": 139,
+  "excluded_hidden_inputs": {
+    "AdvancedImageSaver": ["prompt", "extra_pnginfo"]
+  },
+  "rich_help_node_ids": [
+    "AddTextToImage",
+    "AdvancedImageSaver",
+    "AdvancedTextFilter",
+    "ImageCropper",
+    "LoadImageBatch",
+    "ResizeImageAdvanced",
+    "TextStorageReader",
+    "TextStorageWriter"
+  ],
+  "tiers": {
+    "desktop_floor": {
+      "core_version": "0.22.3",
+      "core_ref_short": "7c47f4d",
+      "frontend_version": "1.43.18",
+      "frontend_ref_short": "6a207bb",
+      "help_lookup_blob_short": "3bbebfd",
+      "generic_help_blob_short": "6e020b5",
+      "v1_input_transform_blob_short": "22d91c1",
+      "localized_lookup": "/extensions/{module}/docs/{node_id}/{locale}.md",
+      "fallback_lookup": "/extensions/{module}/docs/{node_id}.md",
+      "extension_route": "/extensions/{module}"
+    },
+    "current_observation": {
+      "core_version": "0.29.0",
+      "core_ref_short": "9cf9133",
+      "frontend_version": "1.49.1",
+      "frontend_ref_short": "4b3866b",
+      "help_lookup_blob_short": "3bbebfd",
+      "generic_help_blob_short": "6e020b5",
+      "v1_input_transform_blob_short": "22d91c1",
+      "localized_lookup": "/extensions/{module}/docs/{node_id}/{locale}.md",
+      "fallback_lookup": "/extensions/{module}/docs/{node_id}.md",
+      "extension_route": "/extensions/{module}"
+    }
+  }
+}

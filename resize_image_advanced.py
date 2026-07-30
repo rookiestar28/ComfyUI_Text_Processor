@@ -451,24 +451,90 @@ class ResizeImageAdvanced:
         ]
         return {
             "required": {
-                "image": ("IMAGE",),
-                "resize_mode": (["explicit", "aspect_ratio"],),
-                "width": ("INT", {"default": 512, "min": 0, "max": MAX_RESIZE_DIMENSION, "step": 1}),
-                "height": ("INT", {"default": 512, "min": 0, "max": MAX_RESIZE_DIMENSION, "step": 1}),
-                "aspect_ratio": (ratio_list,),
-                "proportional_width": ("INT", {"default": 1, "min": 1, "max": MAX_RESIZE_DIMENSION, "step": 1}),
-                "proportional_height": ("INT", {"default": 1, "min": 1, "max": MAX_RESIZE_DIMENSION, "step": 1}),
-                "fit": (fit_modes,),
-                "method": (["nearest", "nearest-exact", "bilinear", "area", "bicubic", "lanczos", "nvidia_rtx_vsr"],),
-                "scale_to_side": (["None", "longest", "shortest", "width", "height", "total_pixel(kilo pixel)"],),
-                "scale_to_length": ("INT", {"default": 1024, "min": 1, "max": MAX_RESIZE_DIMENSION, "step": 1}),
-                "background_color": ("STRING", {"default": "#000000"}),
-                "crop_position": (["center", "top", "bottom", "left", "right"],),
-                "round_to_multiple": ("INT", {"default": 0, "min": 0, "max": 512, "step": 1}),
-                "device": (["cpu", "gpu"],),
+                "image": (
+                    "IMAGE",
+                    {"tooltip": "Image batch to resize."},
+                ),
+                "resize_mode": (
+                    ["explicit", "aspect_ratio"],
+                    {"tooltip": "Use width and height directly or calculate a target from aspect-ratio controls."},
+                ),
+                "width": ("INT", {
+                    "default": 512,
+                    "min": 0,
+                    "max": MAX_RESIZE_DIMENSION,
+                    "step": 1,
+                    "tooltip": "Explicit output width; zero preserves the source ratio from height.",
+                }),
+                "height": ("INT", {
+                    "default": 512,
+                    "min": 0,
+                    "max": MAX_RESIZE_DIMENSION,
+                    "step": 1,
+                    "tooltip": "Explicit output height; zero preserves the source ratio from width.",
+                }),
+                "aspect_ratio": (
+                    ratio_list,
+                    {"tooltip": "Target ratio for aspect_ratio mode; custom uses proportional values."},
+                ),
+                "proportional_width": ("INT", {
+                    "default": 1,
+                    "min": 1,
+                    "max": MAX_RESIZE_DIMENSION,
+                    "step": 1,
+                    "tooltip": "Width component used when aspect_ratio is custom.",
+                }),
+                "proportional_height": ("INT", {
+                    "default": 1,
+                    "min": 1,
+                    "max": MAX_RESIZE_DIMENSION,
+                    "step": 1,
+                    "tooltip": "Height component used when aspect_ratio is custom.",
+                }),
+                "fit": (
+                    fit_modes,
+                    {"tooltip": "How source content is stretched, fitted, padded, cropped, or pixel-budgeted."},
+                ),
+                "method": (
+                    ["nearest", "nearest-exact", "bilinear", "area", "bicubic", "lanczos", "nvidia_rtx_vsr"],
+                    {"tooltip": "Resize algorithm; nvidia_rtx_vsr requires a compatible NVIDIA runtime."},
+                ),
+                "scale_to_side": (
+                    ["None", "longest", "shortest", "width", "height", "total_pixel(kilo pixel)"],
+                    {"tooltip": "Dimension or total-pixel policy controlled by scale_to_length in aspect_ratio mode."},
+                ),
+                "scale_to_length": ("INT", {
+                    "default": 1024,
+                    "min": 1,
+                    "max": MAX_RESIZE_DIMENSION,
+                    "step": 1,
+                    "tooltip": "Target side length, or kilo-pixel budget for total_pixel mode.",
+                }),
+                "background_color": ("STRING", {
+                    "default": "#000000",
+                    "tooltip": "Hex fill color used by letterbox and padding fit modes.",
+                }),
+                "crop_position": (
+                    ["center", "top", "bottom", "left", "right"],
+                    {"tooltip": "Anchor used when crop fitting removes overflow."},
+                ),
+                "round_to_multiple": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 512,
+                    "step": 1,
+                    "tooltip": "Round final dimensions to this multiple; zero disables rounding.",
+                }),
+                "device": (
+                    ["cpu", "gpu"],
+                    {"tooltip": "Requested processing device; availability depends on the selected method and runtime."},
+                ),
             },
             "optional": {
-                "mask": ("MASK",),
+                "mask": (
+                    "MASK",
+                    {"tooltip": "Optional mask transformed with the same geometry as the image."},
+                ),
             },
         }
 

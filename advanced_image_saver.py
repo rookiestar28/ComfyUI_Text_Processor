@@ -43,30 +43,112 @@ class AdvancedImageSaver:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "images": ("IMAGE", ),
-                "output_path": ("STRING", {"default": '[time(%Y-%m-%d)]', "multiline": False}),
-                "allow_absolute_output_path": (["false", "true"],),
-                "filename_prefix": ("STRING", {"default": "ComfyUI"}),
-                "filename_delimiter": ("STRING", {"default":"_"}),
-                "filename_number_padding": ("INT", {"default":4, "min":1, "max":9, "step":1}),
-                "filename_number_start": (["false", "true"],),
-                "extension": (['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff'], ),
-                "dpi": ("INT", {"default": 300, "min": 1, "max": 2400, "step": 1}),
-                "quality": ("INT", {"default": 100, "min": 1, "max": 100, "step": 1}),
-                "optimize_image": (["true", "false"],),
-                "lossless_webp": (["false", "true"],),
-                "overwrite_mode": (["false", "prefix_as_filename"],),
-                "embed_workflow": (["true", "false"],),
-                "show_previews": (["true", "false"],),
-                "metadata_mode": (["full", "minimal", "none"],),
-                "calculate_aesthetic_score": (["false", "true"],),
-                "allow_aesthetic_remote_code": (["false", "true"],),
-                "aesthetic_precision": (["auto", "bf16", "fp16", "fp32", "cpu_fp32"], {"default": "auto"}),
-                "keep_aesthetic_model_loaded": (["true", "false"],),
-                "aesthetic_threshold": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 10.0, "step": 0.1}),
+                "images": (
+                    "IMAGE",
+                    {"tooltip": "Image batch to save and optionally filter by aesthetic score."},
+                ),
+                "output_path": ("STRING", {
+                    "default": '[time(%Y-%m-%d)]',
+                    "multiline": False,
+                    "tooltip": "Output subfolder or, when explicitly allowed, an absolute directory; supports time tokens.",
+                }),
+                "allow_absolute_output_path": (
+                    ["false", "true"],
+                    {"tooltip": "Allow output_path outside ComfyUI's output root; keep false unless the destination is trusted."},
+                ),
+                "filename_prefix": ("STRING", {
+                    "default": "ComfyUI",
+                    "tooltip": "Base name placed before the generated file number.",
+                }),
+                "filename_delimiter": ("STRING", {
+                    "default":"_",
+                    "tooltip": "Text inserted between the filename prefix and generated number.",
+                }),
+                "filename_number_padding": ("INT", {
+                    "default":4,
+                    "min":1,
+                    "max":9,
+                    "step":1,
+                    "tooltip": "Minimum digit width used for generated file numbers.",
+                }),
+                "filename_number_start": (
+                    ["false", "true"],
+                    {"tooltip": "Place the generated number before the prefix instead of after it."},
+                ),
+                "extension": (
+                    ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff'],
+                    {"tooltip": "Image file format used for saved outputs."},
+                ),
+                "dpi": ("INT", {
+                    "default": 300,
+                    "min": 1,
+                    "max": 2400,
+                    "step": 1,
+                    "tooltip": "DPI metadata written when supported by the selected format.",
+                }),
+                "quality": ("INT", {
+                    "default": 100,
+                    "min": 1,
+                    "max": 100,
+                    "step": 1,
+                    "tooltip": "Encoder quality for formats that support a quality setting.",
+                }),
+                "optimize_image": (
+                    ["true", "false"],
+                    {"tooltip": "Request supported encoders to optimize the saved file."},
+                ),
+                "lossless_webp": (
+                    ["false", "true"],
+                    {"tooltip": "Use lossless encoding when extension is webp."},
+                ),
+                "overwrite_mode": (
+                    ["false", "prefix_as_filename"],
+                    {"tooltip": "Choose numbered files or overwrite a filename derived from the prefix."},
+                ),
+                "embed_workflow": (
+                    ["true", "false"],
+                    {"tooltip": "Embed available workflow metadata in supported output formats."},
+                ),
+                "show_previews": (
+                    ["true", "false"],
+                    {"tooltip": "Return contained ComfyUI output previews for saved files."},
+                ),
+                "metadata_mode": (
+                    ["full", "minimal", "none"],
+                    {"tooltip": "Select how much available generation metadata to write."},
+                ),
+                "calculate_aesthetic_score": (
+                    ["false", "true"],
+                    {"tooltip": "Run the optional aesthetic model and filter images by the threshold."},
+                ),
+                "allow_aesthetic_remote_code": (
+                    ["false", "true"],
+                    {"tooltip": "Permit model repository remote code for aesthetic scoring; enable only for a trusted model source."},
+                ),
+                "aesthetic_precision": (
+                    ["auto", "bf16", "fp16", "fp32", "cpu_fp32"],
+                    {
+                        "default": "auto",
+                        "tooltip": "Device and numeric precision policy for the optional aesthetic model.",
+                    },
+                ),
+                "keep_aesthetic_model_loaded": (
+                    ["true", "false"],
+                    {"tooltip": "Keep the optional aesthetic model in memory between executions."},
+                ),
+                "aesthetic_threshold": ("FLOAT", {
+                    "default": 5.0,
+                    "min": 0.0,
+                    "max": 10.0,
+                    "step": 0.1,
+                    "tooltip": "Minimum aesthetic score required for an image to be saved.",
+                }),
             },
             "optional": {
-                "aesthetic_score": ("STRING", {"forceInput": True}),
+                "aesthetic_score": ("STRING", {
+                    "forceInput": True,
+                    "tooltip": "Optional upstream score text used instead of calculating scores locally.",
+                }),
             },
             "hidden": {
                 "prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"

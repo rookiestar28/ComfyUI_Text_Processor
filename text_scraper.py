@@ -42,9 +42,15 @@ class TextScraper:
             "required": {
                 "url": ("STRING", {
                     "default": "https://news.ycombinator.com",
-                    "multiline": False
+                    "multiline": False,
+                    "tooltip": "Public HTTP or HTTPS page to fetch; local and private destinations are blocked.",
                 }),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "tooltip": "Change this value to force a fresh fetch when the URL is unchanged.",
+                }),
             }
         }
 

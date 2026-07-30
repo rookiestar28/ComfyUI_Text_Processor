@@ -16,13 +16,38 @@ class EvaluateInts:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "python_expression": ("STRING", {"default": "((a + b) - c) / 2", "multiline": False}),
-                "print_to_console": (["False", "True"],), 
+                "python_expression": ("STRING", {
+                    "default": "((a + b) - c) / 2",
+                    "multiline": False,
+                    "tooltip": "Numeric expression evaluated with integer variables a, b, and c.",
+                }),
+                "print_to_console": (
+                    ["False", "True"],
+                    {"tooltip": "Print variables, expression, and result to the server console."},
+                ),
             },
             "optional": {
-                "a": ("INT", {"default": 0, "min": -sys.maxsize, "max": sys.maxsize, "step": 1}),
-                "b": ("INT", {"default": 0, "min": -sys.maxsize, "max": sys.maxsize, "step": 1}),
-                "c": ("INT", {"default": 0, "min": -sys.maxsize, "max": sys.maxsize, "step": 1}), 
+                "a": ("INT", {
+                    "default": 0,
+                    "min": -sys.maxsize,
+                    "max": sys.maxsize,
+                    "step": 1,
+                    "tooltip": "Integer value bound to variable a.",
+                }),
+                "b": ("INT", {
+                    "default": 0,
+                    "min": -sys.maxsize,
+                    "max": sys.maxsize,
+                    "step": 1,
+                    "tooltip": "Integer value bound to variable b.",
+                }),
+                "c": ("INT", {
+                    "default": 0,
+                    "min": -sys.maxsize,
+                    "max": sys.maxsize,
+                    "step": 1,
+                    "tooltip": "Integer value bound to variable c.",
+                }),
             },
         }
 
@@ -61,13 +86,38 @@ class EvaluateFloats:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "python_expression": ("STRING", {"default": "((a + b) - c) / 2", "multiline": False}),
-                "print_to_console": (["False", "True"],), 
+                "python_expression": ("STRING", {
+                    "default": "((a + b) - c) / 2",
+                    "multiline": False,
+                    "tooltip": "Numeric expression evaluated with floating-point variables a, b, and c.",
+                }),
+                "print_to_console": (
+                    ["False", "True"],
+                    {"tooltip": "Print variables, expression, and result to the server console."},
+                ),
             },
             "optional": {
-                "a": ("FLOAT", {"default": 0, "min": -sys.float_info.max, "max": sys.float_info.max, "step": 0.01}),
-                "b": ("FLOAT", {"default": 0, "min": -sys.float_info.max, "max": sys.float_info.max, "step": 0.01}),
-                "c": ("FLOAT", {"default": 0, "min": -sys.float_info.max, "max": sys.float_info.max, "step": 0.01}), 
+                "a": ("FLOAT", {
+                    "default": 0,
+                    "min": -sys.float_info.max,
+                    "max": sys.float_info.max,
+                    "step": 0.01,
+                    "tooltip": "Floating-point value bound to variable a.",
+                }),
+                "b": ("FLOAT", {
+                    "default": 0,
+                    "min": -sys.float_info.max,
+                    "max": sys.float_info.max,
+                    "step": 0.01,
+                    "tooltip": "Floating-point value bound to variable b.",
+                }),
+                "c": ("FLOAT", {
+                    "default": 0,
+                    "min": -sys.float_info.max,
+                    "max": sys.float_info.max,
+                    "step": 0.01,
+                    "tooltip": "Floating-point value bound to variable c.",
+                }),
             },
         }
 
@@ -108,13 +158,32 @@ class EvaluateStrs:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "python_expression": ("STRING", {"default": "a + ' ' + b + c", "multiline": False}),
-                "print_to_console": (["False", "True"],),
+                "python_expression": ("STRING", {
+                    "default": "a + ' ' + b + c",
+                    "multiline": False,
+                    "tooltip": "String expression evaluated with text variables a, b, and c.",
+                }),
+                "print_to_console": (
+                    ["False", "True"],
+                    {"tooltip": "Print variables, expression, and result to the server console."},
+                ),
             },
             "optional": {
-                "a": ("STRING", {"default": "Hello", "multiline": False}),
-                "b": ("STRING", {"default": "World", "multiline": False}),
-                "c": ("STRING", {"default": "!", "multiline": False}), 
+                "a": ("STRING", {
+                    "default": "Hello",
+                    "multiline": False,
+                    "tooltip": "Text value bound to variable a.",
+                }),
+                "b": ("STRING", {
+                    "default": "World",
+                    "multiline": False,
+                    "tooltip": "Text value bound to variable b.",
+                }),
+                "c": ("STRING", {
+                    "default": "!",
+                    "multiline": False,
+                    "tooltip": "Text value bound to variable c.",
+                }),
             }
         }
 

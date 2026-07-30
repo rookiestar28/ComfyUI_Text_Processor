@@ -110,6 +110,16 @@ class DependencyMetadataTests(unittest.TestCase):
                 ".pre-commit-config.yaml",
             }
         }
+        expected_help_paths = {
+            "web/docs/AddTextToImage.md",
+            "web/docs/AdvancedImageSaver.md",
+            "web/docs/AdvancedTextFilter.md",
+            "web/docs/ImageCropper.md",
+            "web/docs/LoadImageBatch.md",
+            "web/docs/ResizeImageAdvanced.md",
+            "web/docs/TextStorageReader.md",
+            "web/docs/TextStorageWriter.md",
+        }
         required_archive_paths = {
             "__init__.py",
             "advanced_text_filter.py",
@@ -136,11 +146,20 @@ class DependencyMetadataTests(unittest.TestCase):
             "text_storage/.gitkeep",
             "wildcards/.gitkeep",
             "wildcards/example_format.txt",
+            *expected_help_paths,
         }
 
         self.assertEqual(expected_development_only, excluded)
         self.assertTrue(required_archive_paths.issubset(candidate_archive))
         self.assertTrue(expected_development_only.isdisjoint(candidate_archive))
+        self.assertEqual(
+            expected_help_paths,
+            {
+                path
+                for path in candidate_archive
+                if path.startswith("web/docs/")
+            },
+        )
 
         forbidden_prefixes = (
             ".planning/",

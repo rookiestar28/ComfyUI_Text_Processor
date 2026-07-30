@@ -51,8 +51,14 @@ class TP_SaveMask:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "mask": ("MASK", ),
-                "filename_prefix": ("STRING", {"default": "Mask_Output"}),
+                "mask": (
+                    "MASK",
+                    {"tooltip": "Mask batch to save and pass through unchanged."},
+                ),
+                "filename_prefix": ("STRING", {
+                    "default": "Mask_Output",
+                    "tooltip": "Base filename used for numbered PNG mask outputs.",
+                }),
             },
         }
 
@@ -93,7 +99,13 @@ class TP_LoadMask:
         
         return {
             "required": {
-                "image": (sorted(files), {"image_upload": True})
+                "image": (
+                    sorted(files),
+                    {
+                        "image_upload": True,
+                        "tooltip": "Image from ComfyUI's input directory to convert into a grayscale mask.",
+                    },
+                )
             },
         }
 

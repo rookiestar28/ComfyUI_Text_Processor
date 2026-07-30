@@ -38,27 +38,87 @@ class _:
     OUTPUT_TOOLTIPS = ("Cropped image batch.",)
     INPUT_TYPES = lambda: {
         "required": {
-            "image": ("IMAGE",),
+            "image": (
+                "IMAGE",
+                {"tooltip": "Image batch to crop and optionally rescale."},
+            ),
             
-            "enable_fixed_crop": ("BOOLEAN", {"default": False}),
+            "enable_fixed_crop": ("BOOLEAN", {
+                "default": False,
+                "tooltip": "Derive the crop from a fixed side length before applying the aspect ratio.",
+            }),
             
-            "fixed_crop_side": (["shortest", "longest", "width", "height"],),
-            "fixed_crop_length": ("INT", {"default": 512, "min": 1, "max": 99999, "step": 1}),
+            "fixed_crop_side": (
+                ["shortest", "longest", "width", "height"],
+                {"tooltip": "Image dimension that fixed_crop_length controls."},
+            ),
+            "fixed_crop_length": ("INT", {
+                "default": 512,
+                "min": 1,
+                "max": 99999,
+                "step": 1,
+                "tooltip": "Target length used when enable_fixed_crop is on.",
+            }),
             
-            "aspect_ratio": (["1:1", "3:2", "4:3", "16:9", "2:3", "3:4", "9:16", "custom", "original"],),
-            "proportional_width": ("INT", {"default": 1, "min": 1, "max": 999999, "step": 1}),
-            "proportional_height": ("INT", {"default": 1, "min": 1, "max": 999999, "step": 1}),
+            "aspect_ratio": (
+                ["1:1", "3:2", "4:3", "16:9", "2:3", "3:4", "9:16", "custom", "original"],
+                {"tooltip": "Aspect ratio of the crop rectangle; custom uses the proportional values."},
+            ),
+            "proportional_width": ("INT", {
+                "default": 1,
+                "min": 1,
+                "max": 999999,
+                "step": 1,
+                "tooltip": "Width component used when aspect_ratio is custom.",
+            }),
+            "proportional_height": ("INT", {
+                "default": 1,
+                "min": 1,
+                "max": 999999,
+                "step": 1,
+                "tooltip": "Height component used when aspect_ratio is custom.",
+            }),
             
-            "alignment": (["center", "top-left", "top-right", "bottom-left", "bottom-right"],),
-            "offset_x": ("INT", {"default": 0, "min": -99999, "max": 99999, "step": 1}),
-            "offset_y": ("INT", {"default": 0, "min": -99999, "max": 99999, "step": 1}),
+            "alignment": (
+                ["center", "top-left", "top-right", "bottom-left", "bottom-right"],
+                {"tooltip": "Base placement of the crop rectangle when no mask center is used."},
+            ),
+            "offset_x": ("INT", {
+                "default": 0,
+                "min": -99999,
+                "max": 99999,
+                "step": 1,
+                "tooltip": "Horizontal pixel offset applied to the crop center.",
+            }),
+            "offset_y": ("INT", {
+                "default": 0,
+                "min": -99999,
+                "max": 99999,
+                "step": 1,
+                "tooltip": "Vertical pixel offset applied to the crop center.",
+            }),
             
-            "scale_to_side": (["None", "longest", "shortest", "width", "height"],),
-            "scale_to_length": ("INT", {"default": 1024, "min": 1, "max": 999999, "step": 1}),
-            "interpolation_mode": (["bicubic", "bilinear", "nearest", "nearest exact"],),
+            "scale_to_side": (
+                ["None", "longest", "shortest", "width", "height"],
+                {"tooltip": "Optional crop dimension to resize to scale_to_length after cropping."},
+            ),
+            "scale_to_length": ("INT", {
+                "default": 1024,
+                "min": 1,
+                "max": 999999,
+                "step": 1,
+                "tooltip": "Output length used by the selected scale_to_side policy.",
+            }),
+            "interpolation_mode": (
+                ["bicubic", "bilinear", "nearest", "nearest exact"],
+                {"tooltip": "Sampling method used only when the cropped image is resized."},
+            ),
         },
         "optional": {
-            "mask": ("MASK",),
+            "mask": (
+                "MASK",
+                {"tooltip": "Optional mask whose nonzero bounding-box center guides crop placement."},
+            ),
         }
     }
     RETURN_TYPES = ("IMAGE",)
