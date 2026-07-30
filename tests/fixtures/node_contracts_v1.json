@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "nodes": {
+    "AdvancedTextFilter": {
+      "required": [
+        {"name": "text", "type": "STRING", "default": "", "widget": true},
+        {"name": "concat_mode", "type": "COMBO", "default": null, "widget": true},
+        {"name": "operation", "type": "COMBO", "default": null, "widget": true},
+        {"name": "start_text", "type": "STRING", "default": "", "widget": true},
+        {"name": "end_text", "type": "STRING", "default": "", "widget": true},
+        {"name": "optional_text_input", "type": "STRING", "default": "", "widget": true},
+        {"name": "replace_with_text", "type": "STRING", "default": "", "widget": true},
+        {"name": "use_regex", "type": "BOOLEAN", "default": false, "widget": true},
+        {"name": "case_conversion", "type": "COMBO", "default": null, "widget": true},
+        {"name": "if_not_found", "type": "COMBO", "default": "return original text", "widget": true}
+      ],
+      "optional": [
+        {"name": "external_text", "type": "*", "default": null, "widget": false},
+        {"name": "replacement_rules", "type": "STRING", "default": "", "widget": true}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "processed_text (Target)"},
+        {"index": 1, "type": "STRING", "name": "remaining_text"}
+      ],
+      "output_node": false,
+      "function": "process",
+      "category": "ComfyUI Text Processor"
+    },
+    "TextInput": {
+      "required": [
+        {"name": "separator", "type": "STRING", "default": " ", "widget": true}
+      ],
+      "optional": [
+        {"name": "text1", "type": "STRING", "default": null, "widget": true},
+        {"name": "text2", "type": "STRING", "default": null, "widget": true},
+        {"name": "text3", "type": "STRING", "default": null, "widget": true},
+        {"name": "text4", "type": "STRING", "default": "", "widget": true},
+        {"name": "text5", "type": "STRING", "default": "", "widget": true},
+        {"name": "text6", "type": "STRING", "default": "", "widget": true},
+        {"name": "text7", "type": "STRING", "default": "", "widget": true}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "STRING"}
+      ],
+      "output_node": false,
+      "function": "join_texts",
+      "category": "ComfyUI Text Processor"
+    },
+    "TextScraper": {
+      "required": [
+        {"name": "url", "type": "STRING", "default": "https://news.ycombinator.com", "widget": true},
+        {"name": "seed", "type": "INT", "default": 0, "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "text"}
+      ],
+      "output_node": false,
+      "function": "scrape_news",
+      "category": "ComfyUI Text Processor"
+    },
+    "WildcardsNode": {
+      "required": [
+        {"name": "seed", "type": "INT", "default": 0, "widget": true},
+        {"name": "prompt_1", "type": "STRING", "default": null, "widget": true},
+        {"name": "wildcard_1", "type": "COMBO", "default": null, "widget": true},
+        {"name": "prompt_2", "type": "STRING", "default": null, "widget": true},
+        {"name": "wildcard_2", "type": "COMBO", "default": null, "widget": true},
+        {"name": "prompt_3", "type": "STRING", "default": null, "widget": true},
+        {"name": "wildcard_3", "type": "COMBO", "default": null, "widget": true},
+        {"name": "prompt_4", "type": "STRING", "default": null, "widget": true},
+        {"name": "wildcard_4", "type": "COMBO", "default": null, "widget": true},
+        {"name": "prompt_5", "type": "STRING", "default": null, "widget": true},
+        {"name": "wildcard_5", "type": "COMBO", "default": null, "widget": true},
+        {"name": "prompt_6", "type": "STRING", "default": null, "widget": true},
+        {"name": "wildcard_6", "type": "COMBO", "default": null, "widget": true},
+        {"name": "prompt_7", "type": "STRING", "default": null, "widget": true},
+        {"name": "wildcard_7", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "STRING"}
+      ],
+      "output_node": false,
+      "function": "process",
+      "category": "ComfyUI Text Processor"
+    },
+    "AddTextToImage": {
+      "required": [
+        {"name": "image", "type": "IMAGE", "default": null, "widget": false},
+        {"name": "font_name", "type": "COMBO", "default": "Aileron Regular", "widget": true},
+        {"name": "text_position", "type": "COMBO", "default": "bottom_center", "widget": true},
+        {"name": "background_mode", "type": "COMBO", "default": "text_box", "widget": true},
+        {"name": "font_size", "type": "INT", "default": 48, "widget": true},
+        {"name": "margin", "type": "INT", "default": 24, "widget": true},
+        {"name": "line_spacing", "type": "INT", "default": 5, "widget": true},
+        {"name": "text_color_hex", "type": "STRING", "default": "#ffffff", "widget": true},
+        {"name": "background_color_hex", "type": "STRING", "default": "#00000080", "widget": true},
+        {"name": "background_padding", "type": "INT", "default": 10, "widget": true},
+        {"name": "auto_adapt", "type": "BOOLEAN", "default": true, "widget": true},
+        {"name": "min_font_size", "type": "INT", "default": 8, "widget": true}
+      ],
+      "optional": [
+        {"name": "label_text", "type": "STRING", "default": "Label 1\nLabel 2", "widget": true}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "IMAGE", "name": "image"}
+      ],
+      "output_node": false,
+      "function": "execute_draw_on_batch",
+      "category": "ComfyUI Text Processor/Image"
+    },
+    "EvaluateInts": {
+      "required": [
+        {"name": "python_expression", "type": "STRING", "default": "((a + b) - c) / 2", "widget": true},
+        {"name": "print_to_console", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [
+        {"name": "a", "type": "INT", "default": 0, "widget": true},
+        {"name": "b", "type": "INT", "default": 0, "widget": true},
+        {"name": "c", "type": "INT", "default": 0, "widget": true}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "INT", "name": "INT"},
+        {"index": 1, "type": "FLOAT", "name": "FLOAT"},
+        {"index": 2, "type": "STRING", "name": "STRING"}
+      ],
+      "output_node": true,
+      "function": "evaluate",
+      "category": "ComfyUI Text Processor/Logic"
+    },
+    "EvaluateFloats": {
+      "required": [
+        {"name": "python_expression", "type": "STRING", "default": "((a + b) - c) / 2", "widget": true},
+        {"name": "print_to_console", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [
+        {"name": "a", "type": "FLOAT", "default": 0, "widget": true},
+        {"name": "b", "type": "FLOAT", "default": 0, "widget": true},
+        {"name": "c", "type": "FLOAT", "default": 0, "widget": true}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "INT", "name": "INT"},
+        {"index": 1, "type": "FLOAT", "name": "FLOAT"},
+        {"index": 2, "type": "STRING", "name": "STRING"}
+      ],
+      "output_node": true,
+      "function": "evaluate",
+      "category": "ComfyUI Text Processor/Logic"
+    },
+    "EvaluateStrs": {
+      "required": [
+        {"name": "python_expression", "type": "STRING", "default": "a + ' ' + b + c", "widget": true},
+        {"name": "print_to_console", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [
+        {"name": "a", "type": "STRING", "default": "Hello", "widget": true},
+        {"name": "b", "type": "STRING", "default": "World", "widget": true},
+        {"name": "c", "type": "STRING", "default": "!", "widget": true}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "STRING"}
+      ],
+      "output_node": true,
+      "function": "evaluate",
+      "category": "ComfyUI Text Processor/Logic"
+    },
+    "AdvancedImageSaver": {
+      "required": [
+        {"name": "images", "type": "IMAGE", "default": null, "widget": false},
+        {"name": "output_path", "type": "STRING", "default": "[time(%Y-%m-%d)]", "widget": true},
+        {"name": "allow_absolute_output_path", "type": "COMBO", "default": null, "widget": true},
+        {"name": "filename_prefix", "type": "STRING", "default": "ComfyUI", "widget": true},
+        {"name": "filename_delimiter", "type": "STRING", "default": "_", "widget": true},
+        {"name": "filename_number_padding", "type": "INT", "default": 4, "widget": true},
+        {"name": "filename_number_start", "type": "COMBO", "default": null, "widget": true},
+        {"name": "extension", "type": "COMBO", "default": null, "widget": true},
+        {"name": "dpi", "type": "INT", "default": 300, "widget": true},
+        {"name": "quality", "type": "INT", "default": 100, "widget": true},
+        {"name": "optimize_image", "type": "COMBO", "default": null, "widget": true},
+        {"name": "lossless_webp", "type": "COMBO", "default": null, "widget": true},
+        {"name": "overwrite_mode", "type": "COMBO", "default": null, "widget": true},
+        {"name": "embed_workflow", "type": "COMBO", "default": null, "widget": true},
+        {"name": "show_previews", "type": "COMBO", "default": null, "widget": true},
+        {"name": "metadata_mode", "type": "COMBO", "default": null, "widget": true},
+        {"name": "calculate_aesthetic_score", "type": "COMBO", "default": null, "widget": true},
+        {"name": "allow_aesthetic_remote_code", "type": "COMBO", "default": null, "widget": true},
+        {"name": "aesthetic_precision", "type": "COMBO", "default": "auto", "widget": true},
+        {"name": "keep_aesthetic_model_loaded", "type": "COMBO", "default": null, "widget": true},
+        {"name": "aesthetic_threshold", "type": "FLOAT", "default": 5.0, "widget": true}
+      ],
+      "optional": [
+        {"name": "aesthetic_score", "type": "STRING", "default": null, "widget": false}
+      ],
+      "hidden": [
+        {"name": "prompt", "type": "PROMPT", "default": null, "widget": false},
+        {"name": "extra_pnginfo", "type": "EXTRA_PNGINFO", "default": null, "widget": false}
+      ],
+      "outputs": [
+        {"index": 0, "type": "IMAGE", "name": "filtered_images"},
+        {"index": 1, "type": "STRING", "name": "files"},
+        {"index": 2, "type": "STRING", "name": "scores"}
+      ],
+      "output_node": true,
+      "function": "save_images",
+      "category": "ComfyUI Text Processor/IO"
+    },
+    "TextStorageReader": {
+      "required": [
+        {"name": "text_key", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "text_content"}
+      ],
+      "output_node": false,
+      "function": "read_text",
+      "category": "ComfyUI Text Processor"
+    },
+    "TextStorageWriter": {
+      "required": [
+        {"name": "text_input", "type": "STRING", "default": null, "widget": false},
+        {"name": "filename_prefix", "type": "STRING", "default": "", "widget": true},
+        {"name": "save_name", "type": "STRING", "default": "My_Data", "widget": true},
+        {"name": "mode", "type": "COMBO", "default": null, "widget": true},
+        {"name": "storage_format", "type": "COMBO", "default": "json", "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "passthrough_text"}
+      ],
+      "output_node": true,
+      "function": "write_text",
+      "category": "ComfyUI Text Processor"
+    },
+    "ImageCropper": {
+      "required": [
+        {"name": "image", "type": "IMAGE", "default": null, "widget": false},
+        {"name": "enable_fixed_crop", "type": "BOOLEAN", "default": false, "widget": true},
+        {"name": "fixed_crop_side", "type": "COMBO", "default": null, "widget": true},
+        {"name": "fixed_crop_length", "type": "INT", "default": 512, "widget": true},
+        {"name": "aspect_ratio", "type": "COMBO", "default": null, "widget": true},
+        {"name": "proportional_width", "type": "INT", "default": 1, "widget": true},
+        {"name": "proportional_height", "type": "INT", "default": 1, "widget": true},
+        {"name": "alignment", "type": "COMBO", "default": null, "widget": true},
+        {"name": "offset_x", "type": "INT", "default": 0, "widget": true},
+        {"name": "offset_y", "type": "INT", "default": 0, "widget": true},
+        {"name": "scale_to_side", "type": "COMBO", "default": null, "widget": true},
+        {"name": "scale_to_length", "type": "INT", "default": 1024, "widget": true},
+        {"name": "interpolation_mode", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [
+        {"name": "mask", "type": "MASK", "default": null, "widget": false}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "IMAGE", "name": "IMAGE"}
+      ],
+      "output_node": false,
+      "function": "execute",
+      "category": "ComfyUI Text Processor/Image"
+    },
+    "TP_SaveMask": {
+      "required": [
+        {"name": "mask", "type": "MASK", "default": null, "widget": false},
+        {"name": "filename_prefix", "type": "STRING", "default": "Mask_Output", "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [],
+      "output_node": true,
+      "function": "save_mask",
+      "category": "ComfyUI Text Processor/Image"
+    },
+    "TP_LoadMask": {
+      "required": [
+        {"name": "image", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "MASK", "name": "MASK"}
+      ],
+      "output_node": false,
+      "function": "load_mask",
+      "category": "ComfyUI Text Processor/Image"
+    },
+    "image_concat_advanced": {
+      "required": [
+        {"name": "images", "type": "IMAGE", "default": null, "widget": false},
+        {"name": "direction", "type": "COMBO", "default": "left_to_right", "widget": true},
+        {"name": "max_images_per_line", "type": "INT", "default": 3, "widget": true},
+        {"name": "interpolation", "type": "COMBO", "default": "bicubic", "widget": true},
+        {"name": "output_channels", "type": "COMBO", "default": "rgb", "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "IMAGE", "name": "IMAGE"}
+      ],
+      "output_node": false,
+      "function": "concatenate",
+      "category": "ComfyUI Text Processor/Image"
+    },
+    "LoadImageBatch": {
+      "required": [
+        {"name": "mode", "type": "COMBO", "default": null, "widget": true},
+        {"name": "seed", "type": "INT", "default": 0, "widget": true},
+        {"name": "index", "type": "INT", "default": 0, "widget": true},
+        {"name": "label", "type": "STRING", "default": "Batch 001", "widget": true},
+        {"name": "path", "type": "STRING", "default": "", "widget": true},
+        {"name": "pattern", "type": "STRING", "default": "*", "widget": true},
+        {"name": "allow_RGBA_output", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [
+        {"name": "filename_text_extension", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "IMAGE", "name": "image"},
+        {"index": 1, "type": "STRING", "name": "filename_text"}
+      ],
+      "output_node": false,
+      "function": "load_batch_images",
+      "category": "ComfyUI Text Processor/Image"
+    },
+    "ResizeImageAdvanced": {
+      "required": [
+        {"name": "image", "type": "IMAGE", "default": null, "widget": false},
+        {"name": "resize_mode", "type": "COMBO", "default": null, "widget": true},
+        {"name": "width", "type": "INT", "default": 512, "widget": true},
+        {"name": "height", "type": "INT", "default": 512, "widget": true},
+        {"name": "aspect_ratio", "type": "COMBO", "default": null, "widget": true},
+        {"name": "proportional_width", "type": "INT", "default": 1, "widget": true},
+        {"name": "proportional_height", "type": "INT", "default": 1, "widget": true},
+        {"name": "fit", "type": "COMBO", "default": null, "widget": true},
+        {"name": "method", "type": "COMBO", "default": null, "widget": true},
+        {"name": "scale_to_side", "type": "COMBO", "default": null, "widget": true},
+        {"name": "scale_to_length", "type": "INT", "default": 1024, "widget": true},
+        {"name": "background_color", "type": "STRING", "default": "#000000", "widget": true},
+        {"name": "crop_position", "type": "COMBO", "default": null, "widget": true},
+        {"name": "round_to_multiple", "type": "INT", "default": 0, "widget": true},
+        {"name": "device", "type": "COMBO", "default": null, "widget": true}
+      ],
+      "optional": [
+        {"name": "mask", "type": "MASK", "default": null, "widget": false}
+      ],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "IMAGE", "name": "image"},
+        {"index": 1, "type": "INT", "name": "width"},
+        {"index": 2, "type": "INT", "name": "height"},
+        {"index": 3, "type": "MASK", "name": "mask"}
+      ],
+      "output_node": false,
+      "function": "resize",
+      "category": "ComfyUI Text Processor/Image"
+    }
+  }
+}

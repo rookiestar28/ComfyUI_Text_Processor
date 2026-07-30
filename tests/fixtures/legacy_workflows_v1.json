@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "portable_baseline": "widgets_values",
+  "workflows": [
+    {
+      "id": "advanced_image_saver_positional",
+      "node_type": "AdvancedImageSaver",
+      "widgets_values": [
+        "synthetic_output",
+        "false",
+        "fixture_image",
+        "_",
+        4,
+        "false",
+        "png",
+        72,
+        90,
+        "false",
+        "false",
+        "false",
+        "false",
+        "true",
+        "none",
+        "false",
+        "false",
+        "auto",
+        "false",
+        5.0
+      ],
+      "expected": {
+        "output_path": "synthetic_output",
+        "allow_absolute_output_path": "false",
+        "filename_prefix": "fixture_image",
+        "filename_delimiter": "_",
+        "filename_number_padding": 4,
+        "filename_number_start": "false",
+        "extension": "png",
+        "dpi": 72,
+        "quality": 90,
+        "optimize_image": "false",
+        "lossless_webp": "false",
+        "overwrite_mode": "false",
+        "embed_workflow": "false",
+        "show_previews": "true",
+        "metadata_mode": "none",
+        "calculate_aesthetic_score": "false",
+        "allow_aesthetic_remote_code": "false",
+        "aesthetic_precision": "auto",
+        "keep_aesthetic_model_loaded": "false",
+        "aesthetic_threshold": 5.0
+      }
+    },
+    {
+      "id": "save_mask_output_node_positional",
+      "node_type": "TP_SaveMask",
+      "widgets_values": ["fixture_mask"],
+      "expected": {
+        "filename_prefix": "fixture_mask"
+      }
+    },
+    {
+      "id": "load_mask_dynamic_combo_positional",
+      "node_type": "TP_LoadMask",
+      "widgets_values": ["synthetic_mask.png"],
+      "expected": {
+        "image": "synthetic_mask.png"
+      }
+    },
+    {
+      "id": "text_storage_reader_positional",
+      "node_type": "TextStorageReader",
+      "widgets_values": ["SyntheticKey"],
+      "expected": {
+        "text_key": "SyntheticKey"
+      }
+    },
+    {
+      "id": "text_storage_writer_positional",
+      "node_type": "TextStorageWriter",
+      "widgets_values": [
+        "fixture_",
+        "SyntheticData",
+        "Add New (Auto Rename)",
+        "json"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "fixture_",
+        "save_name": "SyntheticData",
+        "mode": "Add New (Auto Rename)",
+        "storage_format": "json"
+      },
+      "expected": {
+        "filename_prefix": "fixture_",
+        "save_name": "SyntheticData",
+        "mode": "Add New (Auto Rename)",
+        "storage_format": "json"
+      }
+    }
+  ]
+}

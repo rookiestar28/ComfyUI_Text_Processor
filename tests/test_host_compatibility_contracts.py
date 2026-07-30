@@ -1,5 +1,7 @@
+import copy
 import importlib
 import json
+import re
 import sys
 import tempfile
 import types
@@ -9,6 +11,92 @@ from unittest.mock import patch
 
 import torch
 from PIL import Image
+
+
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+NODE_CONTRACTS_PATH = FIXTURES_DIR / "node_contracts_v1.json"
+LEGACY_WORKFLOWS_PATH = FIXTURES_DIR / "legacy_workflows_v1.json"
+WIDGET_TYPES = {"STRING", "INT", "FLOAT", "BOOLEAN"}
+FORBIDDEN_FIXTURE_TEXT = re.compile(
+    r"(?i)(?:[A-Z]:\\|/home/|\.planning|reference/docs|api[_-]?key|authorization|cookie|secret|token)"
+)
+
+
+def _json_value(value):
+    if isinstance(value, tuple):
+        return [_json_value(item) for item in value]
+    if isinstance(value, list):
+        return [_json_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _json_value(item) for key, item in value.items()}
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return repr(value)
+
+
+def _normalize_inputs(input_types):
+    normalized = {}
+    for group_name in ("required", "optional", "hidden"):
+        group = input_types.get(group_name, {})
+        normalized_group = []
+        for input_name, input_spec in group.items():
+            if isinstance(input_spec, (tuple, list)):
+                raw_type = input_spec[0]
+                options = input_spec[1] if len(input_spec) > 1 and isinstance(input_spec[1], dict) else {}
+            else:
+                raw_type = input_spec
+                options = {}
+
+            is_combo = isinstance(raw_type, (tuple, list))
+            input_type = "COMBO" if is_combo else str(raw_type)
+            is_widget = not options.get("forceInput", False) and (
+                is_combo or input_type in WIDGET_TYPES
+            )
+            normalized_group.append(
+                {
+                    "name": input_name,
+                    "type": input_type,
+                    "default": _json_value(options.get("default")),
+                    "widget": is_widget,
+                }
+            )
+        normalized[group_name] = normalized_group
+    return normalized
+
+
+def _normalize_node_contract(node_class):
+    input_contract = _normalize_inputs(node_class.INPUT_TYPES())
+    return_types = list(getattr(node_class, "RETURN_TYPES", ()))
+    return_names = list(getattr(node_class, "RETURN_NAMES", return_types))
+    if len(return_names) != len(return_types):
+        raise AssertionError(f"{node_class.__name__} RETURN_NAMES length mismatch")
+
+    return {
+        **input_contract,
+        "outputs": [
+            {"index": index, "type": output_type, "name": return_names[index]}
+            for index, output_type in enumerate(return_types)
+        ],
+        "output_node": bool(getattr(node_class, "OUTPUT_NODE", False)),
+        "function": getattr(node_class, "FUNCTION", ""),
+        "category": getattr(node_class, "CATEGORY", ""),
+    }
+
+
+def _normalized_package_contracts(package):
+    return {
+        node_id: _normalize_node_contract(node_class)
+        for node_id, node_class in package.NODE_CLASS_MAPPINGS.items()
+    }
+
+
+def _widget_input_names(node_contract):
+    return [
+        item["name"]
+        for group_name in ("required", "optional")
+        for item in node_contract[group_name]
+        if item["widget"]
+    ]
 
 
 class PackageImportContext:
@@ -133,6 +221,127 @@ class HostCompatibilityContractTests(unittest.TestCase):
                 preferred_json = Path(handler.storage_dir) / "text_storage.json"
                 with open(preferred_json, "r", encoding="utf-8") as f:
                     self.assertIn("Preferred", json.load(f))
+
+
+class WorkflowSerializationContractTests(unittest.TestCase):
+    def load_contract_fixture(self):
+        with open(NODE_CONTRACTS_PATH, encoding="utf-8") as fixture_file:
+            manifest = json.load(fixture_file)
+        self.assertEqual(1, manifest.get("schema_version"))
+        self.assertIsInstance(manifest.get("nodes"), dict)
+        return manifest
+
+    def load_workflow_fixture(self):
+        with open(LEGACY_WORKFLOWS_PATH, encoding="utf-8") as fixture_file:
+            workflows = json.load(fixture_file)
+        self.assertEqual(1, workflows.get("schema_version"))
+        self.assertEqual("widgets_values", workflows.get("portable_baseline"))
+        self.assertIsInstance(workflows.get("workflows"), list)
+        return workflows
+
+    def assert_contracts_match(self, expected, actual):
+        self.assertEqual(expected, actual)
+
+    def test_tracked_contract_and_legacy_workflow_fixtures_exist(self):
+        self.assertTrue(
+            NODE_CONTRACTS_PATH.is_file(),
+            "tracked V1 node contract fixture is required",
+        )
+        self.assertTrue(
+            LEGACY_WORKFLOWS_PATH.is_file(),
+            "tracked synthetic legacy workflow fixture is required",
+        )
+
+    def test_manifest_matches_all_registered_v1_node_contracts(self):
+        manifest = self.load_contract_fixture()
+        self.assertEqual(1, manifest.get("schema_version"))
+        self.assertIn("nodes", manifest)
+
+        with PackageImportContext() as package:
+            actual = _normalized_package_contracts(package)
+
+        self.assertEqual(17, len(actual))
+        self.assert_contracts_match(manifest["nodes"], actual)
+
+    def test_contract_comparator_rejects_protected_drift(self):
+        manifest = self.load_contract_fixture()
+        expected = manifest["nodes"]
+
+        with PackageImportContext() as package:
+            actual = _normalized_package_contracts(package)
+
+        mutations = {}
+
+        reordered_input = copy.deepcopy(actual)
+        reordered_input["AdvancedImageSaver"]["required"][1:3] = reversed(
+            reordered_input["AdvancedImageSaver"]["required"][1:3]
+        )
+        mutations["input reorder"] = reordered_input
+
+        renamed_input = copy.deepcopy(actual)
+        renamed_input["LoadImageBatch"]["required"][0]["name"] = "renamed_path"
+        mutations["input rename"] = renamed_input
+
+        reordered_output = copy.deepcopy(actual)
+        reordered_output["LoadImageBatch"]["outputs"].reverse()
+        mutations["output reorder"] = reordered_output
+
+        changed_output_type = copy.deepcopy(actual)
+        changed_output_type["LoadImageBatch"]["outputs"][0]["type"] = "MASK"
+        mutations["output type"] = changed_output_type
+
+        changed_output_name = copy.deepcopy(actual)
+        changed_output_name["LoadImageBatch"]["outputs"][0]["name"] = "renamed_image"
+        mutations["output name"] = changed_output_name
+
+        renamed_node = copy.deepcopy(actual)
+        renamed_node["RenamedLoadImageBatch"] = renamed_node.pop("LoadImageBatch")
+        mutations["node id"] = renamed_node
+
+        for drift_name, mutated in mutations.items():
+            with self.subTest(drift=drift_name):
+                with self.assertRaises(AssertionError):
+                    self.assert_contracts_match(expected, mutated)
+
+    def test_synthetic_legacy_workflows_restore_positional_widgets(self):
+        manifest = self.load_contract_fixture()
+        workflows = self.load_workflow_fixture()
+
+        self.assertEqual(1, workflows.get("schema_version"))
+        self.assertEqual("widgets_values", workflows.get("portable_baseline"))
+
+        required_node_types = {
+            "AdvancedImageSaver",
+            "TP_SaveMask",
+            "TP_LoadMask",
+            "TextStorageReader",
+            "TextStorageWriter",
+        }
+        fixture_node_types = {fixture["node_type"] for fixture in workflows["workflows"]}
+        self.assertTrue(required_node_types.issubset(fixture_node_types))
+
+        for fixture in workflows["workflows"]:
+            with self.subTest(fixture=fixture["id"]):
+                node_contract = manifest["nodes"][fixture["node_type"]]
+                widget_names = _widget_input_names(node_contract)
+                self.assertEqual(len(widget_names), len(fixture["widgets_values"]))
+                restored = dict(zip(widget_names, fixture["widgets_values"], strict=True))
+                self.assertEqual(fixture["expected"], restored)
+
+                named_values = fixture.get("widgets_values_named")
+                if named_values is not None:
+                    self.assertEqual(fixture["expected"], named_values)
+
+    def test_workflow_fixtures_are_synthetic_and_content_free(self):
+        fixture_text = LEGACY_WORKFLOWS_PATH.read_text(encoding="utf-8")
+        self.assertIsNone(FORBIDDEN_FIXTURE_TEXT.search(fixture_text))
+
+        workflows = self.load_workflow_fixture()
+        for fixture in workflows["workflows"]:
+            self.assertRegex(fixture["id"], r"^[a-z0-9_]+$")
+            self.assertNotIn("prompt", fixture)
+            self.assertNotIn("extra", fixture)
+            self.assertNotIn("workflow", fixture)
 
 
 if __name__ == "__main__":
