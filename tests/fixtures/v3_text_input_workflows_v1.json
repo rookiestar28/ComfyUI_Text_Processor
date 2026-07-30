@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "node_type": "TextInput",
+  "portable_baseline": "widgets_values",
+  "workflows": [
+    {
+      "id": "text_input_empty_default",
+      "widgets_values": [" ", "", "", "", "", "", "", ""],
+      "expected_result": [
+        "A cute little monster holding a sign with big text: GIVE ME INPUT!"
+      ],
+      "ui": null
+    },
+    {
+      "id": "text_input_joined_values",
+      "widgets_values": [" | ", "alpha", "", "gamma", "delta", "", "zeta", ""],
+      "expected_result": ["alpha | gamma | delta | zeta"],
+      "ui": null
+    }
+  ]
+}

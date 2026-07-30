@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "decision": "DEFER_PRODUCTION",
+  "production_registration": "V1",
+  "prototype_node": "TextInput",
+  "revisit_trigger": "Official stable V3 API version newer than v0_0_2",
+  "registry_excludes_prototype": true,
+  "supported_tiers": [
+    {
+      "id": "desktop_floor",
+      "core_version": "0.22.3",
+      "core_commit_short": "7c47f4d",
+      "v0_0_2_shim_blob_short": "c4fa1d9",
+      "latest_io_blob_short": "5ed9689",
+      "v0_0_2_stable": false,
+      "loader_precedence": "V1_BEFORE_V3"
+    },
+    {
+      "id": "current_host",
+      "core_version": "0.29.0",
+      "core_commit_short": "9cf9133",
+      "v0_0_2_shim_blob_short": "c4fa1d9",
+      "latest_io_blob_short": "58e49d8",
+      "v0_0_2_stable": false,
+      "loader_precedence": "V1_BEFORE_V3"
+    }
+  ],
+  "nodes": {
+    "AdvancedTextFilter": {
+      "classification": "stateless",
+      "state_seams": ["input_only_text_transform"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "The no-op constructor retains no state and processing is derived from inputs."
+    },
+    "TextInput": {
+      "classification": "stateless",
+      "state_seams": ["input_only_string_join"],
+      "prototype_eligible": true,
+      "selected_prototype": true,
+      "rationale": "The no-op constructor retains no state and execution joins only supplied strings."
+    },
+    "TextScraper": {
+      "classification": "external_stateful",
+      "state_seams": ["dns_resolution", "http_network"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "Results and security behavior depend on DNS and remote HTTP state."
+    },
+    "WildcardsNode": {
+      "classification": "external_stateful",
+      "state_seams": ["wildcard_filesystem", "seeded_randomness"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "Schema and execution read wildcard files and make seeded selections."
+    },
+    "AddTextToImage": {
+      "classification": "class_stateful",
+      "state_seams": ["font_registry", "font_filesystem"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "A mutable class-level FontCollection loaded from font files affects schema and rendering."
+    },
+    "EvaluateInts": {
+      "classification": "stateless",
+      "state_seams": ["input_only_expression_eval", "optional_console_output"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "Expression results derive from inputs; optional console output retains no state."
+    },
+    "EvaluateFloats": {
+      "classification": "stateless",
+      "state_seams": ["input_only_expression_eval", "optional_console_output"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "Expression results derive from inputs; optional console output retains no state."
+    },
+    "EvaluateStrs": {
+      "classification": "stateless",
+      "state_seams": ["input_only_expression_eval", "optional_console_output"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "Expression results derive from inputs; optional console output retains no state."
+    },
+    "AdvancedImageSaver": {
+      "classification": "instance_stateful",
+      "state_seams": [
+        "predictor_model_lifecycle",
+        "predictor_preprocessor_lifecycle",
+        "device_dtype_status",
+        "constructor_output_directory",
+        "output_filesystem"
+      ],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "Instance fields retain model, processor, precision, error, and output lifecycle state."
+    },
+    "TextStorageReader": {
+      "classification": "instance_stateful",
+      "state_seams": ["storage_handler", "storage_version", "user_filesystem"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "A per-instance handler coordinates preferred and legacy storage with class versioning."
+    },
+    "TextStorageWriter": {
+      "classification": "instance_stateful",
+      "state_seams": ["storage_handler", "storage_version", "user_filesystem"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "A per-instance handler performs locked filesystem writes and advances storage version."
+    },
+    "ImageCropper": {
+      "classification": "stateless",
+      "state_seams": ["input_only_tensor_transform"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "Cropping and scaling are derived from input tensors and constants."
+    },
+    "TP_SaveMask": {
+      "classification": "instance_stateful",
+      "state_seams": ["constructor_output_directory", "output_filesystem"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "The constructor captures output metadata used by filesystem writes and previews."
+    },
+    "TP_LoadMask": {
+      "classification": "external_stateful",
+      "state_seams": ["input_filesystem"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "Schema, validation, and execution depend on current ComfyUI input files."
+    },
+    "image_concat_advanced": {
+      "classification": "stateless",
+      "state_seams": ["input_only_tensor_transform"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "Concatenation is derived from supplied image tensors and constants."
+    },
+    "LoadImageBatch": {
+      "classification": "class_stateful",
+      "state_seams": ["incremental_class_state", "input_filesystem"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "A class dictionary retains per-key incremental indices across executions."
+    },
+    "ResizeImageAdvanced": {
+      "classification": "stateless",
+      "state_seams": ["input_only_tensor_transform"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "Resizing and mask transformation are derived from input tensors and constants."
+    }
+  }
+}
