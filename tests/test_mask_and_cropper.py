@@ -52,19 +52,56 @@ class MaskNodeBehaviorTests(unittest.TestCase):
         _restore_folder_paths(self.previous_folder_paths)
         self.tmp.cleanup()
 
-    def test_save_mask_writes_png_to_isolated_output_directory(self):
-        mask = torch.tensor([[[0.0, 0.5], [1.0, 0.25]]], dtype=torch.float32)
+    def test_save_mask_preserves_files_preview_and_original_tensor_passthrough(self):
+        mask = torch.tensor(
+            [
+                [[0.0, 0.5], [1.0, 0.25]],
+                [[0.1, 0.2], [0.3, 0.4]],
+            ],
+            dtype=torch.float32,
+        )
+        expected_mask = mask.clone()
         node = self.mask_nodes.TP_SaveMask()
 
         result = node.save_mask(mask, filename_prefix="unit_mask")
 
+        self.assertEqual(("MASK",), node.RETURN_TYPES)
+        self.assertEqual(("mask",), node.RETURN_NAMES)
+        self.assertEqual(("Saved mask tensor passthrough.",), node.OUTPUT_TOOLTIPS)
+        self.assertTrue(node.OUTPUT_NODE)
+        self.assertEqual({"ui", "result"}, set(result))
+        self.assertEqual(1, len(result["result"]))
+        self.assertIs(mask, result["result"][0])
+        self.assertEqual(mask.shape, result["result"][0].shape)
+        self.assertEqual(mask.dtype, result["result"][0].dtype)
+        self.assertEqual(mask.device, result["result"][0].device)
+        self.assertEqual(mask.requires_grad, result["result"][0].requires_grad)
+        self.assertTrue(torch.equal(expected_mask, result["result"][0]))
+
         files = sorted(self.output_dir.glob("unit_mask_*.png"))
-        self.assertEqual(1, len(files))
+        self.assertEqual(2, len(files))
         with Image.open(files[0]) as saved:
             self.assertEqual(saved.mode, "L")
             self.assertEqual(saved.size, (2, 2))
-            self.assertEqual(np.array(saved).max(), 255)
-        self.assertEqual("unit_mask_00001_.png", result["ui"]["images"][0]["filename"])
+            np.testing.assert_array_equal(
+                np.array([[0, 127], [255, 63]], dtype=np.uint8),
+                np.array(saved),
+            )
+        self.assertEqual(
+            [
+                {
+                    "filename": "unit_mask_00001_.png",
+                    "subfolder": "",
+                    "type": "output",
+                },
+                {
+                    "filename": "unit_mask_00002_.png",
+                    "subfolder": "",
+                    "type": "output",
+                },
+            ],
+            result["ui"]["images"],
+        )
 
     def test_load_mask_returns_single_batch_float_mask_in_zero_to_one_range(self):
         image = Image.fromarray(np.array([[0, 128], [255, 64]], dtype=np.uint8), mode="L")

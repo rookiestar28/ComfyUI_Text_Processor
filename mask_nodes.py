@@ -56,12 +56,14 @@ class TP_SaveMask:
             },
         }
 
-    RETURN_TYPES = ()
+    RETURN_TYPES = ("MASK",)
+    RETURN_NAMES = ("mask",)
     FUNCTION = "save_mask"
     OUTPUT_NODE = True
     CATEGORY = "ComfyUI Text Processor/Image"
     DESCRIPTION = "Writes MASK tensors to the ComfyUI output directory as PNG files."
     SEARCH_ALIASES = ["save mask", "mask output", "export mask", "write mask"]
+    OUTPUT_TOOLTIPS = ("Saved mask tensor passthrough.",)
 
     def save_mask(self, mask, filename_prefix="Mask_Output"):
         full_output_folder, filename, counter, subfolder, filename_prefix = \
@@ -81,7 +83,7 @@ class TP_SaveMask:
             })
             counter += 1
         
-        return { "ui": { "images": results } }
+        return {"ui": {"images": results}, "result": (mask,)}
 
 class TP_LoadMask:
     @classmethod

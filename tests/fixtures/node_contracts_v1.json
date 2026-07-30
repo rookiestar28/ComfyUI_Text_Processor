@@ -277,7 +277,9 @@
       ],
       "optional": [],
       "hidden": [],
-      "outputs": [],
+      "outputs": [
+        {"index": 0, "type": "MASK", "name": "mask"}
+      ],
       "output_node": true,
       "function": "save_mask",
       "category": "ComfyUI Text Processor/Image"
