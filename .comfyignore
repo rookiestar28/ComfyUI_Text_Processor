@@ -1,0 +1,7 @@
+# Development, CI, and repository validation files are not runtime package assets.
+.github/
+.gitattributes
+.gitignore
+.pre-commit-config.yaml
+scripts/
+tests/
