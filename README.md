@@ -10,7 +10,13 @@ An advanced automation toolkit for ComfyUI, bridging the gap between raw data an
 
 **01/2026 update:** Add Text to Image node now supports intelligent text adaptation with `auto_adapt` toggle - automatically wraps long text and adjusts font size to fit image dimensions, plus truncation mode with ellipsis for fixed-size rendering. Height constraints are now enforced alongside width checks.
 
-**06/2026 compatibility update:** Host-facing node metadata has been added for current ComfyUI search/help surfaces. Advanced Image Saver now omits previews for explicitly allowed absolute output paths outside ComfyUI output while still returning saved paths in `files`. Load Image Batch and Load Mask expose validation hooks where ComfyUI supports them, and Text Storage prefers the ComfyUI user directory while keeping legacy plugin-local entries readable.
+## Compatibility and host support
+
+* **Release requirements:** ComfyUI Text Processor 1.5.0 requires Python 3.10+ and ComfyUI Core 0.22.3+.
+* **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
+* **Current host observation:** The node pack has also been checked against Core 0.29.0 and Frontend 1.49.1. These versions are a current compatibility snapshot, not a new minimum or maximum.
+* **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
+* **In-app guidance:** All 139 visible node inputs provide host tooltips, and 8 complex nodes also provide fallback Markdown help in ComfyUI's node-help surface.
 
 ---
 
@@ -132,6 +138,10 @@ Retrieves saved text content.
 * **Passthrough:** Outputs the selected text content string.
 * **> Important Note:** The dropdown list is generated when the node loads. If you have just saved a NEW file using the Writer node, you must **Refresh the ComfyUI Page (F5)** to see the new file appear in the Reader's list.
 
+#### Text Storage vs Core SaveText
+
+Newer ComfyUI Core releases include `SaveText`, a straightforward exporter that writes numbered `.txt`, `.md`, or `.json` files to the ComfyUI output directory and passes the submitted text through. Text Storage is the better fit when workflows need named persistent entries shared across sessions, a separate Reader, JSON/TXT storage, add-with-auto-rename, overwrite, delete, and legacy-entry fallback. `SaveText` was added after the validated Desktop floor, so it may not be available on older supported hosts.
+
 ### Wildcards Processor (Dynamic Prompt Mixer)
 
 Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and random choices (e.g., `{cat|dog}`). This node has been evolved into a powerful **7-slot mixer**.
@@ -236,7 +246,7 @@ Resize image batches with direct size controls, aspect-ratio target calculation,
 Image and mask IO utilities for workflows that need to load batch images or persist mask data.
 
 * **Load Image Batch:** Loads one static `IMAGE` from a directory by `path` + relative `pattern`, with single, incremental, or seeded-random selection. When ComfyUI validation hooks are available, invalid folders, empty matches, unsafe patterns, and out-of-range fixed indexes are reported before execution. Registered as `LoadImageBatch`.
-* **Save Mask:** Writes masks to the ComfyUI output directory as PNG files.
+* **Save Mask:** Writes masks to the ComfyUI output directory as PNG files, reports them to the ComfyUI preview UI, and returns the original `MASK` unchanged for downstream chaining.
 * **Load Mask:** Loads supported image files from the ComfyUI input directory and converts them to `MASK`.
 * **ComfyUI Integration:** Uses ComfyUI input/output path helpers when available.
 
@@ -259,6 +269,10 @@ Renders text onto images with advanced formatting options.
 * **Batch Support:** Can process image batches; text labels loop automatically if fewer than images.
 * **Font Fallbacks:** Handles missing stored font names by resolving compatible fonts from the current environment when possible.
 * **Compatibility:** Always outputs standard RGB images for downstream image/video nodes.
+
+#### Add Text to Image vs Core TextOverlay
+
+Newer ComfyUI Core releases include `TextOverlay`, a simpler option for applying the same text across a batch with the default font, image-relative text size, top/bottom placement, horizontal alignment, color, and an optional black outline. Add Text to Image is intended for workflows that need selectable fonts, per-image labels, 7 anchor positions, pixel-level margins and spacing, RGBA box or strip backgrounds, and adaptive wrapping/shrinking or ellipsis truncation. `TextOverlay` was added after the validated Desktop floor, so it may not be available on older supported hosts.
 
 ---
 

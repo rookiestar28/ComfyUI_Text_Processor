@@ -8,7 +8,13 @@
 
 **01/2026 更新：** 在 add_text_to_image 節點新增智慧文字自適應功能 `auto_adapt` 開關 - 自動換行過長文字並調整字體大小以符合圖片尺寸，另提供截斷模式搭配省略號以固定字體渲染。現已同步強制高度與寬度檢查。
 
-**06/2026 相容性更新：** 已為目前 ComfyUI 搜尋與說明介面補上節點 metadata。Advanced Image Saver 在明確允許輸出到 ComfyUI output 以外的絕對路徑時，仍會於 `files` 回傳已儲存路徑，但不再產生 ComfyUI 預覽。Load Image Batch 與 Load Mask 會在 ComfyUI 支援時提供 validation hooks；Text Storage 會優先使用 ComfyUI user directory，並維持對舊版 plugin-local 資料的讀取相容性。
+## 相容性與宿主支援
+
+* **發行需求：** ComfyUI Text Processor 1.5.0 需要 Python 3.10+ 與 ComfyUI Core 0.22.3+。
+* **已驗證的 Desktop 下限：** 相容性契約涵蓋的最舊宿主組合為 Desktop 0.9.4、Core 0.22.3 與 Frontend 1.43.18。
+* **目前宿主觀測：** 本節點套件也已對照 Core 0.29.0 與 Frontend 1.49.1；這是目前的相容性快照，不代表新的最低或最高支援版本。
+* **Node API 方針：** 正式節點維持 V1 以確保相容性；在 ComfyUI 發布比實驗性 `v0_0_2` 契約更新且穩定的 node API 前，會暫緩 V3 遷移。
+* **介面內說明：** 全部 139 個可見節點輸入都有宿主 tooltip，另有 8 個複雜節點在 ComfyUI node-help 介面提供備援 Markdown 說明。
 
 專為 ComfyUI 打造的進階自動化工具套件，連結原始數據與生成式 AI。具備批量文字清洗（針對圖生文工作流）、LLM 輸出解析、動態通配符以及邏輯運算功能，旨在簡化複雜的提示工程工作流。
 
@@ -131,6 +137,10 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 * **直通輸出:** 輸出選定的文字內容字串。
 * **> 重要提示:** 下拉選單是在節點載入時生成的。如果您剛剛透過 Writer 寫入了新檔案，必須 **重新整理 ComfyUI 網頁 (F5)**，新檔案才會出現在 Reader 的列表中。
 
+#### Text Storage 與 Core SaveText
+
+較新的 ComfyUI Core 提供 `SaveText`，適合把文字直接輸出為帶編號的 `.txt`、`.md` 或 `.json` 檔案至 ComfyUI output 目錄，並將送入的文字直通輸出。若工作流需要跨會話共用的具名持久資料、獨立 Reader、JSON/TXT 儲存、add 自動更名、overwrite、delete，以及舊版資料回退讀取，則 Text Storage 更合適。`SaveText` 在已驗證的 Desktop 下限之後才加入，因此較舊但仍受支援的宿主可能沒有此節點。
+
 ### Wildcards Processor (動態提示詞混合器)
 
 使用通配符語法（如 `__style__`）和隨機選擇（如 `{cat|dog}`）生成豐富的動態提示詞。此節點已進化為強大的 **7 槽混合器**。
@@ -233,7 +243,7 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 提供圖片與遮罩輸入輸出的工具節點，便於載入批次圖片或在工作流中重複使用 mask。
 
 * **Load Image Batch：** 依 `path` 與相對 `pattern` 從資料夾載入一張靜態 `IMAGE`，支援固定索引、逐張遞增與可重現隨機選取。若 ComfyUI 支援 validation hook，無效資料夾、空匹配、不安全 pattern、超出範圍的固定索引會在執行前回報。註冊 ID 為 `LoadImageBatch`。
-* **Save Mask：** 將 `MASK` 以 PNG 形式寫入 ComfyUI output 目錄。
+* **Save Mask：** 將 `MASK` 以 PNG 形式寫入 ComfyUI output 目錄、回報至 ComfyUI 預覽介面，並將原始 `MASK` 不變地回傳以便串接下游節點。
 * **Load Mask：** 從 ComfyUI input 目錄載入支援的圖片檔並轉成 `MASK`。
 * **ComfyUI 整合：** 優先使用 ComfyUI 的 input/output 路徑輔助函式。
 
@@ -256,6 +266,10 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 * **批量支援：** 支援批量圖片處理 (Batch Processing)。
 * **字型回退：** 若工作流中的字型名稱在當前環境不存在，會盡量尋找可相容的替代字型。
 * **格式兼容：** 強制輸出標準 RGB 圖像，確保與下游 image/video 節點相容。
+
+#### Add Text to Image 與 Core TextOverlay
+
+較新的 ComfyUI Core 提供 `TextOverlay`，適合以預設字型將相同文字套用到整個 batch，並控制相對圖片高度的字級、上／下位置、水平對齊、顏色與可選黑色外框。Add Text to Image 則適合需要自選字型、逐張圖片標籤、7 個錨點位置、像素級邊距與行距、RGBA 文字框或橫條背景，以及自適應換行／縮字或省略號截斷的工作流。`TextOverlay` 在已驗證的 Desktop 下限之後才加入，因此較舊但仍受支援的宿主可能沒有此節點。
 
 ---
 
