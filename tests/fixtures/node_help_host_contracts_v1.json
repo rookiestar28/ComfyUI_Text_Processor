@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "web_directory": "./web",
-  "expected_node_count": 17,
-  "expected_visible_input_count": 139,
+  "expected_node_count": 18,
+  "expected_visible_input_count": 145,
   "excluded_hidden_inputs": {
     "AdvancedImageSaver": ["prompt", "extra_pnginfo"]
   },
@@ -10,6 +10,7 @@
     "AddTextToImage",
     "AdvancedImageSaver",
     "AdvancedTextFilter",
+    "Global_RandomSeed",
     "ImageCropper",
     "LoadImageBatch",
     "ResizeImageAdvanced",

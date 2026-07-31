@@ -95,6 +95,26 @@
         "mode": "Add New (Auto Rename)",
         "storage_format": "json"
       }
+    },
+    {
+      "id": "global_random_seed_positional",
+      "node_type": "Global_RandomSeed",
+      "widgets_values": [
+        "4294967295",
+        "uint32",
+        "before_generation",
+        "fixed",
+        "same",
+        "4294967295"
+      ],
+      "expected": {
+        "value": "4294967295",
+        "seed_width": "uint32",
+        "timing": "before_generation",
+        "queue_action": "fixed",
+        "distribution": "same",
+        "last_seed": "4294967295"
+      }
     }
   ]
 }

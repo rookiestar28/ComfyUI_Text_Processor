@@ -203,7 +203,7 @@ class V3MigrationContractTests(unittest.TestCase):
         with PackageImportContext() as package:
             self.assertEqual(set(package.NODE_CLASS_MAPPINGS), set(classifications))
 
-        self.assertEqual(17, len(classifications))
+        self.assertEqual(18, len(classifications))
         counts = Counter()
         selected = []
         for node_id, entry in classifications.items():
@@ -222,7 +222,7 @@ class V3MigrationContractTests(unittest.TestCase):
         self.assertEqual(
             {
                 "stateless": 8,
-                "external_stateful": 3,
+                "external_stateful": 4,
                 "class_stateful": 2,
                 "instance_stateful": 4,
             },

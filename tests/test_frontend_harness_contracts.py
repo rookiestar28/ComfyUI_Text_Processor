@@ -148,13 +148,16 @@ class FrontendHarnessContractTests(unittest.TestCase):
             self.assertIn("node", runner.lower())
             self.assertIn("18", runner)
 
-    def test_t07_does_not_add_runtime_javascript_or_a_product_node(self):
+    def test_f18_adds_only_the_frozen_runtime_javascript_and_product_node(self):
         runtime_javascript = sorted((REPO_DIR / "web").rglob("*.js"))
-        self.assertEqual([], runtime_javascript)
+        self.assertEqual(
+            [REPO_DIR / "web" / "global_random_seed.js"],
+            runtime_javascript,
+        )
 
         node_contracts = _read_json("tests/fixtures/node_contracts_v1.json")
-        self.assertEqual(17, len(node_contracts["nodes"]))
-        self.assertNotIn("Global_RandomSeed", node_contracts["nodes"])
+        self.assertEqual(18, len(node_contracts["nodes"]))
+        self.assertIn("Global_RandomSeed", node_contracts["nodes"])
 
 
 if __name__ == "__main__":

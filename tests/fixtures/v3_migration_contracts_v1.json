@@ -150,6 +150,13 @@
       "prototype_eligible": true,
       "selected_prototype": false,
       "rationale": "Resizing and mask transformation are derived from input tensors and constants."
+    },
+    "Global_RandomSeed": {
+      "classification": "external_stateful",
+      "state_seams": ["prompt_hook", "client_event", "injected_randomness"],
+      "prototype_eligible": false,
+      "selected_prototype": false,
+      "rationale": "Execution is coordinated by a host prompt hook, client-scoped readback event, and optional random derivation."
     }
   }
 }

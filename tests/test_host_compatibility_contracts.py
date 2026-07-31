@@ -260,7 +260,7 @@ class WorkflowSerializationContractTests(unittest.TestCase):
         with PackageImportContext() as package:
             actual = _normalized_package_contracts(package)
 
-        self.assertEqual(17, len(actual))
+        self.assertEqual(18, len(actual))
         self.assert_contracts_match(manifest["nodes"], actual)
 
     def test_contract_comparator_rejects_protected_drift(self):

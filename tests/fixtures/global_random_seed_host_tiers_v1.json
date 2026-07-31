@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "tiers": [
+    {
+      "id": "desktop_floor",
+      "core_version": "0.22.3",
+      "core_ref_short": "7c47f4d",
+      "frontend_version": "1.43.18",
+      "frontend_ref_short": "6a207bb",
+      "prompt_handler_api": "add_on_prompt_handler(handler)",
+      "event_api": "send_sync(event, data, sid)",
+      "extension_api": "app.registerExtension",
+      "client_event_api": "api.addEventListener"
+    },
+    {
+      "id": "current_host",
+      "core_version": "0.29.0",
+      "core_ref_short": "9cf9133",
+      "frontend_version": "1.49.1",
+      "frontend_ref_short": "4b3866b",
+      "prompt_handler_api": "add_on_prompt_handler(handler)",
+      "event_api": "send_sync(event, data, sid)",
+      "extension_api": "app.registerExtension",
+      "client_event_api": "api.addEventListener"
+    }
+  ]
+}

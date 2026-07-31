@@ -367,6 +367,24 @@
       "output_node": false,
       "function": "resize",
       "category": "ComfyUI Text Processor/Image"
+    },
+    "Global_RandomSeed": {
+      "required": [
+        {"name": "value", "type": "STRING", "default": "0", "widget": true},
+        {"name": "seed_width", "type": "COMBO", "default": "uint32", "widget": true},
+        {"name": "timing", "type": "COMBO", "default": "before_generation", "widget": true},
+        {"name": "queue_action", "type": "COMBO", "default": "fixed", "widget": true},
+        {"name": "distribution", "type": "COMBO", "default": "same", "widget": true},
+        {"name": "last_seed", "type": "STRING", "default": "0", "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "INT", "name": "applied_seed"}
+      ],
+      "output_node": true,
+      "function": "apply_seed",
+      "category": "ComfyUI Text Processor/Logic"
     }
   }
 }

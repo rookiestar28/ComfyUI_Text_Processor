@@ -64,6 +64,11 @@ class DependencyMetadataTests(unittest.TestCase):
         )
 
     @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
+    def test_global_random_seed_release_uses_minor_version(self):
+        pyproject = _load_pyproject()
+        self.assertEqual("1.6.0", pyproject["project"]["version"])
+
+    @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
     def test_frontend_dependency_and_force_includes_remain_absent(self):
         pyproject_path = REPO_DIR / "pyproject.toml"
         pyproject = _load_pyproject()
@@ -118,6 +123,7 @@ class DependencyMetadataTests(unittest.TestCase):
             "web/docs/AdvancedImageSaver.md",
             "web/docs/AdvancedTextFilter.md",
             "web/docs/ImageCropper.md",
+            "web/docs/Global_RandomSeed.md",
             "web/docs/LoadImageBatch.md",
             "web/docs/ResizeImageAdvanced.md",
             "web/docs/TextStorageReader.md",
@@ -139,6 +145,8 @@ class DependencyMetadataTests(unittest.TestCase):
             "Image_concat_advanced.py",
             "load_image_batch.py",
             "resize_image_advanced.py",
+            "global_random_seed.py",
+            "web/global_random_seed.js",
             "pyproject.toml",
             "requirements.txt",
             "LICENSE",

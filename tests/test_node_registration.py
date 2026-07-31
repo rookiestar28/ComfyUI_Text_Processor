@@ -24,6 +24,7 @@ EXPECTED_NODE_IDS = {
     "image_concat_advanced",
     "LoadImageBatch",
     "ResizeImageAdvanced",
+    "Global_RandomSeed",
 }
 
 
