@@ -151,7 +151,6 @@ class DependencyMetadataTests(unittest.TestCase):
             "requirements.txt",
             "LICENSE",
             "README.md",
-            "README.zh-TW.md",
             "examples/advanced_text_filter.png",
             "fonts/.gitkeep",
             "text_storage/.gitkeep",

@@ -1,14 +1,130 @@
-[![zh-TW](https://img.shields.io/badge/lang-zh--TW-blue.svg)](./README.zh-TW.md)
-
 # ComfyUI Text Processor
 
-An advanced automation toolkit for ComfyUI, bridging the gap between raw data and generative AI. Features Batch Text Cleaning (for Img2Text), LLM Output Parsing, Dynamic Wildcards, and Logic Evaluation to streamline complex prompt engineering workflows.
+An advanced automation toolkit with 18 production nodes for text processing, reusable storage, dynamic prompts, seed orchestration, image and mask workflows, composition, and export.
 
 ![Workflow Demo](./examples/advanced_text_filter.png)
 
 ---
 
-**01/2026 update:** Add Text to Image node now supports intelligent text adaptation with `auto_adapt` toggle - automatically wraps long text and adjusts font size to fit image dimensions, plus truncation mode with ellipsis for fixed-size rendering. Height constraints are now enforced alongside width checks.
+<details><summary><h2>Latest Updates - Click to expand</h2></summary>
+
+<details>
+
+<summary><strong>Workflow and image tools expanded</strong></summary>
+
+- Added `Global Random Seed`, a zero-wire uint32/uint64 controller with bounded
+  queue actions, distribution modes, and precision-safe browser readback.
+- Added `Resize Image Advanced` and `Load Image Batch` for advanced
+  resize/mask alignment and validated single, incremental, or seeded-random image
+  loading.
+- Expanded `Image Concat Advanced` with directional wrapped grids, and made
+  `Save Mask` return the original mask for downstream chaining.
+
+</details>
+
+<details>
+
+<summary><strong>Image output and text rendering hardened</strong></summary>
+
+- Advanced Image Saver now constrains output paths, avoids unsafe external
+  previews, supports privacy-controlled metadata, and exposes aesthetic scores.
+- Aesthetic Predictor loading is explicit and safer, with remote-code opt-in,
+  device/precision fallback, clearer diagnostics, and optional model caching.
+- Add Text to Image now handles empty/list inputs safely and supports adaptive
+  English/CJK wrapping, font resizing, height limits, and ellipsis truncation.
+
+</details>
+
+<details>
+
+<summary><strong>Text, storage, and network reliability improved</strong></summary>
+
+- Advanced Text Filter now honors trigger-error behavior and returns predictable
+  regex capture-group output.
+- Text Scraper blocks local/private targets and adds bounded public HTTP/HTTPS
+  fetching; Wildcards uses safer source resolution and path handling.
+- Text Storage prefers the ComfyUI user directory while retaining legacy reads,
+  delete compatibility, and a clear empty-state placeholder.
+
+</details>
+
+<details>
+
+<summary><strong>Host compatibility and in-app guidance refreshed</strong></summary>
+
+- Version 1.6.0 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
+  covering the validated Desktop floor and the current host snapshot.
+- Production nodes remain on the compatible V1 API while V3 migration stays
+  deferred until a newer stable ComfyUI node API is available.
+- All 145 visible inputs now include tooltips, 9 complex nodes provide Markdown
+  help, and backend plus real-browser regression coverage protects host behavior.
+
+</details>
+
+</details>
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Compatibility and host support](#compatibility-and-host-support)
+- [Advanced Text Filter Node](#1-advanced-text-filter-node-core)
+- [Text Utilities](#2-text-utilities)
+- [Logic & Math Nodes](#3-logic--math-nodes)
+- [Image Utilities](#4-image-utilities)
+- [License](#license)
+
+---
+
+## Installation
+
+### Method 1: Via ComfyUI Manager (Recommended)
+
+This is the easiest way to install the node pack.
+
+1. Open **ComfyUI Manager** within your ComfyUI interface.
+2. Click on **"Custom Nodes Manager"**.
+3. Search for `ComfyUI Text Processor`.
+4. Click **Install** and wait for the process to complete.
+5. **Restart ComfyUI**.
+
+### Method 2: Manual Installation
+
+If you prefer terminal commands or don't use the Manager:
+
+1. Navigate to your custom nodes directory:
+
+    ```bash
+    cd ComfyUI/custom_nodes/
+    ```
+
+2. Clone this repository:
+
+    ```bash
+    git clone https://github.com/rookiestar28/ComfyUI_Text_Processor.git
+    ```
+
+3. **Install dependencies:**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    Optional built-in aesthetic scoring support:
+
+    ```bash
+    pip install aesthetic-predictor-v2-5
+    ```
+
+4. **Restart ComfyUI**.
+
+---
+
+### Asset Setup (Optional)
+
+* **Fonts:** Place your `.ttf` or `.otf` files in `ComfyUI/custom_nodes/ComfyUI_Text_Processor/fonts/` for the *Add Text to Image* node.
+* **Wildcards:** Place your wildcard text files in `ComfyUI/wildcards/` or `ComfyUI/custom_nodes/ComfyUI_Text_Processor/wildcards/`.
+
+---
 
 ## Compatibility and host support
 
@@ -33,8 +149,8 @@ Whether you need to precisely extract sections from a large text block, batch re
   * Global Find/Replace/Extract
   * First-Match Split/Between
   * Format Cleanup
-  * [New] LLM Output Parsing (JSON, Code blocks)
-* Robust Error Handling (v1.1.5): The new `if_not_found` option allows you to choose the fallback behavior (return original, return empty, or trigger error) when a pattern isn't found, preventing batch workflow failures.
+  * LLM Output Parsing (JSON, Code blocks)
+* **Robust Error Handling:** The `if_not_found` option lets you choose the fallback behavior (return original, return empty, or trigger error) when a pattern isn't found, preventing batch workflow failures.
 * **Powerful Regex Support**: A `use_regex` toggle switches all find and split operations to use Regular Expressions. **Now supports `DOTALL` mode** for multi-line matching.
   * Regex extract with one capture group returns the captured text; multiple capture groups are joined as `group1 | group2`.
 * **Multi-Keyword Handling**: `Find/Replace` operations support multiple, comma-separated (`,`) targets in the `optional_text_input` field.
@@ -43,7 +159,7 @@ Whether you need to precisely extract sections from a large text block, batch re
 
 ### Operation modes
 
-The node's operations are split into three main categories:
+The node's operations are split into five categories:
 
 #### A. Find / Replace / Extract (Global Operations)
 
@@ -65,7 +181,7 @@ This group targets only the **first** matched instance. It uses the `start_text`
 
 * `remove empty lines`, `remove newlines`, `strip lines (trim)`, `remove all whitespace`.
 
-#### D. LLM Utilities (New in v1.1.5)
+#### D. LLM Utilities
 
 Specialized tools for processing raw outputs from Large Language Models (LLMs).
 
@@ -73,7 +189,7 @@ Specialized tools for processing raw outputs from Large Language Models (LLMs).
 * **`LLM: extract JSON object ({...})`**: Locates and extracts the first valid JSON object structure, useful for chaining with JSON parsers.
 * **`LLM: clean markdown formatting`**: Removes bold (`**`), italics (`*`), headers (`#`), and links to return clean, plain text.
 
-#### E. Batch Operations (New in v1.2.0)
+#### E. Batch Operations
 
 Designed for Img2Text workflows or bulk cleaning.
 
@@ -126,7 +242,7 @@ Saves text content to a file or internal database.
     * **Add New (Auto Rename)**: Automatically avoids conflicts by renaming (e.g., `Log_2024-11-26_001.txt`).
     * **Overwrite Existing**: Replaces content if the name exists.
     * **Delete**: Removes the specified file/key from both the current user-directory storage and legacy plugin-local storage when both exist.
-  * **`storage_format` (New!)**:
+  * **`storage_format`**:
     * `json`: Saves as a key inside the internal `text_storage.json` database.
     * `txt`: Saves as a standalone `.txt` file for easy external editing.
 
@@ -144,7 +260,7 @@ Newer ComfyUI Core releases include `SaveText`, a straightforward exporter that 
 
 ### Wildcards Processor (Dynamic Prompt Mixer)
 
-Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and random choices (e.g., `{cat|dog}`). This node has been evolved into a powerful **7-slot mixer**.
+Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and random choices (e.g., `{cat|dog}`) through a flexible **7-slot mixer**.
 
 * **Unified & Powerful (7-Slot Mixer)**:
     Replaces the previous Basic/Advanced split with a single, robust node. It features **7 input slots**, allowing you to combine manual text and wildcard files in complex layers.
@@ -165,7 +281,7 @@ Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and ran
 
 ## 3. Logic & Math Nodes
 
-Safely evaluate Python expressions for dynamic calculations and logic flow. Powered by `simpleeval`.
+Control workflow seeds or safely evaluate Python expressions for dynamic calculations and logic flow. Expression evaluation is powered by `simpleeval`.
 
 ### Simple Eval (Integers / Floats / Strings)
 
@@ -329,57 +445,6 @@ Renders text onto images with advanced formatting options.
 #### Add Text to Image vs Core TextOverlay
 
 Newer ComfyUI Core releases include `TextOverlay`, a simpler option for applying the same text across a batch with the default font, image-relative text size, top/bottom placement, horizontal alignment, color, and an optional black outline. Add Text to Image is intended for workflows that need selectable fonts, per-image labels, 7 anchor positions, pixel-level margins and spacing, RGBA box or strip backgrounds, and adaptive wrapping/shrinking or ellipsis truncation. `TextOverlay` was added after the validated Desktop floor, so it may not be available on older supported hosts.
-
----
-
-## Installation
-
-### Method 1: Via ComfyUI Manager (Recommended)
-
-This is the easiest way to install the node pack.
-
-1. Open **ComfyUI Manager** within your ComfyUI interface.
-2. Click on **"Custom Nodes Manager"**.
-3. Search for `ComfyUI Text Processor`.
-4. Click **Install** and wait for the process to complete.
-5. **Restart ComfyUI**.
-
-### Method 2: Manual Installation
-
-If you prefer terminal commands or don't use the Manager:
-
-1. Navigate to your custom nodes directory:
-
-    ```bash
-    cd ComfyUI/custom_nodes/
-    ```
-
-2. Clone this repository:
-
-    ```bash
-    git clone https://github.com/rookiestar28/ComfyUI_Text_Processor.git
-    ```
-
-3. **Install dependencies:**
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-    Optional built-in aesthetic scoring support:
-
-    ```bash
-    pip install aesthetic-predictor-v2-5
-    ```
-
-4. **Restart ComfyUI**.
-
----
-
-### Asset Setup (Optional)
-
-* **Fonts:** Place your `.ttf` or `.otf` files in `ComfyUI/custom_nodes/ComfyUI_Text_Processor/fonts/` for the *Add Text to Image* node.
-* **Wildcards:** Place your wildcard text files in `ComfyUI/wildcards/` or `ComfyUI/custom_nodes/ComfyUI_Text_Processor/wildcards/`.
 
 ---
 
