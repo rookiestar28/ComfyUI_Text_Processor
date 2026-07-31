@@ -83,7 +83,7 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
         try:
             return importlib.import_module("global_random_seed")
         except ModuleNotFoundError as exc:
-            self.fail(f"F18 production module is missing: {exc}")
+            self.fail(f"Global Random Seed production module is missing: {exc}")
 
     def test_reproduction_and_uint32_profile_prevent_consumer_overflow(self):
         module = self.module()
@@ -181,7 +181,7 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
             ),
         )
 
-    def test_production_schema_matches_the_frozen_t07_contract(self):
+    def test_production_schema_matches_the_frozen_frontend_contract(self):
         module = self.module()
         frozen = json.loads(
             (
@@ -240,7 +240,7 @@ class GlobalRandomSeedPromptTests(unittest.TestCase):
         try:
             return importlib.import_module("global_random_seed")
         except ModuleNotFoundError as exc:
-            self.fail(f"F18 production module is missing: {exc}")
+            self.fail(f"Global Random Seed production module is missing: {exc}")
 
     def run_hook(self, data, random_source=None):
         module = self.module()

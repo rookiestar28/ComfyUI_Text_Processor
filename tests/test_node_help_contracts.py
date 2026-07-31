@@ -29,7 +29,7 @@ FORBIDDEN_PUBLIC_HELP_TEXT = re.compile(
     r"|ROADMAP\.md"
     r"|command[ _-]?log"
     r"|implementation[ _-]?record"
-    r"|(?:^|\W)(?:G03|T06|F15|D02|F16|G04|F17|DOC03|T07|F18|DOC04)(?:\W|$)"
+    r"|(?:^|\W)(?:DOC|[A-Z])\d{2}(?:\W|$)"
     r"|[A-Z]:\\"
     r"|/home/"
     r"|api[_ -]?key"

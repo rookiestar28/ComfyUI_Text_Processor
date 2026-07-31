@@ -168,7 +168,10 @@ class V3MigrationContractTests(unittest.TestCase):
             PROTOTYPE_PATH,
         ):
             with self.subTest(path=path.name):
-                self.assertTrue(path.is_file(), f"required G04 artifact missing: {path.name}")
+                self.assertTrue(
+                    path.is_file(),
+                    f"required migration artifact missing: {path.name}",
+                )
 
     def test_decision_and_two_tier_sources_are_pinned(self):
         contract = _load_json(MIGRATION_CONTRACT_PATH)

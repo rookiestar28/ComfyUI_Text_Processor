@@ -9,9 +9,9 @@ All integration or end-to-end validation for this repository must follow `tests/
 
 ## Repo-specific Scope
 
-This repository contains a tracked Node.js 18+ Playwright harness. T07 initially
-validates frontend precision and extension-safety contracts without adding product
-runtime JavaScript; later runtime extensions use the same mandatory lane.
+This repository contains a tracked Node.js 18+ Playwright harness. Its foundational
+contracts validate frontend precision and extension safety; runtime extensions use
+the same mandatory lane.
 
 Every non-documentation change must run:
 

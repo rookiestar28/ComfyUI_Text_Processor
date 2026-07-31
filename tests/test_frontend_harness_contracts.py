@@ -23,7 +23,9 @@ def _read_json(relative_path):
 def _read_text(relative_path):
     path = REPO_DIR / relative_path
     if not path.is_file():
-        raise AssertionError(f"required T07 artifact is missing: {relative_path}")
+        raise AssertionError(
+            f"required frontend-contract artifact is missing: {relative_path}"
+        )
     return path.read_text(encoding="utf-8")
 
 
@@ -148,7 +150,7 @@ class FrontendHarnessContractTests(unittest.TestCase):
             self.assertIn("node", runner.lower())
             self.assertIn("18", runner)
 
-    def test_f18_adds_only_the_frozen_runtime_javascript_and_product_node(self):
+    def test_runtime_adds_only_the_frozen_javascript_and_product_node(self):
         runtime_javascript = sorted((REPO_DIR / "web").rglob("*.js"))
         self.assertEqual(
             [REPO_DIR / "web" / "global_random_seed.js"],

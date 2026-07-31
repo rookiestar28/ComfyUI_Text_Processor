@@ -9,8 +9,8 @@ This document is the source-of-truth local verification workflow for **ComfyUI T
 - Node entrypoint: `__init__.py`.
 - Registered node modules live as root-level `.py` files.
 - `package.json` and Playwright provide mandatory frontend contract/E2E validation.
-- T07 establishes the harness without adding product runtime JavaScript; runtime
-  frontend extensions become part of this same lane when introduced.
+- The foundational harness does not itself add product runtime JavaScript; every
+  frontend extension introduced later enters this same lane.
 - `reference/` contains reference material only and is ignored; it is not part of the product validation target.
 - `.pre-commit-config.yaml` is present and defines local `detect-secrets` and Python compile hooks.
 
