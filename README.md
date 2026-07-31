@@ -12,11 +12,11 @@ An advanced automation toolkit for ComfyUI, bridging the gap between raw data an
 
 ## Compatibility and host support
 
-* **Release requirements:** ComfyUI Text Processor 1.5.0 requires Python 3.10+ and ComfyUI Core 0.22.3+.
+* **Release requirements:** ComfyUI Text Processor 1.6.0 requires Python 3.10+ and ComfyUI Core 0.22.3+.
 * **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
 * **Current host observation:** The node pack has also been checked against Core 0.29.0 and Frontend 1.49.1. These versions are a current compatibility snapshot, not a new minimum or maximum.
 * **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
-* **In-app guidance:** All 139 visible node inputs provide host tooltips, and 8 complex nodes also provide fallback Markdown help in ComfyUI's node-help surface.
+* **In-app guidance:** All 145 visible node inputs provide host tooltips, and 9 complex nodes also provide fallback Markdown help in ComfyUI's node-help surface.
 
 ---
 
@@ -163,7 +163,7 @@ Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and ran
 
 ---
 
-## 3. Logic & Math Nodes (Simple Eval)
+## 3. Logic & Math Nodes
 
 Safely evaluate Python expressions for dynamic calculations and logic flow. Powered by `simpleeval`.
 
@@ -175,6 +175,59 @@ Perform mathematical calculations or string manipulations without writing comple
 * **Variables:** Supports inputs `a`, `b`, and `c`. You can use them in your expression (e.g., `(a + b) * 2` or `a + " " + b`).
 * **Safe execution:** Restricted environment prevents unsafe code execution while allowing powerful logic.
 * **Console Logging:** Optional toggle to print results to the console for debugging.
+
+### Global Random Seed
+
+`Global Random Seed` is a zero-wire workflow controller: when it is present in a
+submitted prompt, the backend assigns bounded seeds to recognized literal seed
+inputs without requiring connections from `applied_seed`. The output remains
+available when another node needs the applied base seed explicitly.
+
+#### Width and compatibility
+
+| `seed_width` | Inclusive range | Guidance |
+| --- | ---: | --- |
+| `uint32` (default) | `0..4294967295` | Use for workflows that include uint32-limited samplers or API nodes. |
+| `uint64` | `0..18446744073709551615` | Opt in only when every affected consumer accepts the wider range. |
+
+The width is selected by the user; the controller does not execute or infer
+arbitrary third-party node schemas. Selecting `uint64` can therefore still be
+rejected by a uint32-only consumer. `uint32` describes a numeric range, not a
+short display format, and valid values can contain up to ten decimal digits.
+
+#### Queue and target behavior
+
+* **`timing`:** `before_generation` advances the queue action before assigning
+  this prompt; `after_generation` assigns the current value first and then
+  advances the next controller value.
+* **`queue_action`:** `fixed`, `increment`, `decrement`, or `randomize` controls
+  how the controller advances between submitted prompts.
+* **`distribution`:** `same`, `increment`, `decrement`, or `randomize` controls
+  how the applied base is distributed in stable node-ID order.
+  `randomize` gives each eligible target an independent bounded seed, so target
+  values need not equal `applied_seed`.
+* Only literal integer inputs named `seed`, `noise_seed`, or `seed_num` are
+  changed. Links, booleans, non-integers, and unrelated inputs are preserved.
+* If a prompt contains multiple controllers, the lowest canonical controller
+  node ID is authoritative.
+
+`value` and `last_seed` use exact unsigned decimal text for browser readback.
+Assignments above JavaScript's safe-integer range remain exact in the backend, but
+an unsafe `uint64` target numeric widget is left unchanged rather than displaying
+a rounded value. A target node's own non-fixed
+`control_before_generate`/`control_after_generate` setting may also replace its
+visible widget with the next seed after prompt submission; set that target control
+to `fixed` when comparing its widget directly with `last_seed`.
+
+API prompts work without serialized workflow metadata. When no browser client is
+present, callers must resubmit the next controller `value`; the server deliberately
+keeps no per-client continuation state. Backend coverage is defined by eligible
+nodes present in the submitted prompt. Root/current-graph widgets receive
+best-effort readback, while nested subgraph widget synchronization is not
+guaranteed and does not affect the submitted backend assignment.
+
+See [Global Random Seed node help](./web/docs/Global_RandomSeed.md) for the compact
+input reference.
 
 ---
 

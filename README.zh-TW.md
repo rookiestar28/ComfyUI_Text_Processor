@@ -10,11 +10,11 @@
 
 ## 相容性與宿主支援
 
-* **發行需求：** ComfyUI Text Processor 1.5.0 需要 Python 3.10+ 與 ComfyUI Core 0.22.3+。
+* **發行需求：** ComfyUI Text Processor 1.6.0 需要 Python 3.10+ 與 ComfyUI Core 0.22.3+。
 * **已驗證的 Desktop 下限：** 相容性契約涵蓋的最舊宿主組合為 Desktop 0.9.4、Core 0.22.3 與 Frontend 1.43.18。
 * **目前宿主觀測：** 本節點套件也已對照 Core 0.29.0 與 Frontend 1.49.1；這是目前的相容性快照，不代表新的最低或最高支援版本。
 * **Node API 方針：** 正式節點維持 V1 以確保相容性；在 ComfyUI 發布比實驗性 `v0_0_2` 契約更新且穩定的 node API 前，會暫緩 V3 遷移。
-* **介面內說明：** 全部 139 個可見節點輸入都有宿主 tooltip，另有 8 個複雜節點在 ComfyUI node-help 介面提供備援 Markdown 說明。
+* **介面內說明：** 全部 145 個可見節點輸入都有宿主 tooltip，另有 9 個複雜節點在 ComfyUI node-help 介面提供備援 Markdown 說明。
 
 專為 ComfyUI 打造的進階自動化工具套件，連結原始數據與生成式 AI。具備批量文字清洗（針對圖生文工作流）、LLM 輸出解析、動態通配符以及邏輯運算功能，旨在簡化複雜的提示工程工作流。
 
@@ -172,6 +172,51 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 * **變數支援：** 支援 `a`、`b`、`c` 三個輸入變數。可在表達式中直接使用（例如：`(a + b) * 2` 或 `a + " " + b`）。
 * **安全執行：** 受限的執行環境防止不安全的代碼運行，同時保留強大的邏輯功能。
 * **控制台日誌：** 可選的開關，用於將結果列印到控制台以便除錯。
+
+### Global Random Seed（全域隨機種子）
+
+`Global Random Seed` 是零連線工作流控制器：只要它存在於送出的 prompt，
+後端就會把有範圍限制的 seed 指派給可識別的 literal seed 輸入，不需要連接
+`applied_seed`。若其他節點需要明確取得本次套用的基準 seed，仍可使用這個輸出。
+
+#### 位元寬度與相容性
+
+| `seed_width` | 包含端點的範圍 | 使用建議 |
+| --- | ---: | --- |
+| `uint32`（預設） | `0..4294967295` | 工作流包含僅支援 uint32 的 sampler 或 API 節點時使用。 |
+| `uint64` | `0..18446744073709551615` | 僅在所有受影響節點都接受較寬範圍時啟用。 |
+
+位元寬度由使用者選擇；控制器不會執行或推斷任意第三方節點的 schema。因此，
+uint32-only 節點仍可能拒絕 `uint64`。`uint32` 代表數值範圍，不是短位數顯示
+格式；合法值最多仍可有十位十進位數字。
+
+#### Queue 與目標節點行為
+
+* **`timing`：** `before_generation` 會先執行 queue action，再把結果指派給
+  本次 prompt；`after_generation` 會先使用目前值，再推進下一個控制器值。
+* **`queue_action`：** `fixed`、`increment`、`decrement` 或 `randomize`
+  控制每次送出 prompt 之間如何推進控制器。
+* **`distribution`：** `same`、`increment`、`decrement` 或 `randomize`
+  依穩定的 node ID 順序分配基準值。`randomize` 會為每個符合條件的目標產生
+  各自獨立且不越界的 seed，因此目標值不一定等於 `applied_seed`。
+* 只會修改名稱為 `seed`、`noise_seed` 或 `seed_num` 的 literal integer
+  輸入；連線、布林值、非整數及其它輸入都保持不變。
+* 同一 prompt 有多個控制器時，以 canonical 排序最低的控制器 node ID 為準。
+
+`value` 與 `last_seed` 會以精確的 unsigned decimal 文字回讀。超過 JavaScript
+safe-integer 範圍的值在後端仍保持精確，但不會把不安全的 `uint64` 寫入目標
+numeric widget，以免顯示經過捨入的錯誤數值。目標節點自身若使用非 `fixed`
+的 `control_before_generate`／`control_after_generate`，也可能在 prompt
+送出後把畫面 widget 換成下一個 seed；需要直接比對目標 widget 與
+`last_seed` 時，請把該目標控制設為 `fixed`。
+
+API prompt 不需要 serialized workflow metadata 也能使用。沒有瀏覽器 client
+時，呼叫端必須自行把下一個控制器 `value` 帶入後續請求；伺服器刻意不保存
+per-client continuation state。後端作用範圍以送出 prompt 中實際存在且符合
+條件的節點為準。root/current graph widget 會盡力回讀，但不保證 nested
+subgraph widget 同步；這不影響已送出 prompt 的後端 seed 指派。
+
+完整輸入摘要請參閱 [Global Random Seed 節點說明](./web/docs/Global_RandomSeed.md)。
 
 ---
 
