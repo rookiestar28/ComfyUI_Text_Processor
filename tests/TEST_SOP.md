@@ -4,27 +4,26 @@ This document is the source-of-truth local verification workflow for **ComfyUI T
 
 ## Repository Facts
 
-- This repository is a Python-only ComfyUI custom node pack.
+- This repository is a ComfyUI custom node pack with Python runtime nodes and a
+  tracked frontend browser-test harness.
 - Node entrypoint: `__init__.py`.
 - Registered node modules live as root-level `.py` files.
-- There is no frontend extension, no `package.json`, and no Playwright harness in this repository at the time this SOP was written.
+- `package.json` and Playwright provide mandatory frontend contract/E2E validation.
+- T07 establishes the harness without adding product runtime JavaScript; runtime
+  frontend extensions become part of this same lane when introduced.
 - `reference/` contains reference material only and is ignored; it is not part of the product validation target.
 - `.pre-commit-config.yaml` is present and defines local `detect-secrets` and Python compile hooks.
 
 ## Repository-specific E2E Policy
 
 The project-level `AGENTS.md` and this SOP define the same repository-specific gate.
-For this repository, frontend E2E via `npm test` is not applicable unless a tracked frontend harness or `package.json` is added.
+Every non-documentation change must run both:
 
-Required replacement for the frontend lane:
+- the Python ComfyUI custom-node smoke/integration lane; and
+- the Node.js 18+ Playwright lane through `npm test`.
 
-- run the ComfyUI custom-node smoke/integration lane defined by `tests/E2E_TESTING_SOP.md`.
-
-If an implementation record cites this policy, it must explicitly state:
-
-- no tracked `package.json` exists
-- no tracked frontend/E2E harness exists
-- `tests/E2E_TESTING_SOP.md` was followed instead
+Use repo-local ignored npm, browser, and temp paths as defined by the full-test
+scripts and `tests/E2E_TESTING_SOP.md`.
 
 ## Required Reading Order
 
@@ -50,6 +49,7 @@ Required gate for this repository:
 3. Python compile/import smoke checks for tracked product modules
 4. Focused unit or tensor behavior checks for changed nodes
 5. ComfyUI custom-node smoke/integration lane per `tests/E2E_TESTING_SOP.md`
+6. Node.js 18+ frontend/browser lane through `npm test`
 
 ## Documentation-only Exception
 
@@ -70,6 +70,8 @@ This exception does not apply when any `.py`, packaging, test, script, or runtim
 - For optional scraper checks: `requests` and `beautifulsoup4`.
 - For optional aesthetic scorer checks: `aesthetic-predictor-v2-5`.
 - `pre-commit` only after `.pre-commit-config.yaml` exists.
+- Node.js 18+ and npm.
+- Playwright Chromium installed in the repo-local ignored browser path.
 
 Recommended interpreter order:
 
@@ -212,6 +214,23 @@ python -m unittest discover -s tests -p "test_*.py"
 
 Follow `tests/E2E_TESTING_SOP.md`.
 
+### 6. Frontend Browser Lane
+
+Use repo-local ignored caches and browser binaries:
+
+```powershell
+$env:npm_config_cache = (Join-Path (Get-Location) ".tmp/npm-cache")
+$env:PLAYWRIGHT_BROWSERS_PATH = (Join-Path (Get-Location) ".tmp/playwright-browsers")
+$env:TMP = (Join-Path (Get-Location) ".tmp/playwright-temp")
+$env:TEMP = $env:TMP
+
+node -v
+npm ci --ignore-scripts
+npx playwright install chromium
+npm audit --audit-level=high
+npm test
+```
+
 ## Evidence Recording
 
 Implementation records must include:
@@ -220,6 +239,7 @@ Implementation records must include:
 - OS and shell
 - Python executable and version
 - dependency versions relevant to the changed node, such as `torch`
+- Node/npm/Playwright versions for frontend validation
 - command log or exact commands
 - pass/fail/blocked status for every required stage
 - reason for any repo-specific override

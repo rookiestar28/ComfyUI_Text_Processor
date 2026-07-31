@@ -1,17 +1,18 @@
 # E2E Testing SOP
 
-This SOP defines the ComfyUI custom-node smoke/integration workflow for **ComfyUI Text Processor**.
+This SOP defines the Python integration and Node.js 18+ browser workflows for
+**ComfyUI Text Processor**.
 
 ## Scope
 
-This is not a frontend Playwright workflow.
-
-This repository is a Python ComfyUI custom node pack, so the E2E boundary is:
+The E2E boundary is:
 
 - ComfyUI can discover and import the node package.
 - `NODE_CLASS_MAPPINGS` and `NODE_DISPLAY_NAME_MAPPINGS` expose expected nodes.
 - Changed node classes can execute representative workflows with deterministic inputs.
 - Output tensor/string/file contracts match the node definitions.
+- Playwright runs real Chromium assertions for frontend precision, extension safety,
+  event routing, widget synchronization, and user-visible state transitions.
 
 ## Problem-First Test Design Rule
 
@@ -24,7 +25,8 @@ When adding or reviewing E2E coverage, prefer assertions that prove final user-v
 - ComfyUI dependencies importable in that environment, including `folder_paths`.
 - For image/tensor nodes: `torch`, `torchvision`, `Pillow`, and `numpy`.
 - For text scraper checks: mockable `requests` and `beautifulsoup4`.
-- No Node.js or npm requirement exists unless a tracked frontend harness is added later.
+- Node.js 18+ and npm.
+- Repo-local ignored npm cache, Playwright browser storage, and process temp paths.
 
 ## Windows Procedure
 
@@ -136,17 +138,43 @@ Each implementation must include assertions matching the changed node type:
 - output nodes that write files: isolated path, filename behavior, and metadata behavior where applicable.
 - network nodes: mocked success, timeout/error behavior, and blocked unsafe input behavior.
 
-## Non-applicable Frontend E2E
+## Frontend Browser E2E
 
-Do not run these commands for the current repo state:
+Frontend E2E is mandatory for every non-documentation change.
 
-```bash
-npm install
+Windows PowerShell:
+
+```powershell
+$env:npm_config_cache = (Join-Path (Get-Location) ".tmp/npm-cache")
+$env:PLAYWRIGHT_BROWSERS_PATH = (Join-Path (Get-Location) ".tmp/playwright-browsers")
+$env:TMP = (Join-Path (Get-Location) ".tmp/playwright-temp")
+$env:TEMP = $env:TMP
+
+node -v
+npm -v
+npm ci --ignore-scripts
 npx playwright install chromium
+npm audit --audit-level=high
 npm test
 ```
 
-They become applicable only after a tracked frontend harness and `package.json` are added.
+Linux / WSL:
+
+```bash
+export npm_config_cache="${npm_config_cache:-$(pwd)/.tmp/npm-cache}"
+export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$(pwd)/.tmp/playwright-browsers}"
+export TMPDIR="${TMPDIR:-$(pwd)/.tmp/playwright-temp}"
+export TMP="${TMP:-$TMPDIR}"
+export TEMP="${TEMP:-$TMPDIR}"
+mkdir -p "$npm_config_cache" "$PLAYWRIGHT_BROWSERS_PATH" "$TMPDIR"
+
+node -v
+npm -v
+npm ci --ignore-scripts
+npx playwright install chromium
+npm audit --audit-level=high
+npm test
+```
 
 ## Troubleshooting
 
@@ -186,42 +214,53 @@ When adding or reviewing E2E coverage, prefer assertions that prove final user-v
 ### Windows (PowerShell)
 
 ```powershell
+$env:npm_config_cache = (Join-Path (Get-Location) ".tmp/npm-cache")
+$env:PLAYWRIGHT_BROWSERS_PATH = (Join-Path (Get-Location) ".tmp/playwright-browsers")
+$env:TMP = (Join-Path (Get-Location) ".tmp/playwright-temp")
+$env:TEMP = $env:TMP
+
 node -v
 npm -v
 python --version
 
-npm install
+npm ci --ignore-scripts
 npx playwright install chromium
+npm audit --audit-level=high
 npm test
 ```
 
 ### WSL2 (bash)
 
 ```bash
-source ~/.nvm/nvm.sh
-nvm use 18
+export npm_config_cache="${npm_config_cache:-$(pwd)/.tmp/npm-cache}"
+export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$(pwd)/.tmp/playwright-browsers}"
+export TMPDIR="${TMPDIR:-$(pwd)/.tmp/playwright-temp}"
+export TMP="${TMP:-$TMPDIR}"
+export TEMP="${TEMP:-$TMPDIR}"
+mkdir -p "$npm_config_cache" "$PLAYWRIGHT_BROWSERS_PATH" "$TMPDIR"
+
 node -v
 python3 --version
 
 mkdir -p .tmp/bin
 ln -sf "$(command -v python3)" .tmp/bin/python
 
-npm install
+npm ci --ignore-scripts
 npx playwright install chromium
-
-mkdir -p .tmp/playwright
-TMPDIR=.tmp/playwright TMP=.tmp/playwright TEMP=.tmp/playwright \
-  PATH=".tmp/bin:$PATH" npm test
+npm audit --audit-level=high
+PATH=".tmp/bin:$PATH" npm test
 ```
 
 ### Troubleshooting
 
 - `python: command not found` on WSL: create `.tmp/bin/python` as a shim to `python3`.
 - Port bind failure: use the repo-documented E2E port override or stop the conflicting process.
-- Browser missing: run `npx playwright install chromium`.
-- Dependency drift: remove `node_modules` and rerun `npm install`.
+- Browser missing: set the repo-local environment above, then run
+  `npx playwright install chromium`.
+- Dependency drift: rerun `npm ci --ignore-scripts`; do not bypass the lockfile.
 
-### Non-applicable E2E
+### Mandatory Frontend E2E
 
-If the repo does not have a frontend or Playwright harness, document the non-applicability in `tests/TEST_SOP.md` and identify the replacement smoke, unit, or integration lane. Do not treat a missing E2E harness as an unrecorded pass.
+The tracked harness makes `npm test` mandatory for non-documentation changes. A
+missing browser, dependency, or harness is a blocker, not a non-applicable pass.
 <!-- ROOKIEUI-GLOBAL-E2E-SOP-RULES:END -->

@@ -7,10 +7,24 @@ $ErrorActionPreference = "Stop"
 
 Set-Location (Resolve-Path (Join-Path $PSScriptRoot ".."))
 
+$RepoRoot = (Get-Location).Path
+
 if (-not $env:PRE_COMMIT_HOME) {
     $env:PRE_COMMIT_HOME = Join-Path (Get-Location) ".tmp\pre-commit-cache"
 }
 New-Item -ItemType Directory -Force -Path $env:PRE_COMMIT_HOME | Out-Null
+
+$env:npm_config_cache = Join-Path $RepoRoot ".tmp\npm-cache"
+$env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $RepoRoot ".tmp\playwright-browsers"
+$env:TMP = Join-Path $RepoRoot ".tmp\playwright-temp"
+$env:TEMP = $env:TMP
+foreach ($Path in @(
+    $env:npm_config_cache,
+    $env:PLAYWRIGHT_BROWSERS_PATH,
+    $env:TMP
+)) {
+    New-Item -ItemType Directory -Force -Path $Path | Out-Null
+}
 
 if ($Python) {
     $PythonExe = $Python
@@ -66,9 +80,27 @@ function Invoke-PythonStep {
 
 Invoke-PythonStep -Name "Python version" -PythonArgs @("--version")
 
+$NodeCommand = Get-Command node -ErrorAction SilentlyContinue
+if (-not $NodeCommand) {
+    throw "Node.js is required for frontend E2E. Install Node.js 18+."
+}
+$NodeVersion = (& $NodeCommand.Source --version).Trim()
+$NodeMajor = [int]($NodeVersion.TrimStart("v").Split(".")[0])
+if ($NodeMajor -lt 18) {
+    throw "Node.js 18+ is required; active version is $NodeVersion."
+}
+Write-Host ""
+Write-Host "==> Node.js version"
+Write-Host $NodeVersion
+
 if (-not $SkipPreCommit) {
     Invoke-PythonStep -Name "detect-secrets" -PythonArgs @("-m", "pre_commit", "run", "detect-secrets", "--all-files")
     Invoke-PythonStep -Name "pre-commit" -PythonArgs @("-m", "pre_commit", "run", "--all-files", "--show-diff-on-failure")
 }
 
 Invoke-PythonStep -Name "unit tests" -PythonArgs @("-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py")
+
+Invoke-Step -Name "npm clean install" -Command @("npm", "ci", "--ignore-scripts")
+Invoke-Step -Name "Playwright Chromium" -Command @("npx", "playwright", "install", "chromium")
+Invoke-Step -Name "npm audit" -Command @("npm", "audit", "--audit-level=high")
+Invoke-Step -Name "frontend E2E" -Command @("npm", "test")

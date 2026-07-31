@@ -9,25 +9,20 @@ All integration or end-to-end validation for this repository must follow `tests/
 
 ## Repo-specific Scope
 
-This repository does not currently contain:
+This repository contains a tracked Node.js 18+ Playwright harness. T07 initially
+validates frontend precision and extension-safety contracts without adding product
+runtime JavaScript; later runtime extensions use the same mandatory lane.
 
-- frontend JavaScript or TypeScript extension files
-- `package.json`
-- Playwright configuration
-- a browser-based test harness
-
-Therefore `npm test` and Playwright browser E2E are not applicable for the current repo state.
-
-## Required Replacement Lane
-
-Use the ComfyUI custom-node smoke/integration lane in `tests/E2E_TESTING_SOP.md`.
-
-That lane verifies the custom node pack at the ComfyUI integration boundary:
+Every non-documentation change must run:
 
 - module load behavior
 - node registration
 - changed-node runtime behavior
 - image/tensor shape and channel contracts where applicable
+- `npm test` for browser precision, interaction, event, and extension safety
+
+Use repo-local `.tmp/` npm cache, browser, and temp paths. Do not allow Playwright or
+npm validation to write browser/test caches outside the workspace.
 
 ## Exception
 

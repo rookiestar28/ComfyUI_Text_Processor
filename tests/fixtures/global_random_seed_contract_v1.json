@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "node_id": "Global_RandomSeed",
+  "display_name": "Global Random Seed",
+  "category": "ComfyUI Text Processor/Logic",
+  "node_api": "v1",
+  "output_node": true,
+  "widgets": [
+    {"name": "value", "type": "STRING", "transport": "canonical_decimal"},
+    {"name": "seed_width", "type": "COMBO"},
+    {"name": "timing", "type": "COMBO"},
+    {"name": "queue_action", "type": "COMBO"},
+    {"name": "distribution", "type": "COMBO"},
+    {"name": "last_seed", "type": "STRING", "transport": "canonical_decimal"}
+  ],
+  "outputs": [
+    {"index": 0, "type": "INT", "name": "applied_seed"}
+  ],
+  "seed_width": {
+    "default": "uint32",
+    "profiles": {
+      "uint32": {"minimum": "0", "maximum": "4294967295"},
+      "uint64": {"minimum": "0", "maximum": "18446744073709551615"}
+    }
+  },
+  "browser_transport": {
+    "encoding": "canonical_unsigned_decimal_string",
+    "javascript_safe_maximum": "9007199254740991",
+    "unsafe_numeric_widget_policy": "leave_unchanged"
+  }
+}

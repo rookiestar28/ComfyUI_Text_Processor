@@ -108,6 +108,9 @@ class DependencyMetadataTests(unittest.TestCase):
                 ".gitattributes",
                 ".gitignore",
                 ".pre-commit-config.yaml",
+                "package.json",
+                "package-lock.json",
+                "playwright.config.mjs",
             }
         }
         expected_help_paths = {
