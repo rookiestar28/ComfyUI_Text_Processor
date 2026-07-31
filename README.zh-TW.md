@@ -175,9 +175,10 @@ ComfyUI 內部的「持久化剪貼簿」。允許您在不同的工作流或會
 
 ### Global Random Seed（全域隨機種子）
 
-`Global Random Seed` 是零連線工作流控制器：只要它存在於送出的 prompt，
-後端就會把有範圍限制的 seed 指派給可識別的 literal seed 輸入，不需要連接
-`applied_seed`。若其他節點需要明確取得本次套用的基準 seed，仍可使用這個輸出。
+`Global Random Seed` 位於 `ComfyUI Text Processor/Logic`，是零連線工作流
+控制器：只要它存在於送出的 prompt，後端就會把有範圍限制的 seed 指派給
+可識別的 literal seed 輸入，不需要連接 `applied_seed`。若其他節點需要明確
+取得本次套用的基準 seed，仍可使用這個輸出。
 
 #### 位元寬度與相容性
 
@@ -195,10 +196,13 @@ uint32-only 節點仍可能拒絕 `uint64`。`uint32` 代表數值範圍，不�
 * **`timing`：** `before_generation` 會先執行 queue action，再把結果指派給
   本次 prompt；`after_generation` 會先使用目前值，再推進下一個控制器值。
 * **`queue_action`：** `fixed`、`increment`、`decrement` 或 `randomize`
-  控制每次送出 prompt 之間如何推進控制器。
+  控制每次送出 prompt 之間如何推進控制器。`fixed` 會保留目前值；
+  increment 與 decrement 會在所選寬度內循環。
 * **`distribution`：** `same`、`increment`、`decrement` 或 `randomize`
-  依穩定的 node ID 順序分配基準值。`randomize` 會為每個符合條件的目標產生
-  各自獨立且不越界的 seed，因此目標值不一定等於 `applied_seed`。
+  依穩定的 node ID 順序分配基準值。`same` 會重複使用基準值；increment
+  與 decrement 會為每個目標偏移一個不越界的值。`randomize` 會為每個符合
+  條件的目標產生各自獨立且不越界的 seed，因此目標值不一定等於
+  `applied_seed`。
 * 只會修改名稱為 `seed`、`noise_seed` 或 `seed_num` 的 literal integer
   輸入；連線、布林值、非整數及其它輸入都保持不變。
 * 同一 prompt 有多個控制器時，以 canonical 排序最低的控制器 node ID 為準。
@@ -216,7 +220,7 @@ per-client continuation state。後端作用範圍以送出 prompt 中實際存�
 條件的節點為準。root/current graph widget 會盡力回讀，但不保證 nested
 subgraph widget 同步；這不影響已送出 prompt 的後端 seed 指派。
 
-完整輸入摘要請參閱 [Global Random Seed 節點說明](./web/docs/Global_RandomSeed.md)。
+完整的介面內輸入摘要請參閱 [Global Random Seed](./web/docs/Global_RandomSeed.md)。
 
 ---
 

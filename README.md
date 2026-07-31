@@ -178,10 +178,11 @@ Perform mathematical calculations or string manipulations without writing comple
 
 ### Global Random Seed
 
-`Global Random Seed` is a zero-wire workflow controller: when it is present in a
-submitted prompt, the backend assigns bounded seeds to recognized literal seed
-inputs without requiring connections from `applied_seed`. The output remains
-available when another node needs the applied base seed explicitly.
+`Global Random Seed`, under `ComfyUI Text Processor/Logic`, is a zero-wire
+workflow controller: when it is present in a submitted prompt, the backend
+assigns bounded seeds to recognized literal seed inputs without requiring
+connections from `applied_seed`. The output remains available when another node
+needs the applied base seed explicitly.
 
 #### Width and compatibility
 
@@ -201,9 +202,11 @@ short display format, and valid values can contain up to ten decimal digits.
   this prompt; `after_generation` assigns the current value first and then
   advances the next controller value.
 * **`queue_action`:** `fixed`, `increment`, `decrement`, or `randomize` controls
-  how the controller advances between submitted prompts.
+  how the controller advances between submitted prompts. `fixed` preserves the
+  value, while increment and decrement wrap within the selected width.
 * **`distribution`:** `same`, `increment`, `decrement`, or `randomize` controls
-  how the applied base is distributed in stable node-ID order.
+  how the applied base is distributed in stable node-ID order. `same` reuses the
+  base; increment and decrement offset one bounded value per target.
   `randomize` gives each eligible target an independent bounded seed, so target
   values need not equal `applied_seed`.
 * Only literal integer inputs named `seed`, `noise_seed`, or `seed_num` are
@@ -226,7 +229,7 @@ nodes present in the submitted prompt. Root/current-graph widgets receive
 best-effort readback, while nested subgraph widget synchronization is not
 guaranteed and does not affect the submitted backend assignment.
 
-See [Global Random Seed node help](./web/docs/Global_RandomSeed.md) for the compact
+See [Global Random Seed](./web/docs/Global_RandomSeed.md) for the compact in-app
 input reference.
 
 ---
