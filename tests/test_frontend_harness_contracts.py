@@ -80,6 +80,7 @@ class FrontendHarnessContractTests(unittest.TestCase):
         self.assertEqual(
             {
                 "uint32": {"minimum": "0", "maximum": "4294967295"},
+                "uint53": {"minimum": "0", "maximum": "9007199254740991"},
                 "uint64": {"minimum": "0", "maximum": "18446744073709551615"},
             },
             contract["seed_width"]["profiles"],

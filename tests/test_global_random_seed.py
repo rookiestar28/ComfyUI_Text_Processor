@@ -107,6 +107,10 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
             ("1", "uint32"): 1,
             ("4294967295", "uint32"): 4294967295,
             ("4294967296", "uint32"): 0,
+            ("0", "uint53"): 0,
+            ("1", "uint53"): 1,
+            ("9007199254740991", "uint53"): 9007199254740991,
+            ("9007199254740992", "uint53"): 0,
             ("0", "uint64"): 0,
             ("18446744073709551615", "uint64"): 18446744073709551615,
             ("18446744073709551616", "uint64"): 0,
@@ -147,6 +151,23 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
                 random_source=_SequenceRandom([18446744073709551615]),
             ),
         )
+        self.assertEqual(
+            9007199254740991,
+            module.apply_queue_action(
+                1,
+                "randomize",
+                "uint53",
+                random_source=_SequenceRandom([9007199254740991]),
+            ),
+        )
+        self.assertEqual(
+            0,
+            module.apply_queue_action(9007199254740991, "increment", "uint53"),
+        )
+        self.assertEqual(
+            9007199254740991,
+            module.apply_queue_action(0, "decrement", "uint53"),
+        )
 
     def test_node_v1_contract_and_full_width_output(self):
         module = self.module()
@@ -164,6 +185,10 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
             list(required),
         )
         self.assertEqual("uint32", required["seed_width"][1]["default"])
+        self.assertEqual(
+            ["uint32", "uint53", "uint64"],
+            required["seed_width"][0],
+        )
         self.assertEqual(("INT",), node.RETURN_TYPES)
         self.assertEqual(("applied_seed",), node.RETURN_NAMES)
         self.assertEqual("apply_seed", node.FUNCTION)
@@ -178,6 +203,17 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
                 "fixed",
                 "same",
                 "18446744073709551615",
+            ),
+        )
+        self.assertEqual(
+            (9007199254740991,),
+            node().apply_seed(
+                "9007199254740991",
+                "uint53",
+                "before_generation",
+                "fixed",
+                "same",
+                "9007199254740991",
             ),
         )
 
@@ -213,6 +249,10 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
         self.assertEqual(
             int(frozen["seed_width"]["profiles"]["uint64"]["maximum"]),
             module.SEED_WIDTH_MAXIMA["uint64"],
+        )
+        self.assertEqual(
+            int(frozen["seed_width"]["profiles"]["uint53"]["maximum"]),
+            module.SEED_WIDTH_MAXIMA["uint53"],
         )
 
     def test_runtime_source_uses_only_official_frontend_seams(self):
@@ -334,6 +374,27 @@ class GlobalRandomSeedPromptTests(unittest.TestCase):
         self.assertEqual("5", result["prompt"]["alpha"]["inputs"]["seed"])
         targets = server.sent[0][1]["targets"]
         self.assertEqual(["2", "11", "alpha"], [target["node_id"] for target in targets])
+
+    def test_inspire_seed_boundary_does_not_touch_independent_seed_fields(self):
+        maximum = "9007199254740991"
+        data = _envelope(
+            {
+                "1": _controller(value=maximum, seed_width="uint53"),
+                "2": {
+                    "class_type": "RandomNoise //Inspire",
+                    "inputs": {
+                        "noise_seed": 0,
+                        "internal_seed": 17,
+                        "variation_seed": 23,
+                    },
+                },
+            }
+        )
+        result, _server = self.run_hook(data)
+        inputs = result["prompt"]["2"]["inputs"]
+        self.assertEqual(9007199254740991, inputs["noise_seed"])
+        self.assertEqual(17, inputs["internal_seed"])
+        self.assertEqual(23, inputs["variation_seed"])
 
     def test_lowest_controller_is_deterministic_and_all_controllers_are_skipped(self):
         data = _envelope(

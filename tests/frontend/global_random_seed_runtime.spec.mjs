@@ -194,6 +194,35 @@ test("safe uint32 event updates controller strings and exact target widget", asy
   expect(result.targetCallbacks).toEqual([1, 0]);
 });
 
+test("safe uint53 maximum updates controller strings and exact target widget", async ({
+  page,
+}) => {
+  await loadExtension(page, hostTiers[1]);
+  const maximum = "9007199254740991";
+  const result = await page.evaluate((payload) => {
+    const controller = window.__makeNode("1", { value: "0", last_seed: "0" });
+    const target = window.__makeNode("2", { seed: 7 });
+    window.__dispatchSeed(payload);
+    return {
+      controller: Object.fromEntries(
+        controller.widgets.map((widget) => [widget.name, widget.value]),
+      ),
+      seed: target.widgets[0].value,
+    };
+  }, eventPayload({
+    seed_width: "uint53",
+    applied_seed: maximum,
+    next_value: maximum,
+    targets: [{
+      node_id: "2",
+      inputs: [{ name: "seed", seed: maximum }],
+    }],
+  }));
+  expect(result.controller).toEqual({ value: maximum, last_seed: maximum });
+  expect(result.seed).toBe(Number(maximum));
+  expect(Number.isSafeInteger(result.seed)).toBe(true);
+});
+
 test("desktop floor resolves numeric LiteGraph node IDs", async ({ page }) => {
   await loadExtension(page, hostTiers[0]);
   const result = await page.evaluate((payload) => {
@@ -239,6 +268,34 @@ test("unsafe uint64 keeps target numeric widget unchanged without rounding", asy
   }));
   expect(result.controller).toEqual({ value: maximum, last_seed: maximum });
   expect(result.seed).toBe(17);
+});
+
+test("value above JavaScript safe maximum stays out of numeric target widgets", async ({
+  page,
+}) => {
+  await loadExtension(page, hostTiers[1]);
+  const unsafe = "9007199254740992";
+  const result = await page.evaluate((payload) => {
+    const controller = window.__makeNode("1", { value: "0", last_seed: "0" });
+    const target = window.__makeNode("2", { seed: 19 });
+    window.__dispatchSeed(payload);
+    return {
+      controller: Object.fromEntries(
+        controller.widgets.map((widget) => [widget.name, widget.value]),
+      ),
+      seed: target.widgets[0].value,
+    };
+  }, eventPayload({
+    seed_width: "uint64",
+    applied_seed: unsafe,
+    next_value: unsafe,
+    targets: [{
+      node_id: "2",
+      inputs: [{ name: "seed", seed: unsafe }],
+    }],
+  }));
+  expect(result.controller).toEqual({ value: unsafe, last_seed: unsafe });
+  expect(result.seed).toBe(19);
 });
 
 test("malformed or unrelated event data makes no UI change", async ({ page }) => {

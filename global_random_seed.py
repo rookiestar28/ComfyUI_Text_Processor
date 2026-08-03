@@ -15,6 +15,7 @@ PROMPT_HANDLER_MARKER = "_text_processor_global_random_seed_handler"
 
 SEED_WIDTH_MAXIMA = {
     "uint32": 4_294_967_295,
+    "uint53": 9_007_199_254_740_991,
     "uint64": 18_446_744_073_709_551_615,
 }
 TIMINGS = ("before_generation", "after_generation")
@@ -296,7 +297,7 @@ def register_available_prompt_server():
 class GlobalRandomSeed:
     DESCRIPTION = (
         "Applies one bounded global seed to recognized literal seed inputs before "
-        "execution, with exact uint32 or uint64 transport."
+        "execution, with exact uint32, uint53, or uint64 transport."
     )
     SEARCH_ALIASES = [
         "global seed",
@@ -323,11 +324,12 @@ class GlobalRandomSeed:
                     },
                 ),
                 "seed_width": (
-                    ["uint32", "uint64"],
+                    ["uint32", "uint53", "uint64"],
                     {
                         "default": "uint32",
                         "tooltip": (
-                            "uint32 is the safe default; uint64 is opt-in for "
+                            "uint32 is the safe default; uint53 is the largest "
+                            "JavaScript-safe range; uint64 is opt-in for "
                             "compatible consumers."
                         ),
                     },

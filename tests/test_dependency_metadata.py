@@ -66,7 +66,7 @@ class DependencyMetadataTests(unittest.TestCase):
     @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
     def test_global_random_seed_release_uses_minor_version(self):
         pyproject = _load_pyproject()
-        self.assertEqual("1.6.0", pyproject["project"]["version"])
+        self.assertEqual("1.7.0", pyproject["project"]["version"])
 
     @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
     def test_frontend_dependency_and_force_includes_remain_absent(self):

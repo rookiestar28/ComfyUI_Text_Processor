@@ -6,6 +6,7 @@ const EXTENSION_NAME = "ComfyUI.TextProcessor.GlobalRandomSeed";
 const MAX_SAFE_INTEGER = BigInt(Number.MAX_SAFE_INTEGER);
 const WIDTH_MAXIMA = {
   uint32: 4294967295n,
+  uint53: 9007199254740991n,
   uint64: 18446744073709551615n,
 };
 const TIMINGS = new Set(["before_generation", "after_generation"]);
