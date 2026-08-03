@@ -297,7 +297,8 @@ def register_available_prompt_server():
 class GlobalRandomSeed:
     DESCRIPTION = (
         "Applies one bounded global seed to recognized literal seed inputs before "
-        "execution, with exact uint32, uint53, or uint64 transport."
+        "execution, with exact uint32 or uint53 public profiles. Legacy uint64 "
+        "workflows remain backend-compatible."
     )
     SEARCH_ALIASES = [
         "global seed",
@@ -324,13 +325,13 @@ class GlobalRandomSeed:
                     },
                 ),
                 "seed_width": (
-                    ["uint32", "uint53", "uint64"],
+                    ["uint32", "uint53"],
                     {
                         "default": "uint32",
                         "tooltip": (
                             "uint32 is the safe default; uint53 is the largest "
-                            "JavaScript-safe range; uint64 is opt-in for "
-                            "compatible consumers."
+                            "JavaScript-safe selectable range. Legacy uint64 "
+                            "workflows remain backend-compatible."
                         ),
                     },
                 ),

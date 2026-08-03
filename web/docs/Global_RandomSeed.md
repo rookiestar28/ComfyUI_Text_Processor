@@ -7,9 +7,10 @@ prompt without requiring workflow connections.
 
 - `value`: Current seed stored as an exact unsigned decimal string.
 - `seed_width`: Uses `uint32` by default for consumers limited to
-  `0..4294967295`; `uint53` is the largest range that remains exact in standard
-  JavaScript numeric widgets (`0..9007199254740991`); `uint64` is an explicit
-  opt-in up to `18446744073709551615`.
+  `0..4294967295`; `uint53` is the largest selectable range that remains exact in
+  standard JavaScript numeric widgets (`0..9007199254740991`). Existing workflows
+  saved with the former `uint64` profile remain backend-compatible, but new node
+  configurations no longer offer that unsafe display range.
 - `timing`: Applies the queue action before this generation or advances it after
   this generation.
 - `queue_action`: Keeps, increments, decrements, or randomizes the controller

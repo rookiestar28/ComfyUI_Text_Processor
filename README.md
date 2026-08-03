@@ -12,8 +12,9 @@ An advanced automation toolkit with 18 production nodes for text processing, reu
 
 <summary><strong>Workflow and image tools expanded</strong></summary>
 
-- Added `Global Random Seed`, a zero-wire uint32/uint53/uint64 controller with
-  bounded queue actions, distribution modes, and precision-safe browser readback.
+- Added `Global Random Seed`, a zero-wire uint32/uint53 controller with bounded
+  queue actions, distribution modes, precision-safe browser readback, and legacy
+  uint64 workflow compatibility.
 - Added `Resize Image Advanced` and `Load Image Batch` for advanced
   resize/mask alignment and validated single, incremental, or seeded-random image
   loading.
@@ -306,12 +307,13 @@ needs the applied base seed explicitly.
 | --- | ---: | --- |
 | `uint32` (default) | `0..4294967295` | Use for workflows that include uint32-limited samplers or API nodes. |
 | `uint53` | `0..9007199254740991` | Largest range that remains exact in standard JavaScript numeric widgets. |
-| `uint64` | `0..18446744073709551615` | Full backend range; opt in only when every affected consumer accepts it. |
 
 The width is selected by the user; the controller does not execute or infer
-arbitrary third-party node schemas. Selecting `uint64` can therefore still be
-rejected by a uint32-only consumer. `uint32` describes a numeric range, not a
-short display format, and valid values can contain up to ten decimal digits.
+arbitrary third-party node schemas. `uint32` describes a numeric range, not a short
+display format, and valid values can contain up to ten decimal digits.
+Existing workflows saved with the former `uint64` profile remain backend-compatible,
+but new node configurations expose only `uint32` and `uint53` because standard
+numeric widgets cannot display unsafe uint64 values exactly.
 
 #### Queue and target behavior
 

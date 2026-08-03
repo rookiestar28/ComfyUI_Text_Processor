@@ -186,7 +186,7 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
         )
         self.assertEqual("uint32", required["seed_width"][1]["default"])
         self.assertEqual(
-            ["uint32", "uint53", "uint64"],
+            ["uint32", "uint53"],
             required["seed_width"][0],
         )
         self.assertEqual(("INT",), node.RETURN_TYPES)
@@ -246,10 +246,8 @@ class GlobalRandomSeedDomainTests(unittest.TestCase):
             int(frozen["seed_width"]["profiles"]["uint32"]["maximum"]),
             module.SEED_WIDTH_MAXIMA["uint32"],
         )
-        self.assertEqual(
-            int(frozen["seed_width"]["profiles"]["uint64"]["maximum"]),
-            module.SEED_WIDTH_MAXIMA["uint64"],
-        )
+        self.assertNotIn("uint64", frozen["seed_width"]["profiles"])
+        self.assertEqual(18_446_744_073_709_551_615, module.SEED_WIDTH_MAXIMA["uint64"])
         self.assertEqual(
             int(frozen["seed_width"]["profiles"]["uint53"]["maximum"]),
             module.SEED_WIDTH_MAXIMA["uint53"],
