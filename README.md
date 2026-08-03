@@ -12,8 +12,8 @@ An advanced automation toolkit with 18 production nodes for text processing, reu
 
 <summary><strong>Workflow and image tools expanded</strong></summary>
 
-- Added `Global Random Seed`, a zero-wire uint32/uint64 controller with bounded
-  queue actions, distribution modes, and precision-safe browser readback.
+- Added `Global Random Seed`, a zero-wire uint32/uint53/uint64 controller with
+  bounded queue actions, distribution modes, and precision-safe browser readback.
 - Added `Resize Image Advanced` and `Load Image Batch` for advanced
   resize/mask alignment and validated single, incremental, or seeded-random image
   loading.
@@ -52,7 +52,7 @@ An advanced automation toolkit with 18 production nodes for text processing, reu
 
 <summary><strong>Host compatibility and in-app guidance refreshed</strong></summary>
 
-- Version 1.6.0 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
+- Version 1.7.0 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
   covering the validated Desktop floor and the current host snapshot.
 - Production nodes remain on the compatible V1 API while V3 migration stays
   deferred until a newer stable ComfyUI node API is available.
@@ -128,7 +128,7 @@ If you prefer terminal commands or don't use the Manager:
 
 ## Compatibility and host support
 
-* **Release requirements:** ComfyUI Text Processor 1.6.0 requires Python 3.10+ and ComfyUI Core 0.22.3+.
+* **Release requirements:** ComfyUI Text Processor 1.7.0 requires Python 3.10+ and ComfyUI Core 0.22.3+.
 * **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
 * **Current host observation:** The node pack has also been checked against Core 0.29.0 and Frontend 1.49.1. These versions are a current compatibility snapshot, not a new minimum or maximum.
 * **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
@@ -305,7 +305,8 @@ needs the applied base seed explicitly.
 | `seed_width` | Inclusive range | Guidance |
 | --- | ---: | --- |
 | `uint32` (default) | `0..4294967295` | Use for workflows that include uint32-limited samplers or API nodes. |
-| `uint64` | `0..18446744073709551615` | Opt in only when every affected consumer accepts the wider range. |
+| `uint53` | `0..9007199254740991` | Largest range that remains exact in standard JavaScript numeric widgets. |
+| `uint64` | `0..18446744073709551615` | Full backend range; opt in only when every affected consumer accepts it. |
 
 The width is selected by the user; the controller does not execute or infer
 arbitrary third-party node schemas. Selecting `uint64` can therefore still be
@@ -333,7 +334,8 @@ short display format, and valid values can contain up to ten decimal digits.
 `value` and `last_seed` use exact unsigned decimal text for browser readback.
 Assignments above JavaScript's safe-integer range remain exact in the backend, but
 an unsafe `uint64` target numeric widget is left unchanged rather than displaying
-a rounded value. A target node's own non-fixed
+a rounded value. Use `uint53` when the target widget itself must show the same
+seed. A target node's own non-fixed
 `control_before_generate`/`control_after_generate` setting may also replace its
 visible widget with the next seed after prompt submission; set that target control
 to `fixed` when comparing its widget directly with `last_seed`.
