@@ -25,6 +25,7 @@ EXPECTED_NODE_IDS = {
     "LoadImageBatch",
     "ResizeImageAdvanced",
     "Global_RandomSeed",
+    "TP_AdvancedResolutionSelector",
 }
 
 
@@ -67,6 +68,10 @@ class NodeRegistrationTests(unittest.TestCase):
             self.assertEqual(EXPECTED_NODE_IDS, set(module.NODE_DISPLAY_NAME_MAPPINGS))
             self.assertEqual("Load Image Batch", module.NODE_DISPLAY_NAME_MAPPINGS["LoadImageBatch"])
             self.assertEqual("Resize Image Advanced", module.NODE_DISPLAY_NAME_MAPPINGS["ResizeImageAdvanced"])
+            self.assertEqual(
+                "Advanced Resolution Selector",
+                module.NODE_DISPLAY_NAME_MAPPINGS["TP_AdvancedResolutionSelector"],
+            )
             for node_id, node_class in module.NODE_CLASS_MAPPINGS.items():
                 self.assertTrue(callable(node_class), node_id)
                 self.assertTrue(

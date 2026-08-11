@@ -8,4 +8,3 @@ tests/
 package.json
 package-lock.json
 playwright.config.mjs
-advanced_resolution_selector_core.py

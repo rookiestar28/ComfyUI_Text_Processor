@@ -116,7 +116,6 @@ class DependencyMetadataTests(unittest.TestCase):
                 "package.json",
                 "package-lock.json",
                 "playwright.config.mjs",
-                "advanced_resolution_selector_core.py",
             }
         }
         expected_help_paths = {
@@ -129,6 +128,7 @@ class DependencyMetadataTests(unittest.TestCase):
             "web/docs/ResizeImageAdvanced.md",
             "web/docs/TextStorageReader.md",
             "web/docs/TextStorageWriter.md",
+            "web/docs/TP_AdvancedResolutionSelector.md",
         }
         required_archive_paths = {
             "__init__.py",
@@ -147,6 +147,8 @@ class DependencyMetadataTests(unittest.TestCase):
             "load_image_batch.py",
             "resize_image_advanced.py",
             "global_random_seed.py",
+            "advanced_resolution_selector.py",
+            "advanced_resolution_selector_core.py",
             "web/global_random_seed.js",
             "pyproject.toml",
             "requirements.txt",
@@ -161,10 +163,12 @@ class DependencyMetadataTests(unittest.TestCase):
         }
 
         self.assertEqual(expected_development_only, excluded)
-        self.assertIn("advanced_resolution_selector_core.py", excluded)
+        self.assertNotIn("advanced_resolution_selector_core.py", excluded)
+        self.assertIn("advanced_resolution_selector_core.py", candidate_archive)
+        self.assertIn("advanced_resolution_selector.py", candidate_archive)
         self.assertTrue(required_archive_paths.issubset(candidate_archive))
         self.assertTrue(expected_development_only.isdisjoint(candidate_archive))
-        self.assertNotIn("advanced_resolution_selector_core.py", candidate_archive)
+        self.assertIn("advanced_resolution_selector_core.py", candidate_archive)
         self.assertEqual(
             expected_help_paths,
             {

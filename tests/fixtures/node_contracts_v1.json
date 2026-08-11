@@ -385,6 +385,32 @@
       "output_node": true,
       "function": "apply_seed",
       "category": "ComfyUI Text Processor/Logic"
+    },
+    "TP_AdvancedResolutionSelector": {
+      "required": [
+        {"name": "output_mode", "type": "COMBO", "default": "fixed", "widget": true},
+        {"name": "aspect_ratio", "type": "COMBO", "default": "1:1", "widget": true},
+        {"name": "direction", "type": "COMBO", "default": "landscape", "widget": true},
+        {"name": "custom_ratio_width", "type": "INT", "default": 1, "widget": true},
+        {"name": "custom_ratio_height", "type": "INT", "default": 1, "widget": true},
+        {"name": "megapixels", "type": "FLOAT", "default": 1.0, "widget": true},
+        {"name": "multiple", "type": "INT", "default": 8, "widget": true},
+        {"name": "seed", "type": "INT", "default": 0, "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "INT", "name": "width"},
+        {"index": 1, "type": "INT", "name": "height"},
+        {"index": 2, "type": "STRING", "name": "resolved_aspect_ratio"},
+        {"index": 3, "type": "STRING", "name": "resolved_direction"},
+        {"index": 4, "type": "FLOAT", "name": "actual_megapixels"},
+        {"index": 5, "type": "FLOAT", "name": "pixel_error_percent"},
+        {"index": 6, "type": "FLOAT", "name": "aspect_error_percent"}
+      ],
+      "output_node": false,
+      "function": "select_resolution",
+      "category": "ComfyUI Text Processor/Image"
     }
   }
 }

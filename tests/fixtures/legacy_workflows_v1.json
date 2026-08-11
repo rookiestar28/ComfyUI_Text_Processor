@@ -115,6 +115,40 @@
         "distribution": "same",
         "last_seed": "4294967295"
       }
+    },
+    {
+      "id": "advanced_resolution_selector_positional",
+      "node_type": "TP_AdvancedResolutionSelector",
+      "widgets_values": [
+        "randomize_all",
+        "custom",
+        "portrait",
+        6,
+        4,
+        1.0,
+        8,
+        123
+      ],
+      "widgets_values_named": {
+        "output_mode": "randomize_all",
+        "aspect_ratio": "custom",
+        "direction": "portrait",
+        "custom_ratio_width": 6,
+        "custom_ratio_height": 4,
+        "megapixels": 1.0,
+        "multiple": 8,
+        "seed": 123
+      },
+      "expected": {
+        "output_mode": "randomize_all",
+        "aspect_ratio": "custom",
+        "direction": "portrait",
+        "custom_ratio_width": 6,
+        "custom_ratio_height": 4,
+        "megapixels": 1.0,
+        "multiple": 8,
+        "seed": 123
+      }
     }
   ]
 }

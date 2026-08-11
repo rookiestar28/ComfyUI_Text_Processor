@@ -121,11 +121,11 @@ def _validate_fixture_contract(fixture):
     expect(
         fixture["stage"],
         {
-            "name": "unregistered_baseline",
-            "expected_node_count": 18,
-            "expected_visible_input_count": 145,
-            "expected_rich_help_count": 9,
-            "forbidden_registered_id": "TP_AdvancedResolutionSelector",
+            "name": "registered_baseline",
+            "expected_node_count": 19,
+            "expected_visible_input_count": 153,
+            "expected_rich_help_count": 10,
+            "registered_id": "TP_AdvancedResolutionSelector",
         },
         "stage",
     )
@@ -466,26 +466,23 @@ class AdvancedResolutionSelectorContractTests(unittest.TestCase):
         )
         self.assertEqual(
             {
-                "name": "unregistered_baseline",
-                "expected_node_count": 18,
-                "expected_visible_input_count": 145,
-                "expected_rich_help_count": 9,
-                "forbidden_registered_id": "TP_AdvancedResolutionSelector",
+                "name": "registered_baseline",
+                "expected_node_count": 19,
+                "expected_visible_input_count": 153,
+                "expected_rich_help_count": 10,
+                "registered_id": "TP_AdvancedResolutionSelector",
             },
             fixture["stage"],
         )
 
-    def test_current_package_stage_is_unregistered(self):
+    def test_current_package_stage_is_registered(self):
         fixture = _load_fixture(self)
         with PackageImportContext() as package:
             self.assertEqual(
                 fixture["stage"]["expected_node_count"],
                 len(package.NODE_CLASS_MAPPINGS),
             )
-            self.assertNotIn(
-                fixture["stage"]["forbidden_registered_id"],
-                package.NODE_CLASS_MAPPINGS,
-            )
+            self.assertIn(fixture["stage"]["registered_id"], package.NODE_CLASS_MAPPINGS)
             visible_count = sum(
                 len(node_class.INPUT_TYPES().get(group_name, {}))
                 for node_class in package.NODE_CLASS_MAPPINGS.values()
@@ -710,7 +707,7 @@ class AdvancedResolutionSelectorContractTests(unittest.TestCase):
                 expected_indices=[1, 2, 4]
             ),
             "provenance": lambda value: value["provenance"][0].update(commit="deadbeef"),
-            "premature_registration": lambda value: value["stage"].update(expected_node_count=19),
+            "registration_drift": lambda value: value["stage"].update(expected_node_count=18),
         }
         for name, mutate in mutations.items():
             with self.subTest(name=name):

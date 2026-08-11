@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "web_directory": "./web",
-  "expected_node_count": 18,
-  "expected_visible_input_count": 145,
+  "expected_node_count": 19,
+  "expected_visible_input_count": 153,
   "excluded_hidden_inputs": {
     "AdvancedImageSaver": ["prompt", "extra_pnginfo"]
   },
@@ -15,7 +15,8 @@
     "LoadImageBatch",
     "ResizeImageAdvanced",
     "TextStorageReader",
-    "TextStorageWriter"
+    "TextStorageWriter",
+    "TP_AdvancedResolutionSelector"
   ],
   "tiers": {
     "desktop_floor": {

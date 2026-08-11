@@ -157,6 +157,13 @@
       "prototype_eligible": false,
       "selected_prototype": false,
       "rationale": "Execution is coordinated by a host prompt hook, client-scoped readback event, and optional random derivation."
+    },
+    "TP_AdvancedResolutionSelector": {
+      "classification": "stateless",
+      "state_seams": ["input_only_seeded_resolution"],
+      "prototype_eligible": true,
+      "selected_prototype": false,
+      "rationale": "The selected dimensions and diagnostics derive from serialized inputs and a local seeded stream without retained instance state."
     }
   }
 }

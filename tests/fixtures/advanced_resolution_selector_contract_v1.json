@@ -571,11 +571,11 @@
     }
   ],
   "stage": {
-    "expected_node_count": 18,
-    "expected_rich_help_count": 9,
-    "expected_visible_input_count": 145,
-    "forbidden_registered_id": "TP_AdvancedResolutionSelector",
-    "name": "unregistered_baseline"
+    "expected_node_count": 19,
+    "expected_rich_help_count": 10,
+    "expected_visible_input_count": 153,
+    "name": "registered_baseline",
+    "registered_id": "TP_AdvancedResolutionSelector"
   },
   "validation": {
     "error_type": "ValueError",
