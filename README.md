@@ -356,6 +356,91 @@ input reference.
 
 ## 4. Image Utilities
 
+### Advanced Resolution Selector
+
+`Advanced Resolution Selector` (`TP_AdvancedResolutionSelector`) is a
+ComfyUI Text Processor image utility for choosing a deterministic,
+multiple-aligned resolution from a ratio preset or a validated custom ratio.
+It is a separate V1 node from Core's native `Resolution Selector`, so existing
+Core workflows and node IDs remain unchanged. The node returns dimensions and
+diagnostics; it does not create an `IMAGE` or `LATENT` tensor.
+
+#### Presets, direction, and custom ratios
+
+The `aspect_ratio` menu contains one canonical landscape-oriented entry for
+each ratio: `1:1`, `9:7`, `4:3`, `19:13`, `3:2`, `7:4`, `16:9`, and `21:9`,
+plus `custom`. Select `landscape` or `portrait` separately with `direction`.
+Portrait output is produced by transposing the selected ratio; reciprocal
+portrait duplicates are not separate menu entries.
+
+For `custom`, enter positive integer `custom_ratio_width` and
+`custom_ratio_height` values from 1 through 10,000. The pair is reduced to its
+canonical label (for example, `6:4` is reported as `3:2`). Custom components
+are validated in every mode, even when `randomize_all` will not use them.
+
+#### Output modes and reproducibility
+
+| Mode | Ratio selection | Direction selection | Random draws |
+| --- | --- | --- | ---: |
+| `fixed` | selected preset or custom ratio | selected direction | 0 |
+| `randomize` | selected preset or custom ratio | seeded random direction | 1 |
+| `randomize_all` | seeded random canonical preset; `custom` is excluded | seeded random direction | 2, ratio first |
+
+The `seed` is an explicit unsigned 32-bit value (`0` through `4,294,967,295`)
+with ComfyUI's normal queue control. Identical serialized inputs produce the
+same randomized result, and changing the serialized seed changes randomized
+selection. The node uses an isolated deterministic stream; this behavior is
+not cryptographic randomness and does not alter Python's process-global random
+generator. In randomized modes, the selected `direction` is not authoritative;
+in `randomize_all`, the selected ratio and custom values are not authoritative
+after their validation step.
+
+#### Megapixels, alignment, and diagnostics
+
+`megapixels` uses a binary `1024 × 1024` target-area unit and accepts `0.1` to
+`16.0`. `multiple` aligns both dimensions and accepts values from `8` to `128`
+in steps of `4`. Python ties-to-even rounding is preserved while a bounded
+candidate search chooses an aligned pair that balances area and aspect-ratio
+error. Alignment can therefore make the realized area or ratio differ from the
+requested target.
+
+The seven outputs are returned in this order:
+
+1. `width`
+2. `height`
+3. `resolved_aspect_ratio`
+4. `resolved_direction`
+5. `actual_megapixels`
+6. `pixel_error_percent`
+7. `aspect_error_percent`
+
+`actual_megapixels` is the realized binary area. `pixel_error_percent` is the
+signed area difference relative to the target (positive means larger,
+negative means smaller). `aspect_error_percent` is the signed difference
+between the realized oriented ratio and the selected ratio (positive means
+wider, negative means narrower). Neither diagnostic promises exact target area
+or ratio after multiple alignment.
+
+#### Examples
+
+- **Fixed landscape preset:** `fixed`, `16:9`, `landscape`, `1.0` megapixel,
+  and multiple `8` returns `1368 × 768`, with `16:9` and `landscape` reported.
+- **Custom portrait ratio:** `fixed`, `custom`, `portrait`, `3:2`, `1.0`
+  megapixel, and multiple `8` returns `840 × 1256`; the resolved label is
+  `3:2` and the direction is `portrait`.
+- **Randomize:** `randomize`, `4:3`, seed `0`, `1.0` megapixel, and multiple
+  `8` preserves `4:3` and resolves the seeded direction as `portrait`, yielding
+  `888 × 1184`.
+- **Randomize all:** `randomize_all`, seed `0`, `1.0` megapixel, and multiple
+  `8` selects `16:9` followed by `portrait`, yielding `768 × 1368`.
+- **Coarse multiple:** fixed `21:9`, `landscape`, `1.0` megapixel, and multiple
+  `128` yields `1536 × 640`, `0.9375` actual megapixels, `-6.25%` pixel error,
+  and approximately `+2.857%` aspect error; this illustrates why aligned
+  outputs should be read together with their diagnostics.
+
+See the [Advanced Resolution Selector in-app help](./web/docs/TP_AdvancedResolutionSelector.md)
+for the compact input and behavior reference.
+
 ### Advanced Image Saver
 
 A professional-grade image export node with advanced quality control and aesthetic filtering.
