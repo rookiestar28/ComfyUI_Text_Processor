@@ -513,14 +513,14 @@
   ],
   "provenance": [
     {
-      "commit": "9cf91339b708a245762fa38ffeec9702b381e0db",
+      "commit": "9cf9133",
       "name": "ComfyUI native ResolutionSelector source",
-      "url": "https://github.com/Comfy-Org/ComfyUI/blob/9cf91339b708a245762fa38ffeec9702b381e0db/comfy_extras/nodes_resolution.py"
+      "url": "https://github.com/Comfy-Org/ComfyUI/blob/9cf9133/comfy_extras/nodes_resolution.py"
     },
     {
-      "commit": "97807467bf7ff4ea01d529fcd6e666758f34e3c1",
+      "commit": "9780746",
       "name": "WLSH SDXL resolution reference",
-      "url": "https://github.com/wallish77/wlsh_nodes/blob/97807467bf7ff4ea01d529fcd6e666758f34e3c1/wlsh_nodes.py"
+      "url": "https://github.com/wallish77/wlsh_nodes/blob/9780746/wlsh_nodes.py"
     }
   ],
   "schema_version": 1,
