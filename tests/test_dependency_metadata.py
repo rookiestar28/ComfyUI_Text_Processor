@@ -116,6 +116,7 @@ class DependencyMetadataTests(unittest.TestCase):
                 "package.json",
                 "package-lock.json",
                 "playwright.config.mjs",
+                "advanced_resolution_selector_core.py",
             }
         }
         expected_help_paths = {
@@ -160,8 +161,10 @@ class DependencyMetadataTests(unittest.TestCase):
         }
 
         self.assertEqual(expected_development_only, excluded)
+        self.assertIn("advanced_resolution_selector_core.py", excluded)
         self.assertTrue(required_archive_paths.issubset(candidate_archive))
         self.assertTrue(expected_development_only.isdisjoint(candidate_archive))
+        self.assertNotIn("advanced_resolution_selector_core.py", candidate_archive)
         self.assertEqual(
             expected_help_paths,
             {

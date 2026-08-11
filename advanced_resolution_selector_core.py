@@ -14,9 +14,18 @@ MAX_MEGAPIXELS: Final = 16.0
 MIN_MULTIPLE: Final = 8
 MAX_MULTIPLE: Final = 128
 MULTIPLE_STEP: Final = 4
-MAX_DIMENSION: Final = 409728
+MAX_DIMENSION: Final = 409752
 PIXEL_UNIT: Final = 1024 * 1024
 DIRECTIONS: Final = ("landscape", "portrait")
+SCORE_ORDER: Final = (
+    "max_abs_error",
+    "sum_abs_error",
+    "abs_pixel_error",
+    "abs_aspect_error",
+    "native_manhattan_distance",
+    "width",
+    "height",
+)
 _CANONICAL_LABEL_PAIRS: Final = (
     ("1:1", (1, 1)),
     ("9:7", (9, 7)),
@@ -34,7 +43,7 @@ _ERROR_MESSAGES: Final = (
     ("invalid_multiple", "invalid_multiple: integer value in 8..128 is required"),
     ("invalid_multiple_step", "invalid_multiple_step: multiple must equal 8 + 4*n"),
     ("invalid_numeric", "invalid_numeric: derived resolution value is not finite"),
-    ("invalid_dimension_bound", "invalid_dimension_bound: aligned dimension exceeds 409728 pixels"),
+    ("invalid_dimension_bound", "invalid_dimension_bound: aligned dimension exceeds 409752 pixels"),
 )
 
 
@@ -81,6 +90,18 @@ class AspectRatio:
         ):
             _raise_error("invalid_ratio")
         if not _safe_label(self.label):
+            _raise_error("invalid_ratio")
+        label_width, label_height = (int(part) for part in self.label.split(":"))
+        canonical_alias = False
+        for known_label, (known_width, known_height) in _CANONICAL_LABEL_PAIRS:
+            if self.label == known_label:
+                divisor = math.gcd(known_width, known_height)
+                canonical_alias = (known_width // divisor, known_height // divisor) == (
+                    self.width,
+                    self.height,
+                )
+                break
+        if (label_width, label_height) != (self.width, self.height) and not canonical_alias:
             _raise_error("invalid_ratio")
 
 
