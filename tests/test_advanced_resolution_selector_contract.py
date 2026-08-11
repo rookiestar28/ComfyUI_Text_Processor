@@ -121,7 +121,7 @@ def _validate_fixture_contract(fixture):
     expect(
         fixture["stage"],
         {
-            "name": "T08_unregistered",
+            "name": "unregistered_baseline",
             "expected_node_count": 18,
             "expected_visible_input_count": 145,
             "expected_rich_help_count": 9,
@@ -466,7 +466,7 @@ class AdvancedResolutionSelectorContractTests(unittest.TestCase):
         )
         self.assertEqual(
             {
-                "name": "T08_unregistered",
+                "name": "unregistered_baseline",
                 "expected_node_count": 18,
                 "expected_visible_input_count": 145,
                 "expected_rich_help_count": 9,

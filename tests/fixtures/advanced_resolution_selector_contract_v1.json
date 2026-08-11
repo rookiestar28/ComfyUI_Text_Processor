@@ -575,7 +575,7 @@
     "expected_rich_help_count": 9,
     "expected_visible_input_count": 145,
     "forbidden_registered_id": "TP_AdvancedResolutionSelector",
-    "name": "T08_unregistered"
+    "name": "unregistered_baseline"
   },
   "validation": {
     "error_type": "ValueError",
