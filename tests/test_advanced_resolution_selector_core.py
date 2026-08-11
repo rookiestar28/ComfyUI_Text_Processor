@@ -70,7 +70,9 @@ def _run_source_mutation(replacement, runner):
     before, after = replacement
     if source.count(before) != 1:
         raise AssertionError("mutation anchor must occur exactly once")
-    with tempfile.TemporaryDirectory(prefix="resolution_core_mutation_") as temp_dir:
+    mutation_root = REPO_DIR / ".tmp" / "resolution-core-mutations"
+    mutation_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="case_", dir=mutation_root) as temp_dir:
         temp_path = Path(temp_dir) / "advanced_resolution_selector_core.py"
         temp_path.write_text(source.replace(before, after), encoding="utf-8")
         environment = os.environ.copy()
