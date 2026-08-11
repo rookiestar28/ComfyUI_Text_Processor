@@ -149,6 +149,7 @@ class DependencyMetadataTests(unittest.TestCase):
             "global_random_seed.py",
             "advanced_resolution_selector.py",
             "advanced_resolution_selector_core.py",
+            "web/advanced_resolution_selector.js",
             "web/global_random_seed.js",
             "pyproject.toml",
             "requirements.txt",
@@ -166,6 +167,7 @@ class DependencyMetadataTests(unittest.TestCase):
         self.assertNotIn("advanced_resolution_selector_core.py", excluded)
         self.assertIn("advanced_resolution_selector_core.py", candidate_archive)
         self.assertIn("advanced_resolution_selector.py", candidate_archive)
+        self.assertIn("web/advanced_resolution_selector.js", candidate_archive)
         self.assertTrue(required_archive_paths.issubset(candidate_archive))
         self.assertTrue(expected_development_only.isdisjoint(candidate_archive))
         self.assertIn("advanced_resolution_selector_core.py", candidate_archive)

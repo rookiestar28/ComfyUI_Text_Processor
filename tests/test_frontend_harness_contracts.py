@@ -153,8 +153,18 @@ class FrontendHarnessContractTests(unittest.TestCase):
     def test_runtime_adds_only_the_frozen_javascript_and_product_node(self):
         runtime_javascript = sorted((REPO_DIR / "web").rglob("*.js"))
         self.assertEqual(
-            [REPO_DIR / "web" / "global_random_seed.js"],
+            [
+                REPO_DIR / "web" / "advanced_resolution_selector.js",
+                REPO_DIR / "web" / "global_random_seed.js",
+            ],
             runtime_javascript,
+        )
+        runtime_source = (REPO_DIR / "web" / "advanced_resolution_selector.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "ComfyUI.TextProcessor.AdvancedResolutionSelectorRuntimeLabels",
+            runtime_source,
         )
 
         node_contracts = _read_json("tests/fixtures/node_contracts_v1.json")

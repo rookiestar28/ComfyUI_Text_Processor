@@ -1,0 +1,22 @@
+{
+  "extension_name": "ComfyUI.TextProcessor.AdvancedResolutionSelectorRuntimeLabels",
+  "label_format": {
+    "height": "height: <positive-safe-integer>",
+    "width": "width: <positive-safe-integer>"
+  },
+  "node_id": "TP_AdvancedResolutionSelector",
+  "payload_key": "tp_advanced_resolution",
+  "schema_version": 1,
+  "tiers": {
+    "current": {
+      "core_version": "0.29.0",
+      "frontend_version": "1.49.1",
+      "refresh": ["setDirtyCanvas", "node:slot-label:changed"]
+    },
+    "desktop_floor": {
+      "core_version": "0.22.3",
+      "frontend_version": "1.43.18",
+      "refresh": ["setDirtyCanvas", "node:slot-label:changed"]
+    }
+  }
+}

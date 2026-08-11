@@ -250,7 +250,7 @@ class AdvancedResolutionSelector:
         result = plan_resolution(
             ResolutionRequest(resolved_ratio, resolved_direction, megapixels, multiple)
         )
-        return (
+        result_values = (
             result.width,
             result.height,
             result.resolved_aspect_ratio,
@@ -259,6 +259,14 @@ class AdvancedResolutionSelector:
             result.pixel_error_percent,
             result.aspect_error_percent,
         )
+        return {
+            "ui": {
+                "tp_advanced_resolution": [
+                    {"width": result.width, "height": result.height}
+                ]
+            },
+            "result": result_values,
+        }
 
 
 NODE_CLASS_MAPPINGS = {NODE_ID: AdvancedResolutionSelector}

@@ -367,12 +367,15 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
         second = node.select_resolution(**values)
         self.assertEqual(first, second)
         self.assertEqual(state, random.getstate())
-        self.assertEqual(("16:9", "portrait"), (first[2], first[3]))
+        self.assertEqual(("16:9", "portrait"), (first["result"][2], first["result"][3]))
 
         max_seed = node.select_resolution(
             **_values(output_mode="randomize_all", seed=4294967295)
         )
-        self.assertEqual(("7:4", "landscape"), (max_seed[2], max_seed[3]))
+        self.assertEqual(
+            ("7:4", "landscape"),
+            (max_seed["result"][2], max_seed["result"][3]),
+        )
         self.assertNotEqual(first, max_seed)
 
         expected = module.plan_resolution(
@@ -405,9 +408,35 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
                 expected.pixel_error_percent,
                 expected.aspect_error_percent,
             ),
-            actual,
+            actual["result"],
         )
         self.assertEqual(8, request.multiple)
+
+    def test_success_returns_namespaced_ui_and_unchanged_result_tuple(self):
+        node = module.AdvancedResolutionSelector()
+        output = node.select_resolution(**_values())
+
+        self.assertEqual({"ui", "result"}, set(output))
+        self.assertIsInstance(output["result"], tuple)
+        self.assertEqual(7, len(output["result"]))
+        self.assertEqual(
+            {
+                "tp_advanced_resolution": [
+                    {
+                        "width": output["result"][0],
+                        "height": output["result"][1],
+                    }
+                ]
+            },
+            output["ui"],
+        )
+        self.assertGreater(output["ui"]["tp_advanced_resolution"][0]["width"], 0)
+        self.assertGreater(output["ui"]["tp_advanced_resolution"][0]["height"], 0)
+
+    def test_invalid_execution_emits_no_partial_ui_payload(self):
+        node = module.AdvancedResolutionSelector()
+        with self.assertRaisesRegex(ValueError, r"^invalid_direction:"):
+            node.select_resolution(**_values(direction="diagonal"))
 
     def test_adapter_matches_all_frozen_numerical_oracles(self):
         fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
@@ -431,15 +460,16 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
                 multiple=case["multiple"],
             )
             actual = node.select_resolution(**values)
+            result = actual["result"]
             expected = case["expected"]
             with self.subTest(case=case["name"]):
-                self.assertEqual((expected["width"], expected["height"]), actual[:2])
-                self.assertEqual(expected["resolved_aspect_ratio"], actual[2])
-                self.assertEqual(case["direction"], actual[3])
+                self.assertEqual((expected["width"], expected["height"]), result[:2])
+                self.assertEqual(expected["resolved_aspect_ratio"], result[2])
+                self.assertEqual(case["direction"], result[3])
                 self.assertTrue(
                     math.isclose(
                         expected["actual_megapixels"],
-                        actual[4],
+                        result[4],
                         rel_tol=1e-12,
                         abs_tol=1e-12,
                     )
@@ -447,7 +477,7 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
                 self.assertTrue(
                     math.isclose(
                         expected["pixel_error_percent"],
-                        actual[5],
+                        result[5],
                         rel_tol=1e-12,
                         abs_tol=1e-12,
                     )
@@ -455,7 +485,7 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
                 self.assertTrue(
                     math.isclose(
                         expected["aspect_error_percent"],
-                        actual[6],
+                        result[6],
                         rel_tol=1e-12,
                         abs_tol=1e-12,
                     )

@@ -414,6 +414,11 @@ The seven outputs are returned in this order:
 6. `pixel_error_percent`
 7. `aspect_error_percent`
 
+After a successful execution, the optional frontend extension labels the two
+existing resolution ports with the final aligned values (`width: N` and
+`height: N`). The labels show the last successful result, are not persisted into
+workflow JSON, and gracefully remain static when the extension is unavailable.
+
 `actual_megapixels` is the realized binary area. `pixel_error_percent` is the
 signed area difference relative to the target (positive means larger,
 negative means smaller). `aspect_error_percent` is the signed difference

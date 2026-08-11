@@ -31,3 +31,10 @@ those signed differences.
 
 Outputs are `width`, `height`, `resolved_aspect_ratio`, `resolved_direction`,
 `actual_megapixels`, `pixel_error_percent`, and `aspect_error_percent`.
+
+After a successful execution, the optional frontend extension shows the final
+multiple-aligned values beside the `width` and `height` output ports as
+`width: N` and `height: N`. These labels describe the last successful result;
+they do not predict edits that have not been queued and remain unchanged after
+a failed or unrelated execution. If the extension is unavailable, the node
+continues to compute and expose all seven outputs with its static labels.
