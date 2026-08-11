@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import Final
+from typing import Callable, Final
 
 
 MIN_RATIO_COMPONENT: Final = 1
@@ -243,6 +243,22 @@ def _candidate_score(
     )
 
 
+def _select_best_candidate(
+    candidates: tuple[tuple[int, int], ...],
+    score_factory: Callable[[int, int], tuple[float, float, float, float, int, int, int]],
+) -> tuple[int, int]:
+    """Select one candidate using the complete stable lexicographic score."""
+
+    best = None
+    for candidate in candidates:
+        score = score_factory(*candidate)
+        if best is None or score < best[0]:
+            best = (score, candidate)
+    if best is None:
+        _raise_error("invalid_numeric")
+    return best[1]
+
+
 def plan_resolution(request: ResolutionRequest) -> ResolutionResult:
     """Plan one deterministic aligned resolution for a validated request."""
 
@@ -262,23 +278,23 @@ def plan_resolution(request: ResolutionRequest) -> ResolutionResult:
     height_candidates = _axis_candidates(ideal_height, request.multiple)
     native_width_index = max(1, round(ideal_width / request.multiple))
     native_height_index = max(1, round(ideal_height / request.multiple))
-    best = None
-    for width_index in width_candidates:
-        for height_index in height_candidates:
-            score = _candidate_score(
-                width_index,
-                height_index,
-                request.multiple,
-                target_pixels,
-                oriented_ratio,
-                native_width_index,
-                native_height_index,
-            )
-            if best is None or score < best[0]:
-                best = (score, width_index, height_index)
-    if best is None:
-        _raise_error("invalid_numeric")
-    _score, width_index, height_index = best
+    candidate_pairs = tuple(
+        (width_index, height_index)
+        for width_index in width_candidates
+        for height_index in height_candidates
+    )
+    width_index, height_index = _select_best_candidate(
+        candidate_pairs,
+        lambda candidate_width, candidate_height: _candidate_score(
+            candidate_width,
+            candidate_height,
+            request.multiple,
+            target_pixels,
+            oriented_ratio,
+            native_width_index,
+            native_height_index,
+        ),
+    )
     width = width_index * request.multiple
     height = height_index * request.multiple
     if min(width, height) < 1 or max(width, height) > MAX_DIMENSION:
