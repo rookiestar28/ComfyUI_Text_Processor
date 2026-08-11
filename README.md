@@ -10,6 +10,17 @@ An advanced automation toolkit with 19 production nodes for text processing, reu
 
 <details>
 
+<summary><strong>Resolution selection and output feedback improved</strong></summary>
+
+- Added `Advanced Resolution Selector` presets, custom ratios, portrait and
+  landscape direction selection, and reproducible fixed or seeded-random modes.
+- Added multiple-aligned megapixel diagnostics and runtime `width: N` /
+  `height: N` labels beside the output connections after successful execution.
+
+</details>
+
+<details>
+
 <summary><strong>Workflow and image tools expanded</strong></summary>
 
 - Added `Global Random Seed`, a zero-wire uint32/uint53 controller with bounded
@@ -53,7 +64,7 @@ An advanced automation toolkit with 19 production nodes for text processing, reu
 
 <summary><strong>Host compatibility and in-app guidance refreshed</strong></summary>
 
-- Version 1.7.0 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
+- Version 1.7.3 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
   covering the validated Desktop floor and the current host snapshot.
 - Production nodes remain on the compatible V1 API while V3 migration stays
   deferred until a newer stable ComfyUI node API is available.
@@ -129,7 +140,7 @@ If you prefer terminal commands or don't use the Manager:
 
 ## Compatibility and host support
 
-* **Release requirements:** ComfyUI Text Processor 1.7.0 requires Python 3.10+ and ComfyUI Core 0.22.3+.
+* **Release requirements:** ComfyUI Text Processor 1.7.3 requires Python 3.10+ and ComfyUI Core 0.22.3+.
 * **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
 * **Current host observation:** The node pack has also been checked against Core 0.29.0 and Frontend 1.49.1. These versions are a current compatibility snapshot, not a new minimum or maximum.
 * **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
