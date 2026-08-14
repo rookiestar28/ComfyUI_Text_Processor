@@ -27,8 +27,11 @@ def _values(**overrides):
     return values
 
 
-def _host_preflight(node_class, values):
-    """Model the shared V1 host ownership/validation seam without executing Core."""
+def _host_preflight(node_class, values, tier):
+    """Model the shared V1 host seam for either pinned tier without executing Core."""
+
+    if tier not in SUPPORTED_HOST_TIERS:
+        raise AssertionError(f"unsupported host tier in oracle: {tier}")
 
     inputs = node_class.INPUT_TYPES()["required"]
     validator = getattr(node_class, "VALIDATE_INPUTS", None)
@@ -74,7 +77,7 @@ class AdvancedResolutionSelectorHostValidationTests(unittest.TestCase):
         for tier in SUPPORTED_HOST_TIERS:
             with self.subTest(tier=tier):
                 values = _values(aspect_ratio="21:9")
-                self.assertEqual((True, None), _host_preflight(type(node), values))
+                self.assertEqual((True, None), _host_preflight(type(node), values, tier))
                 result = node.select_resolution(**values)
                 self.assertEqual("21:9", result["result"][2])
 
@@ -83,7 +86,7 @@ class AdvancedResolutionSelectorHostValidationTests(unittest.TestCase):
         for tier in SUPPORTED_HOST_TIERS:
             with self.subTest(tier=tier):
                 values = _values(output_mode="randomize", aspect_ratio="21:9")
-                self.assertEqual((True, None), _host_preflight(type(node), values))
+                self.assertEqual((True, None), _host_preflight(type(node), values, tier))
                 result = node.select_resolution(**values)
                 self.assertEqual("21:9", result["result"][2])
 
@@ -100,9 +103,20 @@ class AdvancedResolutionSelectorHostValidationTests(unittest.TestCase):
 
     def test_unknown_ratio_fails_before_host_execution_or_rng(self):
         values = _values(output_mode="randomize_all", aspect_ratio="2:1")
-        valid, reason = _host_preflight(adapter.AdvancedResolutionSelector, values)
-        self.assertFalse(valid)
-        self.assertTrue(reason)
+        draws = []
+
+        def draw_stream():
+            draws.append(True)
+            return 0.5
+
+        for tier in SUPPORTED_HOST_TIERS:
+            with self.subTest(tier=tier):
+                valid, reason = _host_preflight(adapter.AdvancedResolutionSelector, values, tier)
+                self.assertFalse(valid)
+                self.assertTrue(reason)
+                with self.assertRaises(ValueError):
+                    adapter._resolve_selection(**values, draw_stream=draw_stream)
+                self.assertEqual([], draws)
 
     def test_unrelated_inputs_remain_host_owned(self):
         for input_name, invalid_value in (
@@ -113,10 +127,11 @@ class AdvancedResolutionSelectorHostValidationTests(unittest.TestCase):
             ("seed", 4294967296),
         ):
             values = _values(**{input_name: invalid_value})
-            with self.subTest(input_name=input_name):
-                valid, reason = _host_preflight(adapter.AdvancedResolutionSelector, values)
-                self.assertFalse(valid)
-                self.assertIn(reason, {"value_not_in_list", "value_bigger_than_max"})
+            for tier in SUPPORTED_HOST_TIERS:
+                with self.subTest(input_name=input_name, tier=tier):
+                    valid, reason = _host_preflight(adapter.AdvancedResolutionSelector, values, tier)
+                    self.assertFalse(valid)
+                    self.assertIn(reason, {"value_not_in_list", "value_bigger_than_max"})
 
 
 if __name__ == "__main__":
