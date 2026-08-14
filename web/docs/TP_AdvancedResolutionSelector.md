@@ -4,7 +4,7 @@
 
 - `output_mode` chooses `fixed`, `randomize`, or `randomize_all`.
 - `aspect_ratio` selects one of the canonical ratios `1:1`, `9:7`, `4:3`,
-  `19:13`, `3:2`, `7:4`, `16:9`, `21:9`, or `custom`.
+  `19:13`, `3:2`, `7:4`, and `16:9`, or `custom`.
 - `direction` selects `landscape` or `portrait` for fixed mode. Randomized
   modes resolve direction from the seeded stream.
 - `custom_ratio_width` and `custom_ratio_height` define a positive custom ratio
@@ -21,6 +21,10 @@
 draw. `randomize_all` validates the custom fields, then consumes one seeded
 canonical-ratio draw followed by one seeded direction draw; the custom sentinel
 is never a candidate in this mode.
+
+Legacy workflows or API prompts that already store `21:9` remain executable in
+`fixed` and `randomize`, but the value is no longer selectable and is never sampled
+by `randomize_all`.
 
 The node uses an isolated seeded stream and does not change the process-global
 random generator. Identical serialized inputs produce identical results. The

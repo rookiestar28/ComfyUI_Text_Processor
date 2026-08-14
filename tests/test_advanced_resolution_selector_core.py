@@ -15,7 +15,10 @@ try:
     from advanced_resolution_selector_core import (
         CANONICAL_PRESETS,
         DIRECTIONS,
+        LEGACY_PRESET_LABELS,
         MAX_DIMENSION,
+        PUBLIC_PRESETS,
+        RECOGNIZED_RATIO_PAIRS,
         SCORE_ORDER,
         AspectRatio,
         ResolutionRequest,
@@ -28,7 +31,10 @@ except ModuleNotFoundError:
     from ..advanced_resolution_selector_core import (
         CANONICAL_PRESETS,
         DIRECTIONS,
+        LEGACY_PRESET_LABELS,
         MAX_DIMENSION,
+        PUBLIC_PRESETS,
+        RECOGNIZED_RATIO_PAIRS,
         AspectRatio,
         ResolutionRequest,
         canonical_ratio,
@@ -121,9 +127,14 @@ class AdvancedResolutionSelectorCoreTests(unittest.TestCase):
         self.assertEqual((7, 3, "21:9"), (alias.width, alias.height, alias.label))
 
     def test_canonical_and_custom_labels_are_stable(self):
-        self.assertEqual([ratio.label for ratio in CANONICAL_PRESETS], [
-            "1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "21:9"
-        ])
+        public_labels = ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9"]
+        self.assertEqual(public_labels, [ratio.label for ratio in PUBLIC_PRESETS])
+        self.assertIs(CANONICAL_PRESETS, PUBLIC_PRESETS)
+        self.assertEqual(("21:9",), LEGACY_PRESET_LABELS)
+        self.assertEqual(
+            public_labels + ["21:9"],
+            [label for label, _pair in RECOGNIZED_RATIO_PAIRS],
+        )
         self.assertEqual(DIRECTIONS, ("landscape", "portrait"))
         canonical = canonical_ratio("21:9")
         self.assertEqual((7, 3), (canonical.width, canonical.height))

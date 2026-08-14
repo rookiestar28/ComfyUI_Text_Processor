@@ -26,7 +26,7 @@ SCORE_ORDER: Final = (
     "width",
     "height",
 )
-_CANONICAL_LABEL_PAIRS: Final = (
+RECOGNIZED_RATIO_PAIRS: Final = (
     ("1:1", (1, 1)),
     ("9:7", (9, 7)),
     ("4:3", (4, 3)),
@@ -36,6 +36,7 @@ _CANONICAL_LABEL_PAIRS: Final = (
     ("16:9", (16, 9)),
     ("21:9", (21, 9)),
 )
+LEGACY_PRESET_LABELS: Final = ("21:9",)
 _ERROR_MESSAGES: Final = (
     ("invalid_ratio", "invalid_ratio: positive integer ratio components in 1..10000 are required"),
     ("invalid_direction", "invalid_direction: direction must be landscape or portrait"),
@@ -93,7 +94,7 @@ class AspectRatio:
             _raise_error("invalid_ratio")
         label_width, label_height = (int(part) for part in self.label.split(":"))
         canonical_alias = False
-        for known_label, (known_width, known_height) in _CANONICAL_LABEL_PAIRS:
+        for known_label, (known_width, known_height) in RECOGNIZED_RATIO_PAIRS:
             if self.label == known_label:
                 divisor = math.gcd(known_width, known_height)
                 canonical_alias = (known_width // divisor, known_height // divisor) == (
@@ -119,7 +120,7 @@ def normalize_ratio(width: object, height: object, label: object = None) -> Aspe
         if not _safe_label(label):
             _raise_error("invalid_ratio")
         canonical_pair = None
-        for known_label, pair in _CANONICAL_LABEL_PAIRS:
+        for known_label, pair in RECOGNIZED_RATIO_PAIRS:
             if label == known_label:
                 canonical_pair = pair
                 break
@@ -135,14 +136,20 @@ def normalize_ratio(width: object, height: object, label: object = None) -> Aspe
 
 
 def canonical_ratio(label: object) -> AspectRatio:
-    for known_label, pair in _CANONICAL_LABEL_PAIRS:
+    for known_label, pair in RECOGNIZED_RATIO_PAIRS:
         if label == known_label:
             return normalize_ratio(pair[0], pair[1], label=known_label)
     _raise_error("invalid_ratio")
     raise AssertionError("unreachable")
 
 
-CANONICAL_PRESETS: Final = tuple(canonical_ratio(label) for label, _pair in _CANONICAL_LABEL_PAIRS)
+PUBLIC_PRESETS: Final = tuple(
+    canonical_ratio(label)
+    for label, _pair in RECOGNIZED_RATIO_PAIRS
+    if label not in LEGACY_PRESET_LABELS
+)
+# Compatibility alias for existing consumers; public selection owns this seven-item pool.
+CANONICAL_PRESETS: Final = PUBLIC_PRESETS
 
 
 def _validate_direction(direction: object) -> None:

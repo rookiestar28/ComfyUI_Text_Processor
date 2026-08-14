@@ -119,7 +119,7 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
                 "Select fixed, seeded direction randomization, or seeded preset and direction randomization.",
             ),
             "aspect_ratio": (
-                ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "21:9", "custom"],
+                ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "custom"],
                 "1:1",
                 None,
                 None,
@@ -305,7 +305,7 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
             custom_ratio_height=1,
             direction="landscape",
         )
-        self.assertEqual("21:9", ratio.label)
+        self.assertEqual("16:9", ratio.label)
         self.assertEqual("portrait", resolved_direction)
         self.assertEqual([0, 1], recorder.calls)
 
@@ -332,6 +332,25 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "^" + prefix):
                     _select(recorder, **call_overrides)
                 self.assertEqual([], recorder.calls)
+
+    def test_legacy_21_9_executes_in_fixed_and_randomize_but_not_randomize_all(self):
+        fixed_ratio, fixed_direction = _select(
+            output_mode="fixed", aspect_ratio="21:9", direction="landscape"
+        )
+        self.assertEqual(("21:9", "landscape"), (fixed_ratio.label, fixed_direction))
+
+        recorder = DrawRecorder([0.9999999999999999])
+        random_ratio, random_direction = _select(
+            recorder,
+            output_mode="randomize",
+            aspect_ratio="21:9",
+            direction="landscape",
+        )
+        self.assertEqual(("21:9", "portrait"), (random_ratio.label, random_direction))
+        self.assertEqual([0], recorder.calls)
+
+        self.assertNotIn("21:9", module.RATIO_LABELS)
+        self.assertNotIn("21:9", module.ASPECT_RATIO_OPTIONS)
 
         for aspect_ratio in ("1:1", "custom"):
             recorder = DrawRecorder([0.0, 0.0])
@@ -367,13 +386,13 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
         second = node.select_resolution(**values)
         self.assertEqual(first, second)
         self.assertEqual(state, random.getstate())
-        self.assertEqual(("16:9", "portrait"), (first["result"][2], first["result"][3]))
+        self.assertEqual(("7:4", "portrait"), (first["result"][2], first["result"][3]))
 
         max_seed = node.select_resolution(
             **_values(output_mode="randomize_all", seed=4294967295)
         )
         self.assertEqual(
-            ("7:4", "landscape"),
+            ("3:2", "landscape"),
             (max_seed["result"][2], max_seed["result"][3]),
         )
         self.assertNotEqual(first, max_seed)

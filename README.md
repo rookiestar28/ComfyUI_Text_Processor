@@ -379,10 +379,14 @@ diagnostics; it does not create an `IMAGE` or `LATENT` tensor.
 #### Presets, direction, and custom ratios
 
 The `aspect_ratio` menu contains one canonical landscape-oriented entry for
-each ratio: `1:1`, `9:7`, `4:3`, `19:13`, `3:2`, `7:4`, `16:9`, and `21:9`,
-plus `custom`. Select `landscape` or `portrait` separately with `direction`.
+each ratio: `1:1`, `9:7`, `4:3`, `19:13`, `3:2`, `7:4`, and `16:9`, plus
+`custom`. Select `landscape` or `portrait` separately with `direction`.
 Portrait output is produced by transposing the selected ratio; reciprocal
 portrait duplicates are not separate menu entries.
+
+Legacy workflows or API prompts that already store `21:9` remain executable in
+`fixed` and `randomize` modes, but `21:9` is no longer selectable and is never
+sampled by `randomize_all`.
 
 For `custom`, enter positive integer `custom_ratio_width` and
 `custom_ratio_height` values from 1 through 10,000. The pair is reduced to its
@@ -448,10 +452,10 @@ or ratio after multiple alignment.
   `8` preserves `4:3` and resolves the seeded direction as `portrait`, yielding
   `888 × 1184`.
 - **Randomize all:** `randomize_all`, seed `0`, `1.0` megapixel, and multiple
-  `8` selects `16:9` followed by `portrait`, yielding `768 × 1368`.
-- **Coarse multiple:** fixed `21:9`, `landscape`, `1.0` megapixel, and multiple
-  `128` yields `1536 × 640`, `0.9375` actual megapixels, `-6.25%` pixel error,
-  and approximately `+2.857%` aspect error; this illustrates why aligned
+  `8` selects `7:4` followed by `portrait`, yielding `776 × 1352`.
+- **Coarse multiple:** fixed `7:4`, `landscape`, `1.0` megapixel, and multiple
+  `128` yields `1408 × 768`, `1.03125` actual megapixels, `+3.125%` pixel error,
+  and approximately `+4.762%` aspect error; this illustrates why aligned
   outputs should be read together with their diagnostics.
 
 See the [Advanced Resolution Selector in-app help](./web/docs/TP_AdvancedResolutionSelector.md)

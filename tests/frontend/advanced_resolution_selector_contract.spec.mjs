@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import crypto from "node:crypto";
 import fs from "node:fs";
 
 
@@ -6,11 +7,19 @@ const MIGRATION_FIXTURE_PATH = new URL(
   "../fixtures/advanced_resolution_selector_legacy_migration_v2.json",
   import.meta.url,
 );
+const CURRENT_STAGE_FIXTURE_PATH = new URL(
+  "../fixtures/advanced_resolution_selector_current_stage_v2.json",
+  import.meta.url,
+);
+const TARGET_FIXTURE_PATH = new URL(
+  "../fixtures/advanced_resolution_selector_contract_v2.json",
+  import.meta.url,
+);
 
 
 const INPUTS = [
   { id: "output_mode", type: "COMBO", options: ["fixed", "randomize", "randomize_all"], default: "fixed" },
-  { id: "aspect_ratio", type: "COMBO", options: ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "21:9", "custom"], default: "1:1" },
+  { id: "aspect_ratio", type: "COMBO", options: ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "custom"], default: "1:1" },
   { id: "direction", type: "COMBO", options: ["landscape", "portrait"], default: "landscape" },
   { id: "custom_ratio_width", type: "INT", min: 1, max: 10000, step: 1, advanced: true, default: 1 },
   { id: "custom_ratio_height", type: "INT", min: 1, max: 10000, step: 1, advanced: true, default: 1 },
@@ -39,6 +48,34 @@ function loadMigrationFixture() {
   ).toBeTruthy();
   return JSON.parse(fs.readFileSync(MIGRATION_FIXTURE_PATH, "utf8"));
 }
+
+
+test("current product stage binds the immutable seven-preset target", async ({ page }) => {
+  await page.setContent("<!doctype html><html><body></body></html>");
+  expect(
+    fs.existsSync(CURRENT_STAGE_FIXTURE_PATH),
+    "required v2 fixture is missing: advanced_resolution_selector_current_stage_v2.json",
+  ).toBeTruthy();
+  const currentStage = JSON.parse(fs.readFileSync(CURRENT_STAGE_FIXTURE_PATH, "utf8"));
+  const targetBytes = fs.readFileSync(TARGET_FIXTURE_PATH);
+  const targetSha = crypto.createHash("sha256").update(targetBytes).digest("hex");
+  const publicOptions = INPUTS.find((input) => input.id === "aspect_ratio").options;
+
+  expect(currentStage.stage).toEqual({
+    implementation_status: "implemented",
+    name: "current_product",
+  });
+  expect(currentStage.target_contract.filename).toBe(
+    "advanced_resolution_selector_contract_v2.json",
+  );
+  expect(currentStage.target_contract.sha256_hex_chunks.join("")).toBe(targetSha);
+  expect(currentStage.source_boundaries.public_preset_labels).toEqual(publicOptions.slice(0, -1));
+  expect(currentStage.source_boundaries.legacy_preset_labels).toEqual(["21:9"]);
+  expect(publicOptions).toEqual([
+    "1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "custom",
+  ]);
+  expect(publicOptions).not.toContain("21:9");
+});
 
 
 function restoreAndSerializeLegacyValue(fixture, tier, serializer = null) {

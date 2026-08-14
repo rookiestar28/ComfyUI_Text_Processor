@@ -12,8 +12,11 @@ V1_CONTRACT_PATH = FIXTURES_DIR / "advanced_resolution_selector_contract_v1.json
 V2_CONTRACT_PATH = FIXTURES_DIR / "advanced_resolution_selector_contract_v2.json"
 V1_WORKFLOWS_PATH = FIXTURES_DIR / "legacy_workflows_v1.json"
 V2_MIGRATION_PATH = FIXTURES_DIR / "advanced_resolution_selector_legacy_migration_v2.json"
+CURRENT_STAGE_PATH = FIXTURES_DIR / "advanced_resolution_selector_current_stage_v2.json"
 V1_CONTRACT_SHA256 = "b9c26767ac1a4cb4b3f4513585014f7e2a14f1d05a8eb2fb11be960059c31514"  # pragma: allowlist secret
 V1_WORKFLOWS_SHA256 = "361a06896f0143b9348e40d7637c7af64e99854273d7886729366d5b8c82aaa1"  # pragma: allowlist secret
+V2_CONTRACT_SHA256 = "cd2ec31461ae719d217006ac7d800067657e7ad09015e85579b600fb08499cf3"  # pragma: allowlist secret
+V2_MIGRATION_SHA256 = "549a506a525ef971fad231304f87db2e0f07e596e572120a99775f46c625456c"  # pragma: allowlist secret
 PUBLIC_PRESETS = ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9"]
 PUBLIC_OPTIONS = PUBLIC_PRESETS + ["custom"]
 INPUT_IDS = [
@@ -223,6 +226,41 @@ def _validate_migration_fixture(fixture):
     _require(serialized == fixture["widget_values"], "legacy positional serialization drifted")
 
 
+def _validate_current_stage_fixture(fixture):
+    expected = {
+        "schema_version": 2,
+        "stage": {
+            "implementation_status": "implemented",
+            "name": "current_product",
+        },
+        "target_contract": {
+            "filename": "advanced_resolution_selector_contract_v2.json",
+            "sha256_hex_chunks": [
+                "cd2ec314",
+                "61ae719d",
+                "217006ac",
+                "7d800067",
+                "657e7ad0",
+                "9015e855",
+                "79b600fb",
+                "08499cf3",
+            ],
+        },
+        "source_boundaries": {
+            "canonical_presets_alias": "PUBLIC_PRESETS",
+            "legacy_preset_labels": ["21:9"],
+            "public_preset_labels": PUBLIC_PRESETS,
+            "recognized_ratio_labels": PUBLIC_PRESETS + ["21:9"],
+        },
+    }
+    _require(fixture == expected, "current-stage product binding drifted")
+    _require(
+        "".join(fixture["target_contract"]["sha256_hex_chunks"])
+        == V2_CONTRACT_SHA256,
+        "current-stage target hash drifted",
+    )
+
+
 class AdvancedResolutionSelectorMigrationContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -238,6 +276,74 @@ class AdvancedResolutionSelectorMigrationContractTests(unittest.TestCase):
             V1_WORKFLOWS_SHA256,
             hashlib.sha256(V1_WORKFLOWS_PATH.read_bytes()).hexdigest(),
         )
+        self.assertEqual(
+            V2_CONTRACT_SHA256,
+            hashlib.sha256(V2_CONTRACT_PATH.read_bytes()).hexdigest(),
+        )
+        self.assertEqual(
+            V2_MIGRATION_SHA256,
+            hashlib.sha256(V2_MIGRATION_PATH.read_bytes()).hexdigest(),
+        )
+
+    def test_current_stage_binding_is_canonical_and_binds_immutable_target(self):
+        current_stage = _load_required_fixture(self, CURRENT_STAGE_PATH)
+        _validate_current_stage_fixture(current_stage)
+        self.assertEqual(
+            "".join(current_stage["target_contract"]["sha256_hex_chunks"]),
+            hashlib.sha256(V2_CONTRACT_PATH.read_bytes()).hexdigest(),
+        )
+
+    def test_current_product_matches_bound_target_and_named_source_boundaries(self):
+        current_stage = _load_required_fixture(self, CURRENT_STAGE_PATH)
+        target = _load_required_fixture(self, V2_CONTRACT_PATH)
+
+        try:
+            import advanced_resolution_selector as adapter
+            import advanced_resolution_selector_core as core
+        except ModuleNotFoundError:
+            from .. import advanced_resolution_selector as adapter
+            from .. import advanced_resolution_selector_core as core
+
+        boundary = current_stage["source_boundaries"]
+        self.assertEqual(
+            boundary["recognized_ratio_labels"],
+            [label for label, _pair in core.RECOGNIZED_RATIO_PAIRS],
+        )
+        self.assertEqual(
+            boundary["public_preset_labels"],
+            [ratio.label for ratio in core.PUBLIC_PRESETS],
+        )
+        self.assertEqual(tuple(boundary["legacy_preset_labels"]), core.LEGACY_PRESET_LABELS)
+        self.assertIs(core.CANONICAL_PRESETS, core.PUBLIC_PRESETS)
+        self.assertEqual(PUBLIC_OPTIONS, list(adapter.ASPECT_RATIO_OPTIONS))
+        self.assertEqual(PUBLIC_PRESETS, list(adapter.RATIO_LABELS))
+        self.assertEqual(
+            target["inputs"][1]["options"],
+            list(adapter.AdvancedResolutionSelector.INPUT_TYPES()["required"]["aspect_ratio"][0]),
+        )
+
+    def test_current_stage_binding_mutations_are_rejected(self):
+        current_stage = _load_required_fixture(self, CURRENT_STAGE_PATH)
+        mutations = {
+            "target_hash": lambda value: value["target_contract"][
+                "sha256_hex_chunks"
+            ].__setitem__(0, "0" * 8),
+            "legacy_boundary": lambda value: value["source_boundaries"].update(
+                legacy_preset_labels=[]
+            ),
+            "public_boundary": lambda value: value["source_boundaries"][
+                "public_preset_labels"
+            ].append("21:9"),
+            "stage": lambda value: value["stage"].update(
+                implementation_status="not_implemented"
+            ),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                mutated = copy.deepcopy(current_stage)
+                mutate(mutated)
+                with self.assertRaises(AssertionError):
+                    _validate_current_stage_fixture(mutated)
 
     def test_target_contract_allows_only_the_finalized_v1_to_v2_delta(self):
         target = _load_required_fixture(self, V2_CONTRACT_PATH)
@@ -312,7 +418,7 @@ class AdvancedResolutionSelectorMigrationContractTests(unittest.TestCase):
                     _validate_migration_fixture(mutated)
 
     def test_v2_fixtures_are_canonical_json_and_public_safe(self):
-        for path in (V2_CONTRACT_PATH, V2_MIGRATION_PATH):
+        for path in (V2_CONTRACT_PATH, V2_MIGRATION_PATH, CURRENT_STAGE_PATH):
             with self.subTest(path=path.name):
                 fixture = _load_required_fixture(self, path)
                 text = path.read_text(encoding="utf-8")

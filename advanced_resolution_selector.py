@@ -8,8 +8,9 @@ from typing import Callable
 
 try:
     from .advanced_resolution_selector_core import (
-        CANONICAL_PRESETS,
         DIRECTIONS,
+        LEGACY_PRESET_LABELS,
+        PUBLIC_PRESETS,
         AspectRatio,
         ResolutionRequest,
         canonical_ratio,
@@ -19,8 +20,9 @@ try:
 except ImportError:
     # IMPORTANT: retain direct-module discovery for the repository's unittest lane.
     from advanced_resolution_selector_core import (
-        CANONICAL_PRESETS,
         DIRECTIONS,
+        LEGACY_PRESET_LABELS,
+        PUBLIC_PRESETS,
         AspectRatio,
         ResolutionRequest,
         canonical_ratio,
@@ -32,8 +34,9 @@ except ImportError:
 NODE_ID = "TP_AdvancedResolutionSelector"
 DISPLAY_NAME = "Advanced Resolution Selector"
 OUTPUT_MODES = ("fixed", "randomize", "randomize_all")
-RATIO_LABELS = tuple(ratio.label for ratio in CANONICAL_PRESETS)
+RATIO_LABELS = tuple(ratio.label for ratio in PUBLIC_PRESETS)
 ASPECT_RATIO_OPTIONS = RATIO_LABELS + ("custom",)
+EXECUTABLE_RATIO_LABELS = RATIO_LABELS + LEGACY_PRESET_LABELS + ("custom",)
 DrawStream = Callable[[], object]
 
 
@@ -81,7 +84,8 @@ def _resolve_selection(
 
     if not isinstance(output_mode, str) or output_mode not in OUTPUT_MODES:
         _invalid("output_mode")
-    if not isinstance(aspect_ratio, str) or aspect_ratio not in ASPECT_RATIO_OPTIONS:
+    # IMPORTANT: legacy 21:9 stays executable without returning to the public menu or RNG pool.
+    if not isinstance(aspect_ratio, str) or aspect_ratio not in EXECUTABLE_RATIO_LABELS:
         _invalid("aspect_ratio")
 
     # Validate custom components for every mode before selecting a candidate or RNG.
@@ -106,7 +110,7 @@ def _resolve_selection(
     if output_mode == "randomize":
         return selected_ratio, DIRECTIONS[next_index(len(DIRECTIONS))]
 
-    sampled_ratio = CANONICAL_PRESETS[next_index(len(CANONICAL_PRESETS))]
+    sampled_ratio = PUBLIC_PRESETS[next_index(len(PUBLIC_PRESETS))]
     sampled_direction = DIRECTIONS[next_index(len(DIRECTIONS))]
     return sampled_ratio, sampled_direction
 

@@ -1,0 +1,45 @@
+{
+  "schema_version": 2,
+  "source_boundaries": {
+    "canonical_presets_alias": "PUBLIC_PRESETS",
+    "legacy_preset_labels": [
+      "21:9"
+    ],
+    "public_preset_labels": [
+      "1:1",
+      "9:7",
+      "4:3",
+      "19:13",
+      "3:2",
+      "7:4",
+      "16:9"
+    ],
+    "recognized_ratio_labels": [
+      "1:1",
+      "9:7",
+      "4:3",
+      "19:13",
+      "3:2",
+      "7:4",
+      "16:9",
+      "21:9"
+    ]
+  },
+  "stage": {
+    "implementation_status": "implemented",
+    "name": "current_product"
+  },
+  "target_contract": {
+    "filename": "advanced_resolution_selector_contract_v2.json",
+    "sha256_hex_chunks": [
+      "cd2ec314",
+      "61ae719d",
+      "217006ac",
+      "7d800067",
+      "657e7ad0",
+      "9015e855",
+      "79b600fb",
+      "08499cf3"
+    ]
+  }
+}

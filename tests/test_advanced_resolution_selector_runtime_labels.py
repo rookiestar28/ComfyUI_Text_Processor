@@ -77,6 +77,15 @@ class AdvancedResolutionRuntimeLabelContractTests(unittest.TestCase):
         for text in (help_text, readme_text):
             self.assertIn("last successful", text.lower())
             self.assertIn("static", text.lower())
+            self.assertIn("legacy", text.lower())
+            self.assertIn("21:9", text)
+        normalized_help = " ".join(help_text.split())
+        self.assertIn(
+            "`1:1`, `9:7`, `4:3`, `19:13`, `3:2`, `7:4`, and `16:9`",
+            normalized_help,
+        )
+        self.assertNotIn("`16:9` followed by `portrait`", readme_text)
+        self.assertIn("`7:4` followed by `portrait`", readme_text)
         self.assertNotRegex(
             help_text,
             re.compile(
