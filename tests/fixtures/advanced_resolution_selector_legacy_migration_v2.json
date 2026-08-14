@@ -1,0 +1,58 @@
+{
+  "contract": "advanced_resolution_selector_legacy_migration",
+  "custom_ratio_presentation": {
+    "custom_ratio_height": {
+      "label": "custom_ratio_height",
+      "tooltip": "Positive custom ratio height; used when aspect_ratio is custom."
+    },
+    "custom_ratio_width": {
+      "label": "custom_ratio_width",
+      "tooltip": "Positive custom ratio width; used when aspect_ratio is custom."
+    }
+  },
+  "frontend_tiers": [
+    {
+      "id": "desktop_floor",
+      "source": "synthetic_pinned_source_contract",
+      "version": "1.43.18"
+    },
+    {
+      "id": "current_reference",
+      "source": "synthetic_pinned_source_contract",
+      "version": "1.49.1"
+    }
+  ],
+  "input_ids": [
+    "output_mode",
+    "aspect_ratio",
+    "direction",
+    "custom_ratio_width",
+    "custom_ratio_height",
+    "megapixels",
+    "multiple",
+    "seed"
+  ],
+  "node_id": "TP_AdvancedResolutionSelector",
+  "schema_version": 2,
+  "selectable_aspect_ratios": [
+    "1:1",
+    "9:7",
+    "4:3",
+    "19:13",
+    "3:2",
+    "7:4",
+    "16:9",
+    "custom"
+  ],
+  "synthetic_only": true,
+  "widget_values": [
+    "fixed",
+    "21:9",
+    "landscape",
+    1,
+    1,
+    1.0,
+    8,
+    0
+  ]
+}

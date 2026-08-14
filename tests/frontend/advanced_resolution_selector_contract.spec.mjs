@@ -1,4 +1,11 @@
 import { expect, test } from "@playwright/test";
+import fs from "node:fs";
+
+
+const MIGRATION_FIXTURE_PATH = new URL(
+  "../fixtures/advanced_resolution_selector_legacy_migration_v2.json",
+  import.meta.url,
+);
 
 
 const INPUTS = [
@@ -22,6 +29,42 @@ function tierSnapshot() {
     inputs: structuredClone(INPUTS),
     widget_values: ["randomize_all", "custom", "portrait", 6, 4, 1.0, 8, 123],
   };
+}
+
+
+function loadMigrationFixture() {
+  expect(
+    fs.existsSync(MIGRATION_FIXTURE_PATH),
+    "required v2 fixture is missing: advanced_resolution_selector_legacy_migration_v2.json",
+  ).toBeTruthy();
+  return JSON.parse(fs.readFileSync(MIGRATION_FIXTURE_PATH, "utf8"));
+}
+
+
+function restoreAndSerializeLegacyValue(fixture, tier, serializer = null) {
+  expect(fixture.schema_version).toBe(2);
+  expect(fixture.contract).toBe("advanced_resolution_selector_legacy_migration");
+  expect(fixture.synthetic_only).toBe(true);
+  expect(fixture.node_id).toBe("TP_AdvancedResolutionSelector");
+  expect(tier.source).toBe("synthetic_pinned_source_contract");
+  expect(fixture.input_ids).toEqual(INPUTS.map((input) => input.id));
+  expect(fixture.selectable_aspect_ratios).toEqual([
+    "1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "custom",
+  ]);
+  expect(fixture.selectable_aspect_ratios).not.toContain("21:9");
+  expect(fixture.widget_values).toHaveLength(fixture.input_ids.length);
+
+  const restored = Object.fromEntries(
+    fixture.input_ids.map((inputId, index) => [inputId, fixture.widget_values[index]]),
+  );
+  expect(restored.aspect_ratio).toBe("21:9");
+
+  const serialize = serializer ?? ((state) => fixture.input_ids.map((inputId) => state[inputId]));
+  const serialized = serialize(restored);
+  expect(serialized).toHaveLength(fixture.input_ids.length);
+  expect(serialized[1]).toBe("21:9");
+  expect(serialized).toEqual(fixture.widget_values);
+  return { restored, serialized };
 }
 
 
@@ -78,4 +121,53 @@ test("synthetic snapshots fail when the public positional contract drifts", asyn
   [mutated.inputs[0], mutated.inputs[1]] = [mutated.inputs[1], mutated.inputs[0]];
   expect(mutated.inputs.map((input) => input.id)).not.toEqual(INPUTS.map((input) => input.id));
   expect(mutated.widget_values).toHaveLength(8);
+});
+
+
+test("floor and current synthetic tiers restore and serialize unavailable legacy 21:9", async ({ page }) => {
+  await page.setContent("<!doctype html><html><body></body></html>");
+  const fixture = loadMigrationFixture();
+  expect(fixture.frontend_tiers).toEqual([
+    { id: "desktop_floor", source: "synthetic_pinned_source_contract", version: "1.43.18" },
+    { id: "current_reference", source: "synthetic_pinned_source_contract", version: "1.49.1" },
+  ]);
+  expect(fixture.custom_ratio_presentation).toEqual({
+    custom_ratio_height: {
+      label: "custom_ratio_height",
+      tooltip: "Positive custom ratio height; used when aspect_ratio is custom.",
+    },
+    custom_ratio_width: {
+      label: "custom_ratio_width",
+      tooltip: "Positive custom ratio width; used when aspect_ratio is custom.",
+    },
+  });
+
+  for (const tier of fixture.frontend_tiers) {
+    const { restored, serialized } = restoreAndSerializeLegacyValue(fixture, tier);
+    expect(restored.aspect_ratio, tier.id).toBe("21:9");
+    expect(serialized[1], tier.id).toBe("21:9");
+  }
+});
+
+
+test("synthetic legacy migration rejects option reintroduction and value loss mutations", async ({ page }) => {
+  await page.setContent("<!doctype html><html><body></body></html>");
+  const fixture = loadMigrationFixture();
+  const tier = fixture.frontend_tiers[0];
+
+  const optionMutation = structuredClone(fixture);
+  optionMutation.selectable_aspect_ratios.splice(-1, 0, "21:9");
+  expect(() => restoreAndSerializeLegacyValue(optionMutation, tier)).toThrow();
+
+  const storedValueMutation = structuredClone(fixture);
+  storedValueMutation.widget_values[1] = "16:9";
+  expect(() => restoreAndSerializeLegacyValue(storedValueMutation, tier)).toThrow();
+
+  const droppedSerialization = (state) =>
+    fixture.input_ids.filter((inputId) => inputId !== "aspect_ratio").map((inputId) => state[inputId]);
+  expect(() => restoreAndSerializeLegacyValue(fixture, tier, droppedSerialization)).toThrow();
+
+  const substitutedSerialization = (state) =>
+    fixture.input_ids.map((inputId) => (inputId === "aspect_ratio" ? "16:9" : state[inputId]));
+  expect(() => restoreAndSerializeLegacyValue(fixture, tier, substitutedSerialization)).toThrow();
 });
