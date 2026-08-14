@@ -69,6 +69,7 @@ test("current product stage binds the immutable seven-preset target", async ({ p
     "advanced_resolution_selector_contract_v2.json",
   );
   expect(currentStage.target_contract.sha256_hex_chunks.join("")).toBe(targetSha);
+  expect(currentStage.validator_inputs).toEqual(["aspect_ratio"]);
   expect(currentStage.source_boundaries.public_preset_labels).toEqual(publicOptions.slice(0, -1));
   expect(currentStage.source_boundaries.legacy_preset_labels).toEqual(["21:9"]);
   expect(publicOptions).toEqual([

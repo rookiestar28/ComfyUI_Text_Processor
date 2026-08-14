@@ -41,5 +41,8 @@
       "79b600fb",
       "08499cf3"
     ]
-  }
+  },
+  "validator_inputs": [
+    "aspect_ratio"
+  ]
 }

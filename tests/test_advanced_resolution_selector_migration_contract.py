@@ -252,6 +252,7 @@ def _validate_current_stage_fixture(fixture):
             "public_preset_labels": PUBLIC_PRESETS,
             "recognized_ratio_labels": PUBLIC_PRESETS + ["21:9"],
         },
+        "validator_inputs": ["aspect_ratio"],
     }
     _require(fixture == expected, "current-stage product binding drifted")
     _require(

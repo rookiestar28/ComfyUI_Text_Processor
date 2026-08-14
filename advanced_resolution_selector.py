@@ -149,6 +149,13 @@ class AdvancedResolutionSelector:
     CATEGORY = "ComfyUI Text Processor/Image"
 
     @classmethod
+    # IMPORTANT: own only aspect_ratio; ComfyUI skips default validation for named inputs.
+    def VALIDATE_INPUTS(cls, aspect_ratio):
+        if not isinstance(aspect_ratio, str) or aspect_ratio not in EXECUTABLE_RATIO_LABELS:
+            return "invalid_aspect_ratio: a supported ratio preset or custom is required"
+        return True
+
+    @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
