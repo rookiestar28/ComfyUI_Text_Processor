@@ -8,6 +8,8 @@ This document is the source-of-truth local verification workflow for **ComfyUI T
   tracked frontend browser-test harness.
 - Node entrypoint: `__init__.py`.
 - Registered node modules live as root-level `.py` files.
+- Runtime frontend extensions live in `web/global_random_seed.js` and
+  `web/advanced_resolution_selector.js`.
 - `package.json` and Playwright provide mandatory frontend contract/E2E validation.
 - The foundational harness does not itself add product runtime JavaScript; every
   frontend extension introduced later enters this same lane.
@@ -101,6 +103,9 @@ mask_nodes.py
 Image_concat_advanced.py
 load_image_batch.py
 resize_image_advanced.py
+global_random_seed.py
+advanced_resolution_selector_core.py
+advanced_resolution_selector.py
 ```
 
 ## One-command Full Test Scripts
