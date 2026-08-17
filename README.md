@@ -10,10 +10,16 @@ An advanced automation toolkit with 19 production nodes for text processing, reu
 
 <details>
 
-<summary><strong>Resolution selection and output feedback improved</strong></summary>
+<summary><strong>Resolution selection modes and output feedback improved</strong></summary>
 
 - Added `Advanced Resolution Selector` presets, custom ratios, portrait and
-  landscape direction selection, and reproducible fixed or seeded-random modes.
+  landscape direction selection, and four reproducible fixed or seeded-random
+  modes.
+- Added `randomize_ratio` to keep the selected direction while choosing one of six
+  seeded ratio presets; `1:1`, `custom`, and legacy `21:9` are excluded from this
+  mode's output pool.
+- Removed `21:9` from new-workflow menus and random preset sampling while preserving
+  compatible execution for existing `fixed` and `randomize` workflows that store it.
 - Added multiple-aligned megapixel diagnostics and runtime `width: N` /
   `height: N` labels beside the output connections after successful execution.
 
