@@ -33,8 +33,11 @@ except ImportError:
 
 NODE_ID = "TP_AdvancedResolutionSelector"
 DISPLAY_NAME = "Advanced Resolution Selector"
-OUTPUT_MODES = ("fixed", "randomize", "randomize_all")
+OUTPUT_MODES = ("fixed", "randomize", "randomize_all", "randomize_ratio")
 RATIO_LABELS = tuple(ratio.label for ratio in PUBLIC_PRESETS)
+RANDOMIZE_RATIO_PRESETS = tuple(
+    ratio for ratio in PUBLIC_PRESETS if ratio.label != "1:1"
+)
 ASPECT_RATIO_OPTIONS = RATIO_LABELS + ("custom",)
 EXECUTABLE_RATIO_LABELS = RATIO_LABELS + LEGACY_PRESET_LABELS + ("custom",)
 DrawStream = Callable[[], object]
@@ -110,6 +113,12 @@ def _resolve_selection(
     if output_mode == "randomize":
         return selected_ratio, DIRECTIONS[next_index(len(DIRECTIONS))]
 
+    if output_mode == "randomize_ratio":
+        return (
+            RANDOMIZE_RATIO_PRESETS[next_index(len(RANDOMIZE_RATIO_PRESETS))],
+            direction,
+        )
+
     sampled_ratio = PUBLIC_PRESETS[next_index(len(PUBLIC_PRESETS))]
     sampled_direction = DIRECTIONS[next_index(len(DIRECTIONS))]
     return sampled_ratio, sampled_direction
@@ -163,7 +172,7 @@ class AdvancedResolutionSelector:
                     list(OUTPUT_MODES),
                     {
                         "default": "fixed",
-                        "tooltip": "Select fixed, seeded direction randomization, or seeded preset and direction randomization.",
+                        "tooltip": "Select fixed, seeded direction randomization, seeded preset and direction randomization, or seeded ratio randomization with the selected direction.",
                     },
                 ),
                 "aspect_ratio": (
@@ -177,7 +186,7 @@ class AdvancedResolutionSelector:
                     list(DIRECTIONS),
                     {
                         "default": "landscape",
-                        "tooltip": "Choose the resolved orientation; randomized modes may replace it with a seeded draw.",
+                        "tooltip": "Choose the resolved orientation; randomize and randomize_all may replace it, while fixed and randomize_ratio preserve it.",
                     },
                 ),
                 "custom_ratio_width": (

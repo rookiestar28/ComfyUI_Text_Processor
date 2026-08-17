@@ -1,11 +1,19 @@
 import copy
 import hashlib
+import inspect
 import json
 import math
 from pathlib import Path
 import random
 import re
 import unittest
+
+try:
+    import advanced_resolution_selector as adapter
+    import advanced_resolution_selector_core as core
+except ModuleNotFoundError:
+    from .. import advanced_resolution_selector as adapter
+    from .. import advanced_resolution_selector_core as core
 
 
 REPO_DIR = Path(__file__).resolve().parents[1]
@@ -16,6 +24,7 @@ V3_TARGET_PATH = FIXTURES_DIR / "advanced_resolution_selector_contract_v3.json"
 V3_MIGRATION_PATH = (
     FIXTURES_DIR / "advanced_resolution_selector_mode_migration_v3.json"
 )
+V3_CURRENT_PATH = FIXTURES_DIR / "advanced_resolution_selector_current_stage_v3.json"
 V2_TARGET_SHA256 = "cd2ec31461ae719d217006ac7d800067657e7ad09015e85579b600fb08499cf3"  # pragma: allowlist secret
 V2_CURRENT_SHA256 = "c277bbd230dc7e018bc063c6815d0d476a8cd5cf2b8d4a8ad7e0107c5a31f496"  # pragma: allowlist secret
 OUTPUT_MODES = ["fixed", "randomize", "randomize_all", "randomize_ratio"]
@@ -229,6 +238,35 @@ def _validate_migration(migration):
         raise AssertionError("migration contract contains an unauthorized delta")
 
 
+def _expected_current_stage():
+    return {
+        "schema_version": 3,
+        "source_boundaries": {
+            "canonical_presets_alias": "PUBLIC_PRESETS",
+            "randomize_ratio_presets_alias": "RANDOMIZE_RATIO_PRESETS",
+            "legacy_preset_labels": ["21:9"],
+            "legacy_execution_modes": ["fixed", "randomize"],
+            "public_preset_labels": ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9"],
+            "randomize_ratio_preset_labels": RATIO_POOL,
+            "recognized_ratio_labels": ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "21:9"],
+            "output_modes": OUTPUT_MODES,
+            "input_order": INPUT_ORDER,
+            "output_order": OUTPUT_ORDER,
+        },
+        "stage": {"implementation_status": "implemented", "name": "current_product"},
+        "target_contract": {
+            "filename": V3_TARGET_PATH.name,
+            "sha256_hex_chunks": _sha_chunks(V3_TARGET_PATH),
+        },
+        "validator_inputs": ["aspect_ratio"],
+    }
+
+
+def _validate_current_stage(current):
+    if current != _expected_current_stage():
+        raise AssertionError("current-stage v3 binding drifted")
+
+
 def _valid_integer(value):
     return isinstance(value, int) and not isinstance(value, bool)
 
@@ -344,6 +382,40 @@ class AdvancedResolutionSelectorRandomizeRatioContractTests(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     _validate_target(v2, mutated)
 
+    def test_current_product_binds_exact_v3_target_and_live_source(self):
+        self.assertTrue(V3_CURRENT_PATH.is_file(), "required current-stage v3 fixture is missing")
+        current = _load(V3_CURRENT_PATH)
+        _validate_current_stage(current)
+        boundary = current["source_boundaries"]
+        required = adapter.AdvancedResolutionSelector.INPUT_TYPES()["required"]
+        self.assertEqual(boundary["output_modes"], list(adapter.OUTPUT_MODES))
+        self.assertEqual(boundary["output_modes"], list(required["output_mode"][0]))
+        self.assertEqual(boundary["input_order"], list(required))
+        self.assertEqual(boundary["output_order"], list(adapter.AdvancedResolutionSelector.RETURN_NAMES))
+        self.assertEqual(boundary["public_preset_labels"], [ratio.label for ratio in core.PUBLIC_PRESETS])
+        self.assertEqual(boundary["randomize_ratio_preset_labels"], [ratio.label for ratio in adapter.RANDOMIZE_RATIO_PRESETS])
+        self.assertTrue(all(any(ratio is public for public in core.PUBLIC_PRESETS) for ratio in adapter.RANDOMIZE_RATIO_PRESETS))
+        self.assertEqual(tuple(boundary["legacy_preset_labels"]), core.LEGACY_PRESET_LABELS)
+        self.assertEqual(boundary["recognized_ratio_labels"], [label for label, _pair in core.RECOGNIZED_RATIO_PAIRS])
+        self.assertEqual(["aspect_ratio"], list(inspect.signature(adapter.AdvancedResolutionSelector.VALIDATE_INPUTS).parameters))
+
+    def test_current_stage_mutations_are_rejected(self):
+        current = _load(V3_CURRENT_PATH)
+        mutations = {
+            "target_hash": lambda value: value["target_contract"]["sha256_hex_chunks"].__setitem__(0, "00000000"),
+            "pool": lambda value: value["source_boundaries"]["randomize_ratio_preset_labels"].insert(0, "1:1"),
+            "mode_order": lambda value: value["source_boundaries"]["output_modes"].reverse(),
+            "validator": lambda value: value.update(validator_inputs=["output_mode", "aspect_ratio"]),
+            "legacy_modes": lambda value: value["source_boundaries"].update(legacy_execution_modes=["fixed", "randomize", "randomize_ratio"]),
+            "stage": lambda value: value["stage"].update(implementation_status="not_implemented"),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                mutated = copy.deepcopy(current)
+                mutate(mutated)
+                with self.assertRaises(AssertionError):
+                    _validate_current_stage(mutated)
+
     def test_six_bucket_endpoints_replace_selected_values_and_preserve_direction(self):
         target = _load(V3_TARGET_PATH)
         new_cases = target["draw_cases"][-7:]
@@ -454,9 +526,11 @@ class AdvancedResolutionSelectorRandomizeRatioContractTests(unittest.TestCase):
     def test_v3_fixtures_are_canonical_lf_and_public_safe(self):
         target = _load(V3_TARGET_PATH)
         migration = _load(V3_MIGRATION_PATH)
+        current = _load(V3_CURRENT_PATH)
         for path, fixture, sort_keys in (
             (V3_TARGET_PATH, target, True),
             (V3_MIGRATION_PATH, migration, False),
+            (V3_CURRENT_PATH, current, False),
         ):
             with self.subTest(path=path.name):
                 data = path.read_bytes()

@@ -386,12 +386,13 @@ portrait duplicates are not separate menu entries.
 
 Legacy workflows or API prompts that already store `21:9` remain executable in
 `fixed` and `randomize` modes, but `21:9` is no longer selectable and is never
-sampled by `randomize_all`.
+sampled by `randomize_all` or `randomize_ratio`.
 
 For `custom`, enter positive integer `custom_ratio_width` and
 `custom_ratio_height` values from 1 through 10,000. The pair is reduced to its
 canonical label (for example, `6:4` is reported as `3:2`). Custom components
-are validated in every mode, even when `randomize_all` will not use them.
+are validated in every mode, even when `randomize_all` or `randomize_ratio` will
+not use them.
 
 #### Output modes and reproducibility
 
@@ -399,16 +400,18 @@ are validated in every mode, even when `randomize_all` will not use them.
 | --- | --- | --- | ---: |
 | `fixed` | selected preset or custom ratio | selected direction | 0 |
 | `randomize` | selected preset or custom ratio | seeded random direction | 1 |
-| `randomize_all` | seeded random canonical preset; `custom` is excluded | seeded random direction | 2, ratio first |
+| `randomize_all` | seeded random canonical preset, including `1:1`; `custom` is excluded | seeded random direction | 2, ratio first |
+| `randomize_ratio` | one of `9:7`, `4:3`, `19:13`, `3:2`, `7:4`, or `16:9`, excluding `1:1`, `custom`, and legacy `21:9` | selected direction | 1 ratio draw |
 
 The `seed` is an explicit unsigned 32-bit value (`0` through `4,294,967,295`)
 with ComfyUI's normal queue control. Identical serialized inputs produce the
 same randomized result, and changing the serialized seed changes randomized
 selection. The node uses an isolated deterministic stream; this behavior is
 not cryptographic randomness and does not alter Python's process-global random
-generator. In randomized modes, the selected `direction` is not authoritative;
-in `randomize_all`, the selected ratio and custom values are not authoritative
-after their validation step.
+generator. `randomize` and `randomize_all` replace the selected `direction`;
+`fixed` and `randomize_ratio` preserve the selected direction. In
+`randomize_all` and `randomize_ratio`, the selected ratio and custom values are
+not authoritative after their validation step.
 
 #### Megapixels, alignment, and diagnostics
 
@@ -453,6 +456,9 @@ or ratio after multiple alignment.
   `888 × 1184`.
 - **Randomize all:** `randomize_all`, seed `0`, `1.0` megapixel, and multiple
   `8` selects `7:4` followed by `portrait`, yielding `776 × 1352`.
+- **Randomize ratio:** `randomize_ratio`, `portrait`, seed `0`, `1.0` megapixel,
+  and multiple `8` selects `16:9` with the selected direction unchanged, yielding
+  `768 × 1368`.
 - **Coarse multiple:** fixed `7:4`, `landscape`, `1.0` megapixel, and multiple
   `128` yields `1408 × 768`, `1.03125` actual megapixels, `+3.125%` pixel error,
   and approximately `+4.762%` aspect error; this illustrates why aligned

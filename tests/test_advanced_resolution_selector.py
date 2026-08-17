@@ -110,13 +110,13 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
 
         expected = {
             "output_mode": (
-                ["fixed", "randomize", "randomize_all"],
+                ["fixed", "randomize", "randomize_all", "randomize_ratio"],
                 "fixed",
                 None,
                 None,
                 False,
                 False,
-                "Select fixed, seeded direction randomization, or seeded preset and direction randomization.",
+                "Select fixed, seeded direction randomization, seeded preset and direction randomization, or seeded ratio randomization with the selected direction.",
             ),
             "aspect_ratio": (
                 ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "custom"],
@@ -134,7 +134,7 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
                 None,
                 False,
                 False,
-                "Choose the resolved orientation; randomized modes may replace it with a seeded draw.",
+                "Choose the resolved orientation; randomize and randomize_all may replace it, while fixed and randomize_ratio preserve it.",
             ),
             "custom_ratio_width": (
                 None,
@@ -309,6 +309,59 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
         self.assertEqual("portrait", resolved_direction)
         self.assertEqual([0, 1], recorder.calls)
 
+    def test_randomize_ratio_uses_six_existing_presets_and_preserves_direction(self):
+        expected_labels = ["9:7", "4:3", "19:13", "3:2", "7:4", "16:9"]
+        self.assertEqual(expected_labels, [ratio.label for ratio in module.RANDOMIZE_RATIO_PRESETS])
+        for ratio in module.RANDOMIZE_RATIO_PRESETS:
+            self.assertTrue(any(ratio is public for public in module.PUBLIC_PRESETS))
+
+        selected = ("1:1", "custom", "21:9", "1:1", "custom", "21:9")
+        for index, (expected_label, selected_ratio) in enumerate(zip(expected_labels, selected, strict=True)):
+            for direction in module.DIRECTIONS:
+                recorder = DrawRecorder([index / len(expected_labels)])
+                ratio, resolved_direction = _select(
+                    recorder,
+                    output_mode="randomize_ratio",
+                    aspect_ratio=selected_ratio,
+                    custom_ratio_width=6,
+                    custom_ratio_height=4,
+                    direction=direction,
+                )
+                with self.subTest(label=expected_label, selected=selected_ratio, direction=direction):
+                    self.assertEqual(expected_label, ratio.label)
+                    self.assertEqual(direction, resolved_direction)
+                    self.assertEqual([0], recorder.calls)
+                    self.assertNotIn(ratio.label, ("1:1", "custom", "21:9"))
+
+        recorder = DrawRecorder([0.9999999999999999])
+        ratio, direction = _select(
+            recorder,
+            output_mode="randomize_ratio",
+            aspect_ratio="21:9",
+            direction="portrait",
+        )
+        self.assertEqual(("16:9", "portrait"), (ratio.label, direction))
+        self.assertEqual([0], recorder.calls)
+
+    def test_randomize_ratio_seed_vectors_and_global_rng_isolation(self):
+        node = module.AdvancedResolutionSelector()
+        state = random.getstate()
+        for seed, direction, expected in (
+            (0, "portrait", ("16:9", "portrait")),
+            (1, "landscape", ("9:7", "landscape")),
+            (4294967295, "portrait", ("3:2", "portrait")),
+        ):
+            first = node.select_resolution(
+                **_values(output_mode="randomize_ratio", seed=seed, direction=direction)
+            )
+            second = node.select_resolution(
+                **_values(output_mode="randomize_ratio", seed=seed, direction=direction)
+            )
+            with self.subTest(seed=seed):
+                self.assertEqual(expected, (first["result"][2], first["result"][3]))
+                self.assertEqual(first, second)
+        self.assertEqual(state, random.getstate())
+
     def test_validation_precedes_rng_for_all_modes_and_invalid_custom_values(self):
         cases = [
             ({"output_mode": "unknown"}, "invalid_output_mode:"),
@@ -325,13 +378,14 @@ class AdvancedResolutionSelectorTests(unittest.TestCase):
             ({"seed": 4294967296}, "invalid_seed:"),
             ({"seed": True}, "invalid_seed:"),
         ]
-        for overrides, prefix in cases:
-            recorder = DrawRecorder([0.0, 0.0])
-            with self.subTest(overrides=overrides):
-                call_overrides = {"output_mode": "randomize_all", **overrides}
-                with self.assertRaisesRegex(ValueError, "^" + prefix):
-                    _select(recorder, **call_overrides)
-                self.assertEqual([], recorder.calls)
+        for mode in ("randomize_all", "randomize_ratio"):
+            for overrides, prefix in cases:
+                recorder = DrawRecorder([0.0, 0.0])
+                with self.subTest(mode=mode, overrides=overrides):
+                    call_overrides = {"output_mode": mode, **overrides}
+                    with self.assertRaisesRegex(ValueError, "^" + prefix):
+                        _select(recorder, **call_overrides)
+                    self.assertEqual([], recorder.calls)
 
     def test_legacy_21_9_executes_in_fixed_and_randomize_but_not_randomize_all(self):
         fixed_ratio, fixed_direction = _select(

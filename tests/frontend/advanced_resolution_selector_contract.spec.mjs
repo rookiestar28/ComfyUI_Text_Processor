@@ -23,6 +23,10 @@ const V3_MIGRATION_FIXTURE_PATH = new URL(
   "../fixtures/advanced_resolution_selector_mode_migration_v3.json",
   import.meta.url,
 );
+const V3_CURRENT_STAGE_FIXTURE_PATH = new URL(
+  "../fixtures/advanced_resolution_selector_current_stage_v3.json",
+  import.meta.url,
+);
 
 
 const V3_OUTPUT_MODES = ["fixed", "randomize", "randomize_all", "randomize_ratio"];
@@ -39,7 +43,7 @@ const OUTPUT_NAMES = [
 
 
 const INPUTS = [
-  { id: "output_mode", type: "COMBO", options: ["fixed", "randomize", "randomize_all"], default: "fixed" },
+  { id: "output_mode", type: "COMBO", options: V3_OUTPUT_MODES, default: "fixed" },
   { id: "aspect_ratio", type: "COMBO", options: ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "custom"], default: "1:1" },
   { id: "direction", type: "COMBO", options: ["landscape", "portrait"], default: "landscape" },
   { id: "custom_ratio_width", type: "INT", min: 1, max: 10000, step: 1, advanced: true, default: 1 },
@@ -80,10 +84,43 @@ function loadV3Fixtures() {
     fs.existsSync(V3_MIGRATION_FIXTURE_PATH),
     "required v3 fixture is missing: advanced_resolution_selector_mode_migration_v3.json",
   ).toBeTruthy();
+  expect(
+    fs.existsSync(V3_CURRENT_STAGE_FIXTURE_PATH),
+    "required v3 fixture is missing: advanced_resolution_selector_current_stage_v3.json",
+  ).toBeTruthy();
   return {
     target: JSON.parse(fs.readFileSync(V3_TARGET_FIXTURE_PATH, "utf8")),
     migration: JSON.parse(fs.readFileSync(V3_MIGRATION_FIXTURE_PATH, "utf8")),
+    current: JSON.parse(fs.readFileSync(V3_CURRENT_STAGE_FIXTURE_PATH, "utf8")),
   };
+}
+
+
+function validateV3Current(target, current) {
+  expect(current).toEqual({
+    schema_version: 3,
+    source_boundaries: {
+      canonical_presets_alias: "PUBLIC_PRESETS",
+      randomize_ratio_presets_alias: "RANDOMIZE_RATIO_PRESETS",
+      legacy_preset_labels: ["21:9"],
+      legacy_execution_modes: ["fixed", "randomize"],
+      public_preset_labels: ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9"],
+      randomize_ratio_preset_labels: RANDOMIZE_RATIO_POOL,
+      recognized_ratio_labels: ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "21:9"],
+      output_modes: V3_OUTPUT_MODES,
+      input_order: INPUTS.map((entry) => entry.id),
+      output_order: OUTPUT_NAMES,
+    },
+    stage: { implementation_status: "implemented", name: "current_product" },
+    target_contract: {
+      filename: "advanced_resolution_selector_contract_v3.json",
+      sha256_hex_chunks: current.target_contract.sha256_hex_chunks,
+    },
+    validator_inputs: ["aspect_ratio"],
+  });
+  const targetSha = crypto.createHash("sha256").update(fs.readFileSync(V3_TARGET_FIXTURE_PATH)).digest("hex");
+  expect(current.target_contract.sha256_hex_chunks.join("")).toBe(targetSha);
+  expect(target.stage).toMatchObject({ name: "target_contract", implementation_status: "not_implemented" });
 }
 
 
@@ -344,9 +381,10 @@ test("synthetic legacy migration rejects option reintroduction and value loss mu
 
 test("v3 target and migration freeze append-only randomize_ratio contracts", async ({ page }) => {
   await page.setContent("<!doctype html><html><body></body></html>");
-  const { target, migration } = loadV3Fixtures();
+  const { target, migration, current } = loadV3Fixtures();
   validateV3Target(target);
   validateV3Migration(target, migration);
+  validateV3Current(target, current);
 
   for (const contractCase of migration.cases) {
     expect(contractCase.tiers).toEqual(["desktop_floor", "current"]);
@@ -395,4 +433,12 @@ test("v3 browser contract rejects pool, direction, option, legacy, and serializa
   const serializationMutation = structuredClone(fixtures.migration);
   serializationMutation.cases[3].expected_serialized_widgets[0] = "fixed";
   expect(() => validateV3Migration(fixtures.target, serializationMutation)).toThrow();
+
+  const currentPoolMutation = structuredClone(fixtures.current);
+  currentPoolMutation.source_boundaries.randomize_ratio_preset_labels.unshift("1:1");
+  expect(() => validateV3Current(fixtures.target, currentPoolMutation)).toThrow();
+
+  const currentValidatorMutation = structuredClone(fixtures.current);
+  currentValidatorMutation.validator_inputs.push("output_mode");
+  expect(() => validateV3Current(fixtures.target, currentValidatorMutation)).toThrow();
 });

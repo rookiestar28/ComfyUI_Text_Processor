@@ -79,6 +79,17 @@ class AdvancedResolutionRuntimeLabelContractTests(unittest.TestCase):
             self.assertIn("static", text.lower())
             self.assertIn("legacy", text.lower())
             self.assertIn("21:9", text)
+            self.assertIn("randomize_ratio", text)
+            self.assertIn("9:7", text)
+            self.assertIn("selected direction", text.lower())
+            self.assertIn("one", text.lower())
+        for forbidden_generalization in (
+            "Randomized modes resolve direction from the seeded stream.",
+            "In randomized modes, the selected `direction` is not authoritative",
+        ):
+            self.assertNotIn(forbidden_generalization, help_text + readme_text)
+        self.assertIn("including `1:1`", readme_text)
+        self.assertIn("excluding `1:1`, `custom`, and legacy `21:9`", readme_text)
         normalized_help = " ".join(help_text.split())
         self.assertIn(
             "`1:1`, `9:7`, `4:3`, `19:13`, `3:2`, `7:4`, and `16:9`",

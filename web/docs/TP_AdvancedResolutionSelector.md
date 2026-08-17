@@ -2,11 +2,12 @@
 
 ## Inputs
 
-- `output_mode` chooses `fixed`, `randomize`, or `randomize_all`.
+- `output_mode` chooses `fixed`, `randomize`, `randomize_all`, or
+  `randomize_ratio`.
 - `aspect_ratio` selects one of the canonical ratios `1:1`, `9:7`, `4:3`,
   `19:13`, `3:2`, `7:4`, and `16:9`, or `custom`.
-- `direction` selects `landscape` or `portrait` for fixed mode. Randomized
-  modes resolve direction from the seeded stream.
+- `direction` selects `landscape` or `portrait`. `fixed` and `randomize_ratio`
+  preserve the selected direction; `randomize` and `randomize_all` replace it.
 - `custom_ratio_width` and `custom_ratio_height` define a positive custom ratio
   when `aspect_ratio` is `custom`. They are validated for every mode.
 - `megapixels` is a binary `1024 * 1024` target area from `0.1` through `16.0`.
@@ -20,11 +21,15 @@
 `randomize` keeps the selected or custom ratio and consumes one seeded direction
 draw. `randomize_all` validates the custom fields, then consumes one seeded
 canonical-ratio draw followed by one seeded direction draw; the custom sentinel
-is never a candidate in this mode.
+is never a candidate in this mode. `randomize_ratio` consumes one seeded ratio
+draw from `9:7`, `4:3`, `19:13`, `3:2`, `7:4`, or `16:9` and preserves the
+selected direction. This pool excludes `1:1`, `custom`, and legacy `21:9`; `1:1`
+remains selectable and remains in `randomize_all`.
 
 Legacy workflows or API prompts that already store `21:9` remain executable in
 `fixed` and `randomize`, but the value is no longer selectable and is never sampled
-by `randomize_all`.
+by `randomize_all` or `randomize_ratio`. A stored `21:9` selection is validated in
+`randomize_ratio` and then replaced by the seeded six-preset result.
 
 The node uses an isolated seeded stream and does not change the process-global
 random generator. Identical serialized inputs produce identical results. The

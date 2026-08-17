@@ -90,6 +90,21 @@ class AdvancedResolutionSelectorHostValidationTests(unittest.TestCase):
                 result = node.select_resolution(**values)
                 self.assertEqual("21:9", result["result"][2])
 
+    def test_new_mode_passes_host_preflight_and_replaces_legacy_ratio(self):
+        node = adapter.AdvancedResolutionSelector()
+        for tier in SUPPORTED_HOST_TIERS:
+            with self.subTest(tier=tier):
+                values = _values(
+                    output_mode="randomize_ratio",
+                    aspect_ratio="21:9",
+                    direction="portrait",
+                    seed=0,
+                )
+                self.assertEqual((True, None), _host_preflight(type(node), values, tier))
+                result = node.select_resolution(**values)
+                self.assertEqual(("16:9", "portrait"), result["result"][2:4])
+                self.assertNotIn(result["result"][2], ("1:1", "custom", "21:9"))
+
     def test_host_validator_exact_allowlist_rejects_unknown_content_safely(self):
         validator = getattr(adapter.AdvancedResolutionSelector, "VALIDATE_INPUTS", None)
         self.assertIsNotNone(validator)

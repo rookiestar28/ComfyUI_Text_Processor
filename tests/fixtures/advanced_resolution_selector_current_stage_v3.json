@@ -1,0 +1,86 @@
+{
+  "schema_version": 3,
+  "source_boundaries": {
+    "canonical_presets_alias": "PUBLIC_PRESETS",
+    "randomize_ratio_presets_alias": "RANDOMIZE_RATIO_PRESETS",
+    "legacy_preset_labels": [
+      "21:9"
+    ],
+    "legacy_execution_modes": [
+      "fixed",
+      "randomize"
+    ],
+    "public_preset_labels": [
+      "1:1",
+      "9:7",
+      "4:3",
+      "19:13",
+      "3:2",
+      "7:4",
+      "16:9"
+    ],
+    "randomize_ratio_preset_labels": [
+      "9:7",
+      "4:3",
+      "19:13",
+      "3:2",
+      "7:4",
+      "16:9"
+    ],
+    "recognized_ratio_labels": [
+      "1:1",
+      "9:7",
+      "4:3",
+      "19:13",
+      "3:2",
+      "7:4",
+      "16:9",
+      "21:9"
+    ],
+    "output_modes": [
+      "fixed",
+      "randomize",
+      "randomize_all",
+      "randomize_ratio"
+    ],
+    "input_order": [
+      "output_mode",
+      "aspect_ratio",
+      "direction",
+      "custom_ratio_width",
+      "custom_ratio_height",
+      "megapixels",
+      "multiple",
+      "seed"
+    ],
+    "output_order": [
+      "width",
+      "height",
+      "resolved_aspect_ratio",
+      "resolved_direction",
+      "actual_megapixels",
+      "pixel_error_percent",
+      "aspect_error_percent"
+    ]
+  },
+  "stage": {
+    "implementation_status": "implemented",
+    "name": "current_product"
+  },
+  "target_contract": {
+    "filename": "advanced_resolution_selector_contract_v3.json",
+    "sha256_hex_chunks": [
+      "1fe13b70",
+      "a340ccc5",
+      "9223f520",
+      "97256648",
+      "9064f99b",
+      "053519cd",
+      "7b6992f3",
+      "c252f094"
+    ]
+  },
+  "validator_inputs": [
+    "aspect_ratio"
+  ]
+}
