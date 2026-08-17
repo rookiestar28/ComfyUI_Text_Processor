@@ -1,0 +1,859 @@
+{
+  "custom_ratio": {
+    "max": 10000,
+    "min": 1,
+    "randomize_all_excluded": true,
+    "sentinel": "custom"
+  },
+  "directions": [
+    "landscape",
+    "portrait"
+  ],
+  "draw_cases": [
+    {
+      "draw_order": [],
+      "draws": [],
+      "expected": [],
+      "logical_draws": 0,
+      "mode": "fixed"
+    },
+    {
+      "draw_order": [
+        "direction"
+      ],
+      "draws": [
+        0
+      ],
+      "expected": [
+        "landscape"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize"
+    },
+    {
+      "draw_order": [
+        "direction"
+      ],
+      "draws": [
+        0.9999999999999999
+      ],
+      "expected": [
+        "portrait"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0,
+        0
+      ],
+      "expected": [
+        "1:1",
+        "landscape"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0.14285714285714285,
+        0
+      ],
+      "expected": [
+        "9:7",
+        "landscape"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0.2857142857142857,
+        0
+      ],
+      "expected": [
+        "4:3",
+        "landscape"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0.42857142857142855,
+        0
+      ],
+      "expected": [
+        "19:13",
+        "landscape"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0.5714285714285714,
+        0
+      ],
+      "expected": [
+        "3:2",
+        "landscape"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0.7142857142857143,
+        0
+      ],
+      "expected": [
+        "7:4",
+        "landscape"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0.8571428571428571,
+        0
+      ],
+      "expected": [
+        "16:9",
+        "landscape"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "draws": [
+        0.9999999999999999,
+        0.9999999999999999
+      ],
+      "expected": [
+        "16:9",
+        "portrait"
+      ],
+      "logical_draws": 2,
+      "mode": "randomize_all"
+    },
+    {
+      "draw_order": [
+        "ratio"
+      ],
+      "draws": [
+        0
+      ],
+      "expected": [
+        "9:7",
+        "portrait"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize_ratio",
+      "selected_aspect_ratio": "1:1",
+      "selected_direction": "portrait"
+    },
+    {
+      "draw_order": [
+        "ratio"
+      ],
+      "draws": [
+        0.16666666666666666
+      ],
+      "expected": [
+        "4:3",
+        "landscape"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize_ratio",
+      "selected_aspect_ratio": "custom",
+      "selected_direction": "landscape"
+    },
+    {
+      "draw_order": [
+        "ratio"
+      ],
+      "draws": [
+        0.3333333333333333
+      ],
+      "expected": [
+        "19:13",
+        "portrait"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize_ratio",
+      "selected_aspect_ratio": "21:9",
+      "selected_direction": "portrait"
+    },
+    {
+      "draw_order": [
+        "ratio"
+      ],
+      "draws": [
+        0.5
+      ],
+      "expected": [
+        "3:2",
+        "landscape"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize_ratio",
+      "selected_aspect_ratio": "1:1",
+      "selected_direction": "landscape"
+    },
+    {
+      "draw_order": [
+        "ratio"
+      ],
+      "draws": [
+        0.6666666666666666
+      ],
+      "expected": [
+        "7:4",
+        "portrait"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize_ratio",
+      "selected_aspect_ratio": "custom",
+      "selected_direction": "portrait"
+    },
+    {
+      "draw_order": [
+        "ratio"
+      ],
+      "draws": [
+        0.8333333333333334
+      ],
+      "expected": [
+        "16:9",
+        "landscape"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize_ratio",
+      "selected_aspect_ratio": "21:9",
+      "selected_direction": "landscape"
+    },
+    {
+      "draw_order": [
+        "ratio"
+      ],
+      "draws": [
+        0.9999999999999999
+      ],
+      "expected": [
+        "16:9",
+        "portrait"
+      ],
+      "logical_draws": 1,
+      "mode": "randomize_ratio",
+      "selected_aspect_ratio": "1:1",
+      "selected_direction": "portrait"
+    }
+  ],
+  "inputs": [
+    {
+      "default": "fixed",
+      "name": "output_mode",
+      "options": [
+        "fixed",
+        "randomize",
+        "randomize_all",
+        "randomize_ratio"
+      ],
+      "step": null,
+      "tooltip": "Select fixed, seeded direction randomization, seeded preset and direction randomization, or seeded ratio randomization with the selected direction.",
+      "type": "COMBO"
+    },
+    {
+      "default": "1:1",
+      "name": "aspect_ratio",
+      "options": [
+        "1:1",
+        "9:7",
+        "4:3",
+        "19:13",
+        "3:2",
+        "7:4",
+        "16:9",
+        "custom"
+      ],
+      "step": null,
+      "tooltip": "Choose one canonical ratio or provide a positive custom ratio pair.",
+      "type": "COMBO"
+    },
+    {
+      "default": "landscape",
+      "name": "direction",
+      "options": [
+        "landscape",
+        "portrait"
+      ],
+      "step": null,
+      "tooltip": "Choose the resolved orientation; randomize and randomize_all may replace it, while fixed and randomize_ratio preserve it.",
+      "type": "COMBO"
+    },
+    {
+      "advanced": true,
+      "bounds": [
+        1,
+        10000
+      ],
+      "default": 1,
+      "name": "custom_ratio_width",
+      "options": null,
+      "step": 1,
+      "tooltip": "Positive custom ratio width; used when aspect_ratio is custom.",
+      "type": "INT"
+    },
+    {
+      "advanced": true,
+      "bounds": [
+        1,
+        10000
+      ],
+      "default": 1,
+      "name": "custom_ratio_height",
+      "options": null,
+      "step": 1,
+      "tooltip": "Positive custom ratio height; used when aspect_ratio is custom.",
+      "type": "INT"
+    },
+    {
+      "bounds": [
+        0.1,
+        16
+      ],
+      "default": 1,
+      "name": "megapixels",
+      "options": null,
+      "step": 0.1,
+      "tooltip": "Binary 1024 squared pixel budget before multiple alignment.",
+      "type": "FLOAT"
+    },
+    {
+      "advanced": true,
+      "bounds": [
+        8,
+        128
+      ],
+      "default": 8,
+      "name": "multiple",
+      "options": null,
+      "step": 4,
+      "tooltip": "Align both dimensions to this positive multiple.",
+      "type": "INT"
+    },
+    {
+      "bounds": [
+        0,
+        4294967295
+      ],
+      "control_after_generate": true,
+      "default": 0,
+      "name": "seed",
+      "options": null,
+      "step": 1,
+      "tooltip": "Explicit uint32 seed for deterministic randomized modes.",
+      "type": "INT"
+    }
+  ],
+  "invalid_inputs": [
+    {
+      "error_id": "invalid_ratio",
+      "field": "ratio",
+      "value": [
+        0,
+        1
+      ]
+    },
+    {
+      "error_id": "invalid_ratio",
+      "field": "ratio",
+      "value": [
+        true,
+        1
+      ]
+    },
+    {
+      "error_id": "invalid_direction",
+      "field": "direction",
+      "value": "diagonal"
+    },
+    {
+      "error_id": "invalid_megapixels",
+      "field": "megapixels",
+      "value": 0
+    },
+    {
+      "error_id": "invalid_megapixels",
+      "field": "megapixels",
+      "value": 16.1
+    },
+    {
+      "error_id": "invalid_megapixels",
+      "field": "megapixels",
+      "value_kind": "non_finite_nan"
+    },
+    {
+      "error_id": "invalid_multiple",
+      "field": "multiple",
+      "value": 6
+    },
+    {
+      "error_id": "invalid_multiple",
+      "field": "multiple",
+      "value": 8.5
+    }
+  ],
+  "legacy_presets": [
+    {
+      "execution_modes": [
+        "fixed",
+        "randomize"
+      ],
+      "label": "21:9",
+      "pair": [
+        21,
+        9
+      ],
+      "randomize_all_excluded": true,
+      "selectable": false
+    }
+  ],
+  "modes": {
+    "fixed": {
+      "direction_source": "selected",
+      "draw_order": [],
+      "logical_draws": 0,
+      "ratio_source": "selected"
+    },
+    "randomize": {
+      "direction_source": "seeded_random",
+      "draw_order": [
+        "direction"
+      ],
+      "logical_draws": 1,
+      "ratio_source": "selected"
+    },
+    "randomize_all": {
+      "direction_source": "seeded_random",
+      "draw_order": [
+        "ratio",
+        "direction"
+      ],
+      "logical_draws": 2,
+      "ratio_source": "seeded_random_preset"
+    },
+    "randomize_ratio": {
+      "direction_source": "selected",
+      "draw_order": [
+        "ratio"
+      ],
+      "logical_draws": 1,
+      "ratio_pool_labels": [
+        "9:7",
+        "4:3",
+        "19:13",
+        "3:2",
+        "7:4",
+        "16:9"
+      ],
+      "ratio_source": "seeded_random_public_preset_excluding_1_1"
+    }
+  },
+  "node": {
+    "api": "v1",
+    "category": "ComfyUI Text Processor/Image",
+    "classification": "stateless",
+    "display_name": "Advanced Resolution Selector",
+    "function": "select_resolution",
+    "id": "TP_AdvancedResolutionSelector"
+  },
+  "numerical": {
+    "candidate_generation_cases": [
+      {
+        "expected_indices": [
+          1,
+          2,
+          3
+        ],
+        "ideal_index": 2.5,
+        "name": "halfway_rounds_down"
+      },
+      {
+        "expected_indices": [
+          3,
+          4,
+          5
+        ],
+        "ideal_index": 3.5,
+        "name": "halfway_rounds_up"
+      }
+    ],
+    "candidate_sources": [
+      "round",
+      "floor",
+      "ceil",
+      "round_minus_one",
+      "round_plus_one"
+    ],
+    "custom_label_policy": [
+      "reduced_width:reduced_height",
+      "direction_separate"
+    ],
+    "error_formula": "relative_percent",
+    "float_tolerance": {
+      "absolute": 1e-12,
+      "relative": 1e-12
+    },
+    "largest_valid_draw": 0.9999999999999999,
+    "megapixel_unit": "binary_1024_squared",
+    "native_index_minimum": 1,
+    "rounding_cases": [
+      {
+        "input": 2.5,
+        "python_round": 2
+      },
+      {
+        "input": 3.5,
+        "python_round": 4
+      }
+    ],
+    "score_order": [
+      "max_abs_error",
+      "sum_abs_error",
+      "abs_pixel_error",
+      "abs_aspect_error",
+      "native_manhattan_distance",
+      "width",
+      "height"
+    ]
+  },
+  "numerical_cases": [
+    {
+      "direction": "landscape",
+      "expected": {
+        "actual_megapixels": 1,
+        "aspect_error_percent": 0,
+        "height": 1024,
+        "pixel_error_percent": 0,
+        "resolved_aspect_ratio": "1:1",
+        "width": 1024
+      },
+      "megapixels": 1,
+      "multiple": 8,
+      "name": "default_square",
+      "ratio": [
+        1,
+        1
+      ]
+    },
+    {
+      "direction": "landscape",
+      "expected": {
+        "actual_megapixels": 0.9375,
+        "aspect_error_percent": 2.857142857142847,
+        "height": 640,
+        "pixel_error_percent": -6.25,
+        "resolved_aspect_ratio": "21:9",
+        "width": 1536
+      },
+      "megapixels": 1,
+      "multiple": 128,
+      "name": "coarse_wide",
+      "ratio": [
+        21,
+        9
+      ]
+    },
+    {
+      "direction": "portrait",
+      "expected": {
+        "actual_megapixels": 1.00616455078125,
+        "aspect_error_percent": 0.31847133757962887,
+        "height": 1256,
+        "pixel_error_percent": 0.616455078125,
+        "resolved_aspect_ratio": "3:2",
+        "width": 840
+      },
+      "megapixels": 1,
+      "multiple": 8,
+      "name": "custom_portrait",
+      "ratio": [
+        3,
+        2
+      ]
+    },
+    {
+      "direction": "landscape",
+      "expected": {
+        "actual_megapixels": 3.9375,
+        "aspect_error_percent": -97.48,
+        "height": 128,
+        "pixel_error_percent": 3837.5,
+        "resolved_aspect_ratio": "10000:1",
+        "width": 32256
+      },
+      "megapixels": 0.1,
+      "multiple": 128,
+      "name": "extreme_custom",
+      "ratio": [
+        10000,
+        1
+      ]
+    },
+    {
+      "direction": "portrait",
+      "expected": {
+        "actual_megapixels": 0.09375,
+        "aspect_error_percent": -14.28571428571429,
+        "height": 384,
+        "pixel_error_percent": -6.25,
+        "resolved_aspect_ratio": "9:7",
+        "width": 256
+      },
+      "megapixels": 0.1,
+      "multiple": 128,
+      "name": "coarse_portrait",
+      "ratio": [
+        9,
+        7
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "width",
+      "tooltip": "Aligned output width in pixels.",
+      "type": "INT"
+    },
+    {
+      "name": "height",
+      "tooltip": "Aligned output height in pixels.",
+      "type": "INT"
+    },
+    {
+      "name": "resolved_aspect_ratio",
+      "tooltip": "Canonical or reduced custom ratio label before direction is reported separately.",
+      "type": "STRING"
+    },
+    {
+      "name": "resolved_direction",
+      "tooltip": "Resolved landscape or portrait direction.",
+      "type": "STRING"
+    },
+    {
+      "name": "actual_megapixels",
+      "tooltip": "Realized binary megapixels after multiple alignment.",
+      "type": "FLOAT"
+    },
+    {
+      "name": "pixel_error_percent",
+      "tooltip": "Signed realized pixel-area error percentage.",
+      "type": "FLOAT"
+    },
+    {
+      "name": "aspect_error_percent",
+      "tooltip": "Signed realized aspect-ratio error percentage.",
+      "type": "FLOAT"
+    }
+  ],
+  "presets": [
+    {
+      "label": "1:1",
+      "pair": [
+        1,
+        1
+      ]
+    },
+    {
+      "label": "9:7",
+      "pair": [
+        9,
+        7
+      ]
+    },
+    {
+      "label": "4:3",
+      "pair": [
+        4,
+        3
+      ]
+    },
+    {
+      "label": "19:13",
+      "pair": [
+        19,
+        13
+      ]
+    },
+    {
+      "label": "3:2",
+      "pair": [
+        3,
+        2
+      ]
+    },
+    {
+      "label": "7:4",
+      "pair": [
+        7,
+        4
+      ]
+    },
+    {
+      "label": "16:9",
+      "pair": [
+        16,
+        9
+      ]
+    }
+  ],
+  "provenance": [
+    {
+      "commit": "9cf9133",
+      "name": "ComfyUI native ResolutionSelector source",
+      "url": "https://github.com/Comfy-Org/ComfyUI/blob/9cf9133/comfy_extras/nodes_resolution.py"
+    },
+    {
+      "commit": "9780746",
+      "name": "WLSH SDXL resolution reference",
+      "url": "https://github.com/wallish77/wlsh_nodes/blob/9780746/wlsh_nodes.py"
+    }
+  ],
+  "schema_version": 3,
+  "seed_cases": [
+    {
+      "draws": [
+        0.8444218515250481
+      ],
+      "expected": [
+        "portrait"
+      ],
+      "mode": "randomize",
+      "seed": 0
+    },
+    {
+      "draws": [
+        0.13436424411240122
+      ],
+      "expected": [
+        "landscape"
+      ],
+      "mode": "randomize",
+      "seed": 1
+    },
+    {
+      "draws": [
+        0.8444218515250481,
+        0.7579544029403025
+      ],
+      "expected": [
+        "7:4",
+        "portrait"
+      ],
+      "mode": "randomize_all",
+      "seed": 0
+    },
+    {
+      "draws": [
+        0.6353574441341173,
+        0.20319993954407756
+      ],
+      "expected": [
+        "3:2",
+        "landscape"
+      ],
+      "mode": "randomize_all",
+      "seed": 4294967295
+    },
+    {
+      "draws": [
+        0.8444218515250481
+      ],
+      "expected": [
+        "16:9",
+        "portrait"
+      ],
+      "mode": "randomize_ratio",
+      "seed": 0,
+      "selected_direction": "portrait"
+    },
+    {
+      "draws": [
+        0.13436424411240122
+      ],
+      "expected": [
+        "9:7",
+        "landscape"
+      ],
+      "mode": "randomize_ratio",
+      "seed": 1,
+      "selected_direction": "landscape"
+    },
+    {
+      "draws": [
+        0.6353574441341173
+      ],
+      "expected": [
+        "3:2",
+        "portrait"
+      ],
+      "mode": "randomize_ratio",
+      "seed": 4294967295,
+      "selected_direction": "portrait"
+    }
+  ],
+  "stage": {
+    "expected_node_count": 19,
+    "expected_rich_help_count": 10,
+    "expected_visible_input_count": 153,
+    "implementation_status": "not_implemented",
+    "name": "target_contract",
+    "registered_id": "TP_AdvancedResolutionSelector"
+  },
+  "validation": {
+    "error_type": "ValueError",
+    "failure_policy": "reject_before_arithmetic",
+    "safe_error_ids": [
+      "invalid_direction",
+      "invalid_megapixels",
+      "invalid_multiple",
+      "invalid_ratio"
+    ]
+  }
+}

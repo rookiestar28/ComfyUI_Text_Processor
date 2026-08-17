@@ -1,0 +1,217 @@
+{
+  "schema_version": 3,
+  "source_contract": {
+    "filename": "advanced_resolution_selector_contract_v2.json",
+    "sha256_hex_chunks": [
+      "cd2ec314",
+      "61ae719d",
+      "217006ac",
+      "7d800067",
+      "657e7ad0",
+      "9015e855",
+      "79b600fb",
+      "08499cf3"
+    ]
+  },
+  "target_contract": {
+    "filename": "advanced_resolution_selector_contract_v3.json",
+    "sha256_hex_chunks": [
+      "1fe13b70",
+      "a340ccc5",
+      "9223f520",
+      "97256648",
+      "9064f99b",
+      "053519cd",
+      "7b6992f3",
+      "c252f094"
+    ]
+  },
+  "supported_frontend_tiers": [
+    {
+      "id": "desktop_floor",
+      "version": "1.43.18"
+    },
+    {
+      "id": "current",
+      "version": "1.49.1"
+    }
+  ],
+  "input_order": [
+    "output_mode",
+    "aspect_ratio",
+    "direction",
+    "custom_ratio_width",
+    "custom_ratio_height",
+    "megapixels",
+    "multiple",
+    "seed"
+  ],
+  "output_order": [
+    "width",
+    "height",
+    "resolved_aspect_ratio",
+    "resolved_direction",
+    "actual_megapixels",
+    "pixel_error_percent",
+    "aspect_error_percent"
+  ],
+  "public_output_modes": [
+    "fixed",
+    "randomize",
+    "randomize_all",
+    "randomize_ratio"
+  ],
+  "legacy_recognized_ratio_labels": [
+    "21:9"
+  ],
+  "cases": [
+    {
+      "id": "fixed_existing",
+      "tiers": [
+        "desktop_floor",
+        "current"
+      ],
+      "serialized_widgets": [
+        "fixed",
+        "16:9",
+        "portrait",
+        1,
+        1,
+        1.0,
+        8,
+        0
+      ],
+      "expected_restored_widgets": [
+        "fixed",
+        "16:9",
+        "portrait",
+        1,
+        1,
+        1.0,
+        8,
+        0
+      ],
+      "expected_serialized_widgets": [
+        "fixed",
+        "16:9",
+        "portrait",
+        1,
+        1,
+        1.0,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "randomize_existing",
+      "tiers": [
+        "desktop_floor",
+        "current"
+      ],
+      "serialized_widgets": [
+        "randomize",
+        "4:3",
+        "landscape",
+        1,
+        1,
+        1.0,
+        8,
+        1
+      ],
+      "expected_restored_widgets": [
+        "randomize",
+        "4:3",
+        "landscape",
+        1,
+        1,
+        1.0,
+        8,
+        1
+      ],
+      "expected_serialized_widgets": [
+        "randomize",
+        "4:3",
+        "landscape",
+        1,
+        1,
+        1.0,
+        8,
+        1
+      ]
+    },
+    {
+      "id": "randomize_all_existing",
+      "tiers": [
+        "desktop_floor",
+        "current"
+      ],
+      "serialized_widgets": [
+        "randomize_all",
+        "custom",
+        "portrait",
+        2,
+        1,
+        1.0,
+        8,
+        0
+      ],
+      "expected_restored_widgets": [
+        "randomize_all",
+        "custom",
+        "portrait",
+        2,
+        1,
+        1.0,
+        8,
+        0
+      ],
+      "expected_serialized_widgets": [
+        "randomize_all",
+        "custom",
+        "portrait",
+        2,
+        1,
+        1.0,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "randomize_ratio_new",
+      "tiers": [
+        "desktop_floor",
+        "current"
+      ],
+      "serialized_widgets": [
+        "randomize_ratio",
+        "1:1",
+        "portrait",
+        1,
+        1,
+        1.0,
+        8,
+        0
+      ],
+      "expected_restored_widgets": [
+        "randomize_ratio",
+        "1:1",
+        "portrait",
+        1,
+        1,
+        1.0,
+        8,
+        0
+      ],
+      "expected_serialized_widgets": [
+        "randomize_ratio",
+        "1:1",
+        "portrait",
+        1,
+        1,
+        1.0,
+        8,
+        0
+      ]
+    }
+  ]
+}

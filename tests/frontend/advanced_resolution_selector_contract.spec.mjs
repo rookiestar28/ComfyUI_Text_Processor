@@ -15,6 +15,27 @@ const TARGET_FIXTURE_PATH = new URL(
   "../fixtures/advanced_resolution_selector_contract_v2.json",
   import.meta.url,
 );
+const V3_TARGET_FIXTURE_PATH = new URL(
+  "../fixtures/advanced_resolution_selector_contract_v3.json",
+  import.meta.url,
+);
+const V3_MIGRATION_FIXTURE_PATH = new URL(
+  "../fixtures/advanced_resolution_selector_mode_migration_v3.json",
+  import.meta.url,
+);
+
+
+const V3_OUTPUT_MODES = ["fixed", "randomize", "randomize_all", "randomize_ratio"];
+const RANDOMIZE_RATIO_POOL = ["9:7", "4:3", "19:13", "3:2", "7:4", "16:9"];
+const OUTPUT_NAMES = [
+  "width",
+  "height",
+  "resolved_aspect_ratio",
+  "resolved_direction",
+  "actual_megapixels",
+  "pixel_error_percent",
+  "aspect_error_percent",
+];
 
 
 const INPUTS = [
@@ -47,6 +68,116 @@ function loadMigrationFixture() {
     "required v2 fixture is missing: advanced_resolution_selector_legacy_migration_v2.json",
   ).toBeTruthy();
   return JSON.parse(fs.readFileSync(MIGRATION_FIXTURE_PATH, "utf8"));
+}
+
+
+function loadV3Fixtures() {
+  expect(
+    fs.existsSync(V3_TARGET_FIXTURE_PATH),
+    "required v3 fixture is missing: advanced_resolution_selector_contract_v3.json",
+  ).toBeTruthy();
+  expect(
+    fs.existsSync(V3_MIGRATION_FIXTURE_PATH),
+    "required v3 fixture is missing: advanced_resolution_selector_mode_migration_v3.json",
+  ).toBeTruthy();
+  return {
+    target: JSON.parse(fs.readFileSync(V3_TARGET_FIXTURE_PATH, "utf8")),
+    migration: JSON.parse(fs.readFileSync(V3_MIGRATION_FIXTURE_PATH, "utf8")),
+  };
+}
+
+
+function validateV3Target(target) {
+  expect(target.schema_version).toBe(3);
+  expect(target.stage).toMatchObject({
+    implementation_status: "not_implemented",
+    name: "target_contract",
+  });
+  expect(target.inputs[0].options).toEqual(V3_OUTPUT_MODES);
+  expect(target.inputs[0].tooltip).toBe(
+    "Select fixed, seeded direction randomization, seeded preset and direction randomization, or seeded ratio randomization with the selected direction.",
+  );
+  expect(target.inputs[2].tooltip).toBe(
+    "Choose the resolved orientation; randomize and randomize_all may replace it, while fixed and randomize_ratio preserve it.",
+  );
+  expect(target.modes.randomize_ratio).toEqual({
+    direction_source: "selected",
+    draw_order: ["ratio"],
+    logical_draws: 1,
+    ratio_pool_labels: RANDOMIZE_RATIO_POOL,
+    ratio_source: "seeded_random_public_preset_excluding_1_1",
+  });
+  expect(target.legacy_presets[0].execution_modes).toEqual(["fixed", "randomize"]);
+  expect(target.draw_cases.slice(-7).map((entry) => entry.expected[0])).toEqual([
+    "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "16:9",
+  ]);
+  expect(target.draw_cases.slice(-7).map((entry) => entry.expected[1])).toEqual([
+    "portrait", "landscape", "portrait", "landscape", "portrait", "landscape", "portrait",
+  ]);
+  expect(target.draw_cases.slice(-7).map((entry) => entry.selected_aspect_ratio)).toEqual([
+    "1:1", "custom", "21:9", "1:1", "custom", "21:9", "1:1",
+  ]);
+}
+
+
+function validateV3Migration(target, migration) {
+  expect(Object.keys(migration)).toEqual([
+    "schema_version",
+    "source_contract",
+    "target_contract",
+    "supported_frontend_tiers",
+    "input_order",
+    "output_order",
+    "public_output_modes",
+    "legacy_recognized_ratio_labels",
+    "cases",
+  ]);
+  expect(migration.schema_version).toBe(3);
+  expect(migration.source_contract.filename).toBe(
+    "advanced_resolution_selector_contract_v2.json",
+  );
+  expect(migration.target_contract.filename).toBe(
+    "advanced_resolution_selector_contract_v3.json",
+  );
+  const targetSha = crypto
+    .createHash("sha256")
+    .update(fs.readFileSync(V3_TARGET_FIXTURE_PATH))
+    .digest("hex");
+  expect(migration.target_contract.sha256_hex_chunks.join("")).toBe(targetSha);
+  expect(migration.supported_frontend_tiers).toEqual([
+    { id: "desktop_floor", version: "1.43.18" },
+    { id: "current", version: "1.49.1" },
+  ]);
+  expect(migration.input_order).toEqual(INPUTS.map((input) => input.id));
+  expect(migration.output_order).toEqual(OUTPUT_NAMES);
+  expect(migration.public_output_modes).toEqual(V3_OUTPUT_MODES);
+  expect(migration.legacy_recognized_ratio_labels).toEqual(["21:9"]);
+  expect(target.inputs[0].options).toEqual(migration.public_output_modes);
+  expect(migration.cases.map((entry) => entry.id)).toEqual([
+    "fixed_existing",
+    "randomize_existing",
+    "randomize_all_existing",
+    "randomize_ratio_new",
+  ]);
+  const expectedVectors = [
+    ["fixed", "16:9", "portrait", 1, 1, 1.0, 8, 0],
+    ["randomize", "4:3", "landscape", 1, 1, 1.0, 8, 1],
+    ["randomize_all", "custom", "portrait", 2, 1, 1.0, 8, 0],
+    ["randomize_ratio", "1:1", "portrait", 1, 1, 1.0, 8, 0],
+  ];
+  for (const [index, contractCase] of migration.cases.entries()) {
+    expect(Object.keys(contractCase)).toEqual([
+      "id",
+      "tiers",
+      "serialized_widgets",
+      "expected_restored_widgets",
+      "expected_serialized_widgets",
+    ]);
+    expect(contractCase.tiers).toEqual(["desktop_floor", "current"]);
+    expect(contractCase.serialized_widgets).toEqual(expectedVectors[index]);
+    expect(contractCase.expected_restored_widgets).toEqual(expectedVectors[index]);
+    expect(contractCase.expected_serialized_widgets).toEqual(expectedVectors[index]);
+  }
 }
 
 
@@ -208,4 +339,60 @@ test("synthetic legacy migration rejects option reintroduction and value loss mu
   const substitutedSerialization = (state) =>
     fixture.input_ids.map((inputId) => (inputId === "aspect_ratio" ? "16:9" : state[inputId]));
   expect(() => restoreAndSerializeLegacyValue(fixture, tier, substitutedSerialization)).toThrow();
+});
+
+
+test("v3 target and migration freeze append-only randomize_ratio contracts", async ({ page }) => {
+  await page.setContent("<!doctype html><html><body></body></html>");
+  const { target, migration } = loadV3Fixtures();
+  validateV3Target(target);
+  validateV3Migration(target, migration);
+
+  for (const contractCase of migration.cases) {
+    expect(contractCase.tiers).toEqual(["desktop_floor", "current"]);
+    const restored = Object.fromEntries(
+      migration.input_order.map((inputId, index) => [
+        inputId,
+        contractCase.serialized_widgets[index],
+      ]),
+    );
+    const serialized = migration.input_order.map((inputId) => restored[inputId]);
+    expect(serialized, contractCase.id).toEqual(contractCase.expected_restored_widgets);
+    expect(serialized, contractCase.id).toEqual(contractCase.expected_serialized_widgets);
+  }
+
+  expect(migration.cases.slice(0, 3).map((entry) => entry.serialized_widgets[0])).toEqual([
+    "fixed", "randomize", "randomize_all",
+  ]);
+  expect(migration.cases[3].serialized_widgets[0]).toBe("randomize_ratio");
+});
+
+
+test("v3 browser contract rejects pool, direction, option, legacy, and serialization mutations", async ({ page }) => {
+  await page.setContent("<!doctype html><html><body></body></html>");
+  const fixtures = loadV3Fixtures();
+
+  const poolMutation = structuredClone(fixtures.target);
+  poolMutation.modes.randomize_ratio.ratio_pool_labels.unshift("1:1");
+  expect(() => validateV3Target(poolMutation)).toThrow();
+
+  const directionMutation = structuredClone(fixtures.target);
+  directionMutation.modes.randomize_ratio.direction_source = "seeded_random";
+  expect(() => validateV3Target(directionMutation)).toThrow();
+
+  const drawMutation = structuredClone(fixtures.target);
+  drawMutation.modes.randomize_ratio.draw_order.push("direction");
+  expect(() => validateV3Target(drawMutation)).toThrow();
+
+  const optionMutation = structuredClone(fixtures.migration);
+  optionMutation.public_output_modes.reverse();
+  expect(() => validateV3Migration(fixtures.target, optionMutation)).toThrow();
+
+  const legacyMutation = structuredClone(fixtures.migration);
+  legacyMutation.legacy_recognized_ratio_labels = [];
+  expect(() => validateV3Migration(fixtures.target, legacyMutation)).toThrow();
+
+  const serializationMutation = structuredClone(fixtures.migration);
+  serializationMutation.cases[3].expected_serialized_widgets[0] = "fixed";
+  expect(() => validateV3Migration(fixtures.target, serializationMutation)).toThrow();
 });
