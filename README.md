@@ -57,8 +57,11 @@ An advanced automation toolkit with 19 production nodes for text processing, reu
 
 <summary><strong>Text, storage, and network reliability improved</strong></summary>
 
-- Advanced Text Filter now honors trigger-error behavior and returns predictable
-  regex capture-group output.
+- Advanced Text Filter now normalizes missing-match routing and preserves
+  correct before/after marker ownership across literal and regex boundaries.
+- Hardened LLM parsing with first-valid bounded JSON extraction, complete
+  punctuation-aware code-fence info strings, identifier-safe Markdown cleanup, and
+  input-safe static diagnostics.
 - Text Scraper blocks local/private targets and adds bounded public HTTP/HTTPS
   fetching; Wildcards uses safer source resolution and path handling.
 - Text Storage prefers the ComfyUI user directory while retaining legacy reads,
@@ -70,7 +73,7 @@ An advanced automation toolkit with 19 production nodes for text processing, reu
 
 <summary><strong>Host compatibility and in-app guidance refreshed</strong></summary>
 
-- Version 1.7.3 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
+- Version 1.7.5 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
   covering the validated Desktop floor and the current host snapshot.
 - Production nodes remain on the compatible V1 API while V3 migration stays
   deferred until a newer stable ComfyUI node API is available.
@@ -146,7 +149,7 @@ If you prefer terminal commands or don't use the Manager:
 
 ## Compatibility and host support
 
-* **Release requirements:** ComfyUI Text Processor 1.7.3 requires Python 3.10+ and ComfyUI Core 0.22.3+.
+* **Release requirements:** ComfyUI Text Processor 1.7.5 requires Python 3.10+ and ComfyUI Core 0.22.3+.
 * **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
 * **Current host observation:** The node pack has also been checked against Core 0.29.0 and Frontend 1.49.1. These versions are a current compatibility snapshot, not a new minimum or maximum.
 * **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
@@ -163,12 +166,12 @@ Whether you need to precisely extract sections from a large text block, batch re
 ### Core Features
 
 * **Dual Outputs (Node Chaining)**: Provides `processed_text (Target)` and `remaining_text` outputs. You can chain the `remaining_text` to another `AdvancedTextFilter` node for multi-step text parsing.
-* **17+ Operation Modes**:
+* **17 Operation Modes**:
   * Global Find/Replace/Extract
   * First-Match Split/Between
   * Format Cleanup
   * LLM Output Parsing (JSON, Code blocks)
-* **Robust Error Handling:** The `if_not_found` option lets you choose the fallback behavior (return original, return empty, or trigger error) when a pattern isn't found, preventing batch workflow failures.
+* **Robust Error Handling:** If no match is found, `return original text` routes preprocessed input to `processed_text (Target)` and clears `remaining_text`; `return empty string` reverses those outputs; `trigger error` raises a static node error.
 * **Powerful Regex Support**: A `use_regex` toggle switches all find and split operations to use Regular Expressions. **Now supports `DOTALL` mode** for multi-line matching.
   * Regex extract with one capture group returns the captured text; multiple capture groups are joined as `group1 | group2`.
 * **Multi-Keyword Handling**: `Find/Replace` operations support multiple, comma-separated (`,`) targets in the `optional_text_input` field.
@@ -192,8 +195,8 @@ This group finds and processes **all** matching instances. It uses the `optional
 This group targets only the **first** matched instance. It uses the `start_text` and `end_text` fields.
 
 * **`extract between`** / **`remove between`**
-* **`extract before start text`** / **`remove after start text`**
-* **`extract after start text`** / **`remove before start text`**
+* **`extract before start text`** / **`remove before start text`**
+* **`extract after start text`** / **`remove after start text`**
 
 #### C. Text Cleanup
 
