@@ -64,9 +64,46 @@ class DependencyMetadataTests(unittest.TestCase):
         )
 
     @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
-    def test_global_random_seed_release_uses_minor_version(self):
+    def test_project_release_version_is_1_7_5(self):
         pyproject = _load_pyproject()
-        self.assertEqual("1.7.3", pyproject["project"]["version"])
+        self.assertEqual("1.7.5", pyproject["project"]["version"])
+
+    def test_readme_release_contract_is_current(self):
+        readme = (REPO_DIR / "README.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "- Version 1.7.5 supports Python 3.10+ and ComfyUI Core 0.22.3+",
+            readme,
+        )
+        self.assertIn(
+            "* **Release requirements:** ComfyUI Text Processor 1.7.5 requires Python 3.10+",
+            readme,
+        )
+        self.assertNotIn("1.7.3", readme)
+        self.assertIn("* **17 Operation Modes**:", readme)
+        self.assertIn(
+            "normalizes missing-match routing and preserves\n"
+            "  correct before/after marker ownership",
+            readme,
+        )
+        self.assertIn(
+            "first-valid bounded JSON extraction, complete\n"
+            "  punctuation-aware code-fence info strings, identifier-safe Markdown cleanup, and\n"
+            "  input-safe static diagnostics.",
+            readme,
+        )
+        self.assertIn(
+            "`return original text` routes preprocessed input to `processed_text (Target)`",
+            readme,
+        )
+        self.assertIn(
+            "extracting before returns LEFT / <MARK>RIGHT",
+            readme,
+        )
+        self.assertIn("first valid JSON object", readme)
+        self.assertIn("complete opening info strings", readme)
+        self.assertIn("literal underscores inside identifiers such as snake_case", readme)
+        for forbidden in ("REL01", "F27", ".planning/", "reference/", "ROADMAP.md"):
+            self.assertNotIn(forbidden, readme)
 
     @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
     def test_frontend_dependency_and_force_includes_remain_absent(self):
