@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "node": {
+    "id": "AdvancedTextFilter",
+    "function": "process",
+    "category": "ComfyUI Text Processor",
+    "required_inputs": [
+      "text",
+      "concat_mode",
+      "operation",
+      "start_text",
+      "end_text",
+      "optional_text_input",
+      "replace_with_text",
+      "use_regex",
+      "case_conversion",
+      "if_not_found"
+    ],
+    "optional_inputs": [
+      "external_text",
+      "replacement_rules"
+    ],
+    "return_types": [
+      "STRING",
+      "STRING"
+    ],
+    "return_names": [
+      "processed_text (Target)",
+      "remaining_text"
+    ],
+    "operation_modes": [
+      "find and remove (use optional_text)",
+      "find and replace (use optional_text, replace_with_text)",
+      "find all (extract) (use optional_text)",
+      "batch replace (use replacement_rules)",
+      "extract between",
+      "remove between",
+      "extract before start text",
+      "extract after start text",
+      "remove before start text",
+      "remove after start text",
+      "remove empty lines",
+      "remove newlines",
+      "strip lines (trim)",
+      "remove all whitespace (keep newlines)",
+      "LLM: extract code block (```)",
+      "LLM: extract JSON object ({...})",
+      "LLM: clean markdown formatting"
+    ],
+    "if_not_found_policies": [
+      "return original text",
+      "return empty string",
+      "trigger error"
+    ]
+  },
+  "missing_aware_operation_groups": {
+    "extraction_like": [
+      "find all (extract) (use optional_text)",
+      "extract between",
+      "extract before start text",
+      "extract after start text",
+      "LLM: extract code block (```)",
+      "LLM: extract JSON object ({...})"
+    ],
+    "transform_like": [
+      "find and remove (use optional_text)",
+      "find and replace (use optional_text, replace_with_text)",
+      "batch replace (use replacement_rules)",
+      "remove between",
+      "remove before start text",
+      "remove after start text"
+    ]
+  },
+  "fallback_contract": {
+    "preprocessed_original": [
+      "LEFT CENTER RIGHT",
+      ""
+    ],
+    "return_original_text": [
+      "LEFT CENTER RIGHT",
+      ""
+    ],
+    "return_empty_string": [
+      "",
+      "LEFT CENTER RIGHT"
+    ]
+  },
+  "safe_reasons": {
+    "replacement_rules_missing": "replacement rules are missing",
+    "batch_no_match": "no batch rule matched",
+    "search_missing": "search pattern is missing",
+    "search_no_match": "search pattern not found",
+    "start_missing": "start boundary is missing",
+    "start_or_end_missing": "start or end boundary is missing",
+    "start_no_match": "start boundary not found",
+    "end_no_match": "end boundary not found",
+    "code_no_match": "code block not found",
+    "json_no_match": "valid JSON object not found",
+    "invalid_regex": "REGEX ERROR: invalid regular expression",
+    "unexpected_error": "FILTER ERROR: unexpected processing failure"
+  },
+  "marker_contract": {
+    "literal_input": "LEFT<MARK>RIGHT",
+    "literal_marker": "<MARK>",
+    "regex_input": "LEFT<MARK>RIGHT",
+    "regex_marker": "<M.RK>",
+    "multiline_input": "LEFT<MARK\nVALUE>RIGHT",
+    "multiline_regex_marker": "<MARK\nVALUE>",
+    "expected": {
+      "extract before start text": [
+        "LEFT",
+        "<MARK>RIGHT"
+      ],
+      "remove before start text": [
+        "<MARK>RIGHT",
+        "LEFT"
+      ],
+      "extract after start text": [
+        "RIGHT",
+        "LEFT<MARK>"
+      ],
+      "remove after start text": [
+        "LEFT<MARK>",
+        "RIGHT"
+      ]
+    },
+    "between_input": "A<START>INNER<END>Z",
+    "between_start": "<START>",
+    "between_end": "<END>",
+    "between_expected": {
+      "extract between": [
+        "INNER",
+        "A<START><END>Z"
+      ],
+      "remove between": [
+        "A<START><END>Z",
+        "INNER"
+      ]
+    }
+  },
+  "json_contract": {
+    "first_valid_input": "prefix {\"a\":1} middle {\"b\":2} suffix",
+    "first_valid_expected": [
+      "{\"a\":1}",
+      "prefix  middle {\"b\":2} suffix"
+    ],
+    "malformed_then_valid_input": "{bad} then {\"ok\":2}",
+    "malformed_then_valid_expected": [
+      "{\"ok\":2}",
+      "{bad} then "
+    ],
+    "nested_input": "prefix {\"outer\":{\"x\":1}} suffix",
+    "nested_expected": [
+      "{\"outer\":{\"x\":1}}",
+      "prefix  suffix"
+    ],
+    "strict_constant_inputs": [
+      "{\"value\":NaN}",
+      "{\"value\":Infinity}",
+      "{\"value\":-Infinity}"
+    ],
+    "candidate_limit": 1024,
+    "candidate_1024_input_prefix": "{bad}",
+    "candidate_1024_valid_suffix": "{\"ok\":2}"
+  },
+  "fence_contract": {
+    "labeled_languages": [
+      "python",
+      "c++",
+      "objective-c",
+      "shell-session"
+    ],
+    "body": "BODY",
+    "unlabeled": [
+      "BODY",
+      ""
+    ],
+    "crlf": [
+      "BODY",
+      ""
+    ],
+    "inline": [
+      "BODY",
+      ""
+    ],
+    "multiple": [
+      "BODY\n\nSECOND",
+      "prefix  middle  suffix"
+    ],
+    "complete_plus_unmatched": [
+      "BODY",
+      "prefix  suffix ```unmatched"
+    ]
+  },
+  "markdown_contract": {
+    "input": "snake_case a_b_c **bold** _italic_",
+    "expected": "snake_case a_b_c bold italic",
+    "plain_input": "already plain",
+    "plain_expected": "already plain"
+  },
+  "preprocessing_contract": {
+    "external_text": "prefix ",
+    "text": "needle",
+    "concat_mode": "prepend_external_text",
+    "case_conversion": "to UPPERCASE",
+    "pattern": "PREFIX NEEDLE",
+    "expected": [
+      "PREFIX NEEDLE",
+      ""
+    ]
+  }
+}

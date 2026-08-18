@@ -224,6 +224,15 @@ Designed for Img2Text workflows or bulk cleaning.
 
   * Supports Regex if `use_regex` is enabled.
 
+### Advanced Text Filter behavior contract
+
+* **Missing-match policy:** For every search, extraction, boundary, and LLM parsing operation, "return original text" sends the preprocessed input to processed_text and an empty string to remaining_text; "return empty string" reverses those outputs; "trigger error" raises a node error with a static reason.
+* **Preprocessing order:** external_text concatenation and case conversion happen before matching, so fallback output uses the fully preprocessed input.
+* **First-match markers:** With LEFT<MARK>RIGHT, extracting before returns LEFT / <MARK>RIGHT, removing before returns <MARK>RIGHT / LEFT, extracting after returns RIGHT / LEFT<MARK>, and removing after returns LEFT<MARK> / RIGHT.
+* **JSON extraction:** The node returns the first valid JSON object, skips malformed candidates, rejects arrays, scalars, and non-standard numeric constants, and inspects at most 1,024 candidate opening braces.
+* **Code fences:** Code extraction removes complete opening info strings, including punctuation-bearing language names; unlabeled, CRLF, inline, multiple, and unmatched fences follow the same two-output contract.
+* **Markdown cleanup:** Supported formatting delimiters are removed while literal underscores inside identifiers such as snake_case are preserved.
+
 ---
 
 ## 2. Text Utilities

@@ -24,7 +24,10 @@ class AdvancedTextFilterNotFoundTests(unittest.TestCase):
         )
 
     def test_trigger_error_raises_for_missing_pattern(self):
-        with self.assertRaisesRegex(ValueError, "Pattern not found"):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^\[AdvancedTextFilter\] search pattern not found$",
+        ):
             self.run_node("trigger error")
 
     def test_return_original_text_keeps_existing_behavior(self):

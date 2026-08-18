@@ -9,3 +9,4 @@ tests/fixtures/advanced_resolution_selector_legacy_migration_v2.json text eol=lf
 tests/fixtures/advanced_resolution_selector_contract_v3.json text eol=lf
 tests/fixtures/advanced_resolution_selector_mode_migration_v3.json text eol=lf
 tests/fixtures/advanced_resolution_selector_current_stage_v3.json text eol=lf
+tests/fixtures/advanced_text_filter_operation_contract_v1.json text eol=lf

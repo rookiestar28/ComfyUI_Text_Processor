@@ -1,9 +1,101 @@
+import json
 import re
 from typing import Tuple, Optional, Any
 
 
 class _IntentionalFilterError(ValueError):
     pass
+
+
+MAX_JSON_OBJECT_CANDIDATES = 1024
+
+
+def _reject_json_constant(_value):
+    raise ValueError("non-standard JSON constant")
+
+
+def _extract_first_valid_json_object(text: str) -> Optional[Tuple[str, str]]:
+    decoder = json.JSONDecoder(parse_constant=_reject_json_constant)
+    search_from = 0
+    attempts = 0
+
+    while attempts < MAX_JSON_OBJECT_CANDIDATES:
+        start_idx = text.find("{", search_from)
+        if start_idx == -1:
+            return None
+
+        attempts += 1
+        try:
+            parsed, end_idx = decoder.raw_decode(text, start_idx)
+        except (ValueError, RecursionError):
+            search_from = start_idx + 1
+            continue
+
+        if isinstance(parsed, dict):
+            return (
+                text[start_idx:end_idx],
+                text[:start_idx] + text[end_idx:],
+            )
+
+        search_from = start_idx + 1
+
+    return None
+
+
+def _extract_code_blocks(text: str) -> Optional[Tuple[str, str]]:
+    fence = chr(96) * 3
+    spans = []
+    bodies = []
+    search_from = 0
+
+    while True:
+        start_idx = text.find(fence, search_from)
+        if start_idx == -1:
+            break
+        close_idx = text.find(fence, start_idx + len(fence))
+        if close_idx == -1:
+            break
+
+        content = text[start_idx + len(fence):close_idx]
+        if content.startswith("\r\n"):
+            body = content[2:]
+        elif content.startswith("\n"):
+            body = content[1:]
+        else:
+            newline_idx = content.find("\n")
+            if newline_idx == -1:
+                body = content
+            else:
+                body = content[newline_idx + 1:]
+
+        spans.append((start_idx, close_idx + len(fence)))
+        bodies.append(body)
+        search_from = close_idx + len(fence)
+
+    if not bodies:
+        return None
+
+    remaining_parts = []
+    cursor = 0
+    for start_idx, end_idx in spans:
+        remaining_parts.append(text[cursor:start_idx])
+        cursor = end_idx
+    remaining_parts.append(text[cursor:])
+
+    return "\n\n".join(bodies).strip(), "".join(remaining_parts).strip()
+
+
+def _clean_markdown_formatting(text: str) -> str:
+    cleaned = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+    cleaned = re.sub(r"^#+\s+", "", cleaned, flags=re.MULTILINE)
+    cleaned = cleaned.replace(chr(96), "")
+    cleaned = re.sub(r"\*\*|\*", "", cleaned)
+    cleaned = re.sub(
+        r"(?<!\w)__(?=\S)|(?<=\S)__(?!\w)|(?<!\w)_(?=\S)|(?<=\S)_(?!\w)",
+        "",
+        cleaned,
+    )
+    return cleaned
 
 
 def _normalize_regex_matches(matches):
@@ -74,12 +166,12 @@ class AdvancedTextFilter:
                 "start_text": ("STRING", {
                     "multiline": False,
                     "default": "",
-                    "tooltip": "Opening boundary used by between, before, and after operations.",
+                    "tooltip": "Opening marker used by first-match between, before, and after operations; the marker stays in the remaining side.",
                 }),
                 "end_text": ("STRING", {
                     "multiline": False,
                     "default": "",
-                    "tooltip": "Closing boundary used by operations that extract or remove between markers.",
+                    "tooltip": "Closing marker used by between operations; both boundary markers stay in the remaining side.",
                 }),
                 
                 "optional_text_input": ("STRING", {
@@ -101,14 +193,14 @@ class AdvancedTextFilter:
                 }),
                 "case_conversion": (
                     ["disabled", "to UPPERCASE", "to lowercase"],
-                    {"tooltip": "Optional case conversion applied to the processed target text."},
+                    {"tooltip": "Optional case conversion applied before matching and processing the target text."},
                 ),
                 
                 "if_not_found": (
                     ["return original text", "return empty string", "trigger error"],
                     {
                         "default": "return original text",
-                        "tooltip": "Result policy when the requested marker or pattern is not found.",
+                        "tooltip": "Missing-match policy: original sends preprocessed text to the target, empty sends it to remaining, and trigger error raises.",
                     },
                 ),
             },
@@ -166,19 +258,14 @@ class AdvancedTextFilter:
         def handle_not_found(original: str, reason: str):
             if if_not_found == "trigger error":
                 raise _IntentionalFilterError(f"[AdvancedTextFilter] {reason}")
-            elif if_not_found == "return empty string":
-                if "extract" in operation or "find all" in operation or "LLM" in operation:
-                    return ("", original)
-                return (original, "") 
-            else: # return original text
-                if "extract" in operation or "find all" in operation or "LLM" in operation:
-                    return ("", original) 
-                return (original, "")
+            if if_not_found == "return empty string":
+                return ("", original)
+            return (original, "")
 
         try:
             if operation == "batch replace (use replacement_rules)":
                 if not replacement_rules:
-                    return handle_not_found(text_to_process, "No replacement rules provided")
+                    return handle_not_found(text_to_process, "replacement rules are missing")
                 
                 lines = replacement_rules.splitlines()
                 processed = text_to_process
@@ -204,7 +291,7 @@ class AdvancedTextFilter:
                         match_count += count
                 
                 if match_count == 0:
-                     return handle_not_found(original_text_input, "No batch rules matched")
+                     return handle_not_found(original_text_input, "no batch rule matched")
 
                 return (processed, "")
 
@@ -225,39 +312,27 @@ class AdvancedTextFilter:
                 return ("\n".join(processed_lines), "")
             
             elif operation == "LLM: extract code block (```)":
-                pattern = r"```[\w]*\n?(.*?)```"
-                matches = re.findall(pattern, text_to_process, re.DOTALL)
-                if not matches:
-                    return handle_not_found(text_to_process, "No code blocks found")
-                
-                extracted_code = "\n\n".join(matches)
-                remaining = re.sub(pattern, "", text_to_process, flags=re.DOTALL)
-                return (extracted_code.strip(), remaining.strip())
+                extracted = _extract_code_blocks(text_to_process)
+                if extracted is None:
+                    return handle_not_found(text_to_process, "code block not found")
+                return extracted
 
             elif operation == "LLM: extract JSON object ({...})":
-                start_idx = text_to_process.find("{")
-                end_idx = text_to_process.rfind("}")
-                if start_idx == -1 or end_idx == -1 or end_idx < start_idx:
-                    return handle_not_found(text_to_process, "No valid JSON brackets found")
-                json_content = text_to_process[start_idx:end_idx+1]
-                remaining = text_to_process[:start_idx] + text_to_process[end_idx+1:]
-                return (json_content, remaining)
+                extracted = _extract_first_valid_json_object(text_to_process)
+                if extracted is None:
+                    return handle_not_found(text_to_process, "valid JSON object not found")
+                return extracted
 
             elif operation == "LLM: clean markdown formatting":
-                cleaned = text_to_process
-                cleaned = re.sub(r'\*\*|__|\*|_', '', cleaned)
-                cleaned = re.sub(r'^#+\s+', '', cleaned, flags=re.MULTILINE)
-                cleaned = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cleaned)
-                cleaned = re.sub(r'`', '', cleaned)
-                return (cleaned, "")
+                return (_clean_markdown_formatting(text_to_process), "")
 
             elif operation.startswith("find"):
                 if not optional_text_input:
-                    return handle_not_found(original_text_input, "optional_text_input is empty")
+                    return handle_not_found(original_text_input, "search pattern is missing")
 
                 patterns = [p.strip() for p in optional_text_input.split(',') if p.strip()]
                 if not patterns:
-                     return handle_not_found(original_text_input, "No valid patterns provided")
+                     return handle_not_found(original_text_input, "search pattern is missing")
 
                 all_found_matches = []
                 
@@ -275,7 +350,7 @@ class AdvancedTextFilter:
                             remaining_output = remaining_output.replace(pattern, "")
                     
                     if not all_found_matches:
-                        return handle_not_found(original_text_input, "Pattern not found")
+                        return handle_not_found(original_text_input, "search pattern not found")
 
                     processed_output = "\n".join(all_found_matches)
                     return (processed_output, remaining_output)
@@ -299,7 +374,7 @@ class AdvancedTextFilter:
                             match_count_total += count
                     
                     if match_count_total == 0:
-                         return handle_not_found(original_text_input, "Pattern not found for replacement")
+                         return handle_not_found(original_text_input, "search pattern not found")
                     
                     processed_output = temp_processed_text
                     remaining_output = "\n".join(all_found_matches)
@@ -319,32 +394,32 @@ class AdvancedTextFilter:
 
                 if "start text" in operation:
                     if not start_text:
-                        return handle_not_found(original_text_input, "start_text input is missing")
+                        return handle_not_found(original_text_input, "start boundary is missing")
                     
                     s_start, s_end = get_index(text_to_process, start_text, use_regex)
                     if s_start == -1:
-                        return handle_not_found(original_text_input, f"Start text '{start_text}' not found")
+                        return handle_not_found(original_text_input, "start boundary not found")
 
-                    split_point = s_start 
-                    part_before = text_to_process[:split_point]
-                    part_after = text_to_process[split_point:]
+                    part_before = text_to_process[:s_start]
+                    marker = text_to_process[s_start:s_end]
+                    part_after = text_to_process[s_end:]
 
-                    if "extract before" in operation: return (part_before, part_after)
-                    elif "remove before" in operation: return (part_after, part_before)
-                    elif "extract after" in operation: return (part_after, part_before)
-                    elif "remove after" in operation: return (part_before, part_after)
+                    if "extract before" in operation: return (part_before, marker + part_after)
+                    elif "remove before" in operation: return (marker + part_after, part_before)
+                    elif "extract after" in operation: return (part_after, part_before + marker)
+                    elif "remove after" in operation: return (part_before + marker, part_after)
 
                 elif "between" in operation:
                     if not start_text or not end_text:
-                        return handle_not_found(original_text_input, "start_text or end_text missing")
+                        return handle_not_found(original_text_input, "start or end boundary is missing")
 
                     s_start, s_end = get_index(text_to_process, start_text, use_regex)
                     if s_start == -1:
-                        return handle_not_found(original_text_input, f"Start text '{start_text}' not found")
+                        return handle_not_found(original_text_input, "start boundary not found")
                     
                     e_start, e_end = get_index(text_to_process, end_text, use_regex, start_from=s_end)
                     if e_start == -1:
-                        return handle_not_found(original_text_input, f"End text '{end_text}' not found after start")
+                        return handle_not_found(original_text_input, "end boundary not found")
 
                     target_text = text_to_process[s_end:e_start]
                     before_text = text_to_process[:s_end]
@@ -355,15 +430,15 @@ class AdvancedTextFilter:
                     else: # remove between
                         return (before_text + after_text, target_text)
 
-        except re.error as e:
-            print(f"[AdvancedTextFilter] Regex Error: {e}")
-            return (original_text_input, f"REGEX ERROR: {e}")
+        except re.error:
+            print("[AdvancedTextFilter] Regex Error: invalid regular expression")
+            return (original_text_input, "REGEX ERROR: invalid regular expression")
 
         except _IntentionalFilterError:
             raise
 
-        except Exception as e:
-            print(f"[AdvancedTextFilter] Generic Error: {e}")
-            return (original_text_input, str(e)) 
+        except Exception:
+            print("[AdvancedTextFilter] Unexpected processing error")
+            return (original_text_input, "FILTER ERROR: unexpected processing failure")
 
         return (text_to_process, "Unknown operation")
