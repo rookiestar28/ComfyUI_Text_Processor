@@ -55,13 +55,17 @@ An advanced automation toolkit with 20 production nodes for text processing, reu
 
 <details>
 
-<summary><strong>Text, storage, and network reliability improved</strong></summary>
+<summary><strong>Text processing, expressions, and storage improved</strong></summary>
 
+- Added `Split String` to split text once at the first literal delimiter and return
+  separate `left` and `right` outputs.
 - Advanced Text Filter now normalizes missing-match routing and preserves
   correct before/after marker ownership across literal and regex boundaries.
 - Hardened LLM parsing with first-valid bounded JSON extraction, complete
   punctuation-aware code-fence info strings, identifier-safe Markdown cleanup, and
   input-safe static diagnostics.
+- Simple Expression now uses a bounded built-in interpreter for allowlisted math,
+  comparison, boolean, and string operations without dynamic Python execution.
 - Text Scraper remains available for workflow compatibility but remote fetching is
   disabled; Wildcards uses safer source resolution and path handling.
 - Text Storage prefers the ComfyUI user directory while retaining legacy reads,
@@ -71,7 +75,7 @@ An advanced automation toolkit with 20 production nodes for text processing, reu
 
 <details>
 
-<summary><strong>Host compatibility and in-app guidance refreshed</strong></summary>
+<summary><strong>Host compatibility, guidance, and packaging refreshed</strong></summary>
 
 - Version 1.7.5 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
   covering the validated Desktop floor and the current host snapshot.
@@ -79,6 +83,9 @@ An advanced automation toolkit with 20 production nodes for text processing, reu
   deferred until a newer stable ComfyUI node API is available.
 - All 155 visible inputs now include tooltips, 10 complex nodes provide Markdown
   help, and backend plus real-browser regression coverage protects host behavior.
+- Registry package validation now checks the exact public file set and source bytes,
+  keeps development-only files out, and blocks known unsafe execution or network
+  capability patterns before publication.
 
 </details>
 
@@ -124,13 +131,8 @@ If you prefer terminal commands or don't use the Manager:
     git clone https://github.com/rookiestar28/ComfyUI_Text_Processor.git
     ```
 
-3. **Install dependencies:**
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-    Optional built-in aesthetic scoring support:
+3. Standard nodes require no additional third-party runtime packages. For optional
+   built-in aesthetic scoring support, install:
 
     ```bash
     pip install aesthetic-predictor-v2-5
@@ -333,7 +335,8 @@ Perform mathematical calculations or string manipulations without writing comple
 
 * **3 Variants:** Dedicated nodes for `Integers`, `Floats`, and `Strings`.
 * **Variables:** Supports inputs `a`, `b`, and `c`. You can use them in your expression (e.g., `(a + b) * 2` or `a + " " + b`).
-* **Safe execution:** Restricted environment prevents unsafe code execution while allowing powerful logic.
+* **Allowlisted operations:** Numeric variants support arithmetic, comparisons, boolean logic, and `int`, `float`, or `str` conversion. The string variant supports concatenation, repetition, comparisons, boolean logic, `len`, and `str`.
+* **Safe execution:** Exactly one bounded expression is interpreted by the package's own AST allowlist. Imports, attributes, subscripts, comprehensions, arbitrary calls, and dynamic Python execution are rejected.
 * **Console Logging:** Optional toggle to print results to the console for debugging.
 
 ### Global Random Seed
