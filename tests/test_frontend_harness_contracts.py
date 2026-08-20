@@ -168,9 +168,10 @@ class FrontendHarnessContractTests(unittest.TestCase):
         )
 
         node_contracts = _read_json("tests/fixtures/node_contracts_v1.json")
-        self.assertEqual(19, len(node_contracts["nodes"]))
+        self.assertEqual(20, len(node_contracts["nodes"]))
         self.assertIn("Global_RandomSeed", node_contracts["nodes"])
         self.assertIn("TP_AdvancedResolutionSelector", node_contracts["nodes"])
+        self.assertIn("TP_SplitString", node_contracts["nodes"])
 
 
 if __name__ == "__main__":

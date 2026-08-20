@@ -479,7 +479,7 @@ class AdvancedResolutionSelectorContractTests(unittest.TestCase):
         fixture = _load_fixture(self)
         with PackageImportContext() as package:
             self.assertEqual(
-                fixture["stage"]["expected_node_count"],
+                fixture["stage"]["expected_node_count"] + 1,
                 len(package.NODE_CLASS_MAPPINGS),
             )
             self.assertIn(fixture["stage"]["registered_id"], package.NODE_CLASS_MAPPINGS)
@@ -488,7 +488,7 @@ class AdvancedResolutionSelectorContractTests(unittest.TestCase):
                 for node_class in package.NODE_CLASS_MAPPINGS.values()
                 for group_name in ("required", "optional")
             )
-            self.assertEqual(fixture["stage"]["expected_visible_input_count"], visible_count)
+            self.assertEqual(fixture["stage"]["expected_visible_input_count"] + 2, visible_count)
 
         docs_dir = REPO_DIR / "web" / "docs"
         self.assertEqual(
