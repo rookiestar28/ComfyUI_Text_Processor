@@ -1,3 +1,4 @@
+import copy
 import importlib.util
 import json
 import re
@@ -232,6 +233,18 @@ class V3MigrationContractTests(unittest.TestCase):
             dict(counts),
         )
         self.assertEqual(["TextInput"], selected)
+
+        def assert_split_string_classification(entry):
+            self.assertEqual("stateless", entry["classification"])
+            self.assertEqual(["input_only_string_split"], entry["state_seams"])
+            self.assertTrue(entry["prototype_eligible"])
+            self.assertFalse(entry["selected_prototype"])
+
+        assert_split_string_classification(classifications["TP_SplitString"])
+        seam_mutation = copy.deepcopy(classifications["TP_SplitString"])
+        seam_mutation["state_seams"] = ["input_only_text_transform"]
+        with self.assertRaises(AssertionError):
+            assert_split_string_classification(seam_mutation)
 
     def test_required_stateful_seams_are_explicit(self):
         nodes = _load_json(MIGRATION_CONTRACT_PATH)["nodes"]
