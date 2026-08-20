@@ -78,6 +78,14 @@ function Invoke-PythonStep {
     Invoke-Step -Name $Name -Command (@($PythonExe) + $PythonPrefixArgs + $PythonArgs)
 }
 
+# IMPORTANT: language: system hooks must resolve through the selected Python environment.
+$SelectedPython = (& $PythonExe @PythonPrefixArgs -c "import sys; print(sys.executable)").Trim()
+if ($LASTEXITCODE -ne 0 -or -not $SelectedPython) {
+    throw "Unable to resolve the selected Python interpreter."
+}
+$SelectedPythonDir = Split-Path -Parent $SelectedPython
+$env:PATH = $SelectedPythonDir + [IO.Path]::PathSeparator + $env:PATH
+
 Invoke-PythonStep -Name "Python version" -PythonArgs @("--version")
 
 $NodeCommand = Get-Command node -ErrorAction SilentlyContinue

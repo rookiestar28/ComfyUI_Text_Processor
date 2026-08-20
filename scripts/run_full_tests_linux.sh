@@ -26,6 +26,14 @@ fi
 
 skip_precommit="${SKIP_PRECOMMIT:-0}"
 
+# IMPORTANT: language: system hooks must resolve through the selected Python environment.
+SelectedPython="$("$python_cmd" -c 'import sys; print(sys.executable)')"
+if [[ -z "$SelectedPython" ]]; then
+  echo "Unable to resolve the selected Python interpreter." >&2
+  exit 1
+fi
+export PATH="$(dirname "$SelectedPython"):$PATH"
+
 echo
 echo "==> Python version"
 $python_cmd --version

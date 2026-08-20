@@ -8,8 +8,9 @@ WORKFLOW_PATH = ROOT / ".github" / "workflows" / "publish.yml"
 CI_LOCK = ROOT / ".github" / "requirements-ci.txt"
 PUBLISH_LOCK = ROOT / ".github" / "requirements-publish.txt"
 PRECOMMIT_CONFIG = ROOT / ".pre-commit-config.yaml"
+LINUX_FULL_GATE = ROOT / "scripts" / "run_full_tests_linux.sh"
+WINDOWS_FULL_GATE = ROOT / "scripts" / "run_full_tests_windows.ps1"
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
-EXPECTED_DETECT_SECRETS_COMMIT = "01886c8a910c64595c47f186ca1ffc0b77fa5458"  # pragma: allowlist secret
 
 
 def audit_workflow(text):
@@ -146,26 +147,40 @@ class PublishWorkflowSecurityTests(unittest.TestCase):
         self.assertRegex(ci_text, r"torchvision @ https://download\.pytorch\.org/.+#sha256=[0-9a-f]{64}")
         self.assertIn("comfy-cli==1.16.0", PUBLISH_LOCK.read_text(encoding="utf-8"))
 
-    def test_hosted_precommit_hook_source_is_immutable(self):
-        text = PRECOMMIT_CONFIG.read_text(encoding="utf-8")
-        match = re.search(
-            r"repo:\s*https://github\.com/Yelp/detect-secrets\s+"
-            r"rev:\s*([^\s#]+)",
-            text,
-        )
-        self.assertIsNotNone(match)
-        revision = match.group(1)
-        self.assertTrue(FULL_SHA.fullmatch(revision))
-        self.assertEqual(revision, EXPECTED_DETECT_SECRETS_COMMIT)
+    def test_detect_secrets_uses_selected_hash_locked_interpreter(self):
+        config = PRECOMMIT_CONFIG.read_text(encoding="utf-8")
+        ci_lock = CI_LOCK.read_text(encoding="utf-8")
+        linux = LINUX_FULL_GATE.read_text(encoding="utf-8")
+        windows = WINDOWS_FULL_GATE.read_text(encoding="utf-8")
 
-        mutation = text.replace(EXPECTED_DETECT_SECRETS_COMMIT, "v1.5.0", 1)
-        mutated_match = re.search(
-            r"repo:\s*https://github\.com/Yelp/detect-secrets\s+"
-            r"rev:\s*([^\s#]+)",
-            mutation,
+        self.assertNotIn("github.com/Yelp/detect-secrets", config)
+        self.assertRegex(
+            config,
+            r"repo:\s*local[\s\S]*?id:\s*detect-secrets[\s\S]*?"
+            r"entry:\s*python -m detect_secrets\.pre_commit_hook[\s\S]*?"
+            r"language:\s*system",
         )
-        self.assertIsNotNone(mutated_match)
-        self.assertFalse(FULL_SHA.fullmatch(mutated_match.group(1)))
+        self.assertRegex(
+            ci_lock,
+            r"(?m)^detect-secrets==1\.5\.0\s+\\\n"
+            r"\s+--hash=sha256:[0-9a-f]{64}",
+        )
+        self.assertIn("import sys; print(sys.executable)", linux)
+        self.assertIn('export PATH="$(dirname "$SelectedPython"):$PATH"', linux)
+        self.assertIn("import sys; print(sys.executable)", windows)
+        self.assertIn("[IO.Path]::PathSeparator", windows)
+        self.assertIn("$env:PATH", windows)
+
+        mutations = (
+            config.replace("language: system", "language: python", 1),
+            ci_lock.replace("detect-secrets==1.5.0", "detect-secrets-unlocked", 1),
+            linux.replace('export PATH="$(dirname "$SelectedPython"):$PATH"', "", 1),
+            windows.replace("[IO.Path]::PathSeparator", "", 1),
+        )
+        self.assertIn("language: python", mutations[0])
+        self.assertNotRegex(mutations[1], r"(?m)^detect-secrets==1\.5\.0")
+        self.assertNotIn('export PATH="$(dirname "$SelectedPython"):$PATH"', mutations[2])
+        self.assertNotIn("[IO.Path]::PathSeparator", mutations[3])
 
     def test_mutations_are_detected(self):
         mutations = (
