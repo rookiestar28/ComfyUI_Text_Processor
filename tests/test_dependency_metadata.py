@@ -69,18 +69,18 @@ class DependencyMetadataTests(unittest.TestCase):
         )
 
     @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
-    def test_project_release_version_is_1_7_5(self):
+    def test_project_release_version_is_1_8_0(self):
         pyproject = _load_pyproject()
-        self.assertEqual("1.7.5", pyproject["project"]["version"])
+        self.assertEqual("1.8.0", pyproject["project"]["version"])
 
     def test_readme_release_contract_is_current(self):
         readme = (REPO_DIR / "README.md").read_text(encoding="utf-8")
         self.assertIn(
-            "- Version 1.7.5 supports Python 3.10+ and ComfyUI Core 0.22.3+",
+            "- Version 1.8.0 supports Python 3.10+ and ComfyUI Core 0.22.3+",
             readme,
         )
         self.assertIn(
-            "* **Release requirements:** ComfyUI Text Processor 1.7.5 requires Python 3.10+",
+            "* **Release requirements:** ComfyUI Text Processor 1.8.0 requires Python 3.10+",
             readme,
         )
         self.assertNotIn("1.7.3", readme)
