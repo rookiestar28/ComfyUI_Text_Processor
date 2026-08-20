@@ -1,9 +1,29 @@
 # E2E Testing SOP
 
+<!-- CURRENT-TEST-GOVERNANCE:START -->
+## Current Governance Scope
+
+A change limited to pure text/documentation files, a version-field-only `pyproject.toml` update, or
+both does not enter this E2E workflow and requires no planning, roadmap item, record/log,
+independent review, documentation test contract, browser installation, or full gate. Behavior-
+bearing metadata changes do not qualify. For non-exempt work, applicable E2E runs through the
+authoritative Windows Full Gate. Hosted CI repetitions are optional diagnostics and are not
+acceptance prerequisites or pushed-commit evidence. Explicit item-scoped live/supported-host checks
+remain separate when required.
+<!-- CURRENT-TEST-GOVERNANCE:END -->
+
 This SOP defines the Python integration and Node.js 18+ browser workflows for
 **ComfyUI Text Processor**.
 
 ## Scope
+
+Fast-path exclusion: when the complete tracked change set is limited to pure
+text/documentation files, a version-field-only `pyproject.toml` update, or both, this
+SOP is not required. Such changes need no prior plan, roadmap item, record, command
+log, or independent review. Dependency, build, tool-configuration, entry-point,
+packaging, or runtime-semantic TOML changes are behavior-bearing. If those or other
+product code, tests, executable scripts, or generated runtime artifacts change, apply
+this SOP normally.
 
 The E2E boundary is:
 
@@ -140,7 +160,8 @@ Each implementation must include assertions matching the changed node type:
 
 ## Frontend Browser E2E
 
-Frontend E2E is mandatory for every non-documentation change.
+Frontend E2E is mandatory for every change outside the text/version-only-
+`pyproject.toml` fast-path.
 
 Windows PowerShell:
 
@@ -261,6 +282,7 @@ PATH=".tmp/bin:$PATH" npm test
 
 ### Mandatory Frontend E2E
 
-The tracked harness makes `npm test` mandatory for non-documentation changes. A
-missing browser, dependency, or harness is a blocker, not a non-applicable pass.
+The tracked harness makes `npm test` mandatory for changes outside the
+text/version-only-`pyproject.toml` fast-path. A missing browser, dependency, or harness is a
+blocker for those changes, not a non-applicable pass.
 <!-- ROOKIEUI-GLOBAL-E2E-SOP-RULES:END -->

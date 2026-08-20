@@ -1,5 +1,24 @@
 # Test SOP
 
+<!-- CURRENT-TEST-GOVERNANCE:START -->
+## Current Change-Governance Authority
+
+This section supersedes narrower documentation exceptions, platform-selection rules, and Hosted CI
+acceptance wording elsewhere in this file.
+
+- Pure text/documentation changes and version-field-only `pyproject.toml` updates do not require
+  planning, a roadmap item, records/logs, independent review, a documentation test contract, E2E,
+  or the full repository gate. Use proportionate text/TOML/metadata checks only when useful.
+- Dependency, build, tool-configuration, entry-point, runtime-compatibility, or other
+  behavior-bearing `pyproject.toml` changes are not version-only fast-path changes.
+- For non-exempt work, a passing Windows Full Gate is the authoritative repository-wide test
+  result. Neither push nor Hosted CI is required, and acceptance evidence does not need to bind to a
+  pushed commit. Linux/WSL and Hosted CI runs are optional diagnostics unless the current item
+  explicitly requires platform-specific evidence.
+- Required item-scoped security, live-host, provider, migration, release, or publication checks
+  remain additive.
+<!-- CURRENT-TEST-GOVERNANCE:END -->
+
 This document is the source-of-truth local verification workflow for **ComfyUI Text Processor**.
 
 ## Repository Facts
@@ -19,7 +38,7 @@ This document is the source-of-truth local verification workflow for **ComfyUI T
 ## Repository-specific E2E Policy
 
 The project-level `AGENTS.md` and this SOP define the same repository-specific gate.
-Every non-documentation change must run both:
+Every change outside the text/version-only-`pyproject.toml` fast-path must run both:
 
 - the Python ComfyUI custom-node smoke/integration lane; and
 - the Node.js 18+ Playwright lane through `npm test`.
@@ -53,17 +72,26 @@ Required gate for this repository:
 5. ComfyUI custom-node smoke/integration lane per `tests/E2E_TESTING_SOP.md`
 6. Node.js 18+ frontend/browser lane through `npm test`
 
-## Documentation-only Exception
+## Text And Version-Only `pyproject.toml` Fast-Path
 
-If all touched files are documentation/planning text only, runtime checks are optional.
+If all tracked changes are pure text/documentation files, a version-field-only
+`pyproject.toml` update, or both, the change does not enter the mandatory full-gate
+workflow and requires no prior plan, roadmap item, implementation record, command
+log, or independent review.
 
-Required evidence for documentation-only changes:
+Use proportionate checks:
 
-1. list touched documentation files
-2. confirm no product code, tests, scripts, or config were changed
-3. run a lightweight file/readability check where practical
+1. confirm the touched-file set qualifies for the fast-path
+2. for text, run readability/format/link checks such as `git diff --check` where useful
+3. for a version-field-only `pyproject.toml` update, parse TOML or read back the
+   version directly when useful
 
-This exception does not apply when any `.py`, packaging, test, script, or runtime config file changes.
+A version-field-only `pyproject.toml` update does not require Python compilation, the
+full unit suite, npm installation/audit, or Playwright. Dependency, build,
+tool-configuration, entry-point, packaging, or runtime-semantic changes in that file
+are behavior-bearing and use the normal required gate. The normal gate also applies
+if product code, tests, executable scripts, generated runtime artifacts, or other
+behavior-bearing files change.
 
 ## Prerequisites
 
@@ -297,9 +325,14 @@ For bugfix/hotfix work, acceptance evidence must include:
 
 A green full gate alone is not sufficient bugfix evidence unless the record also shows how the specific failure was reproduced and pinned.
 
-### Documentation-only Exception
+### Text And Version-Only `pyproject.toml` Fast-Path
 
-If all touched files are documentation/planning text only and no code, tests, scripts, config, generated artifacts, dependency manifests, or runtime behavior changed, full test execution is optional. Once executable or runtime-affecting files change, this exception does not apply.
+If the complete tracked change set is limited to pure text/documentation files,
+a version-field-only `pyproject.toml` update, or both, full test execution is not
+required and no planning, roadmap, record, command-log, or independent-review workflow
+applies. Validate text lightly and parse or read back the version when useful. If the
+TOML edit or any other touched file is behavior-bearing, use the normal gate for the
+combined task.
 
 ### Environment Guardrails
 
