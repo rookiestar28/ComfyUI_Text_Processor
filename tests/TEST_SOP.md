@@ -13,8 +13,8 @@ acceptance wording elsewhere in this file.
   behavior-bearing `pyproject.toml` changes are not version-only fast-path changes.
 - For non-exempt work, a passing Windows Full Gate is the authoritative repository-wide test
   result. Neither push nor Hosted CI is required, and acceptance evidence does not need to bind to a
-  pushed commit. Linux/WSL and Hosted CI runs are optional diagnostics unless the current item
-  explicitly requires platform-specific evidence.
+  pushed commit. Hosted CI is always optional supplemental diagnostics. Linux/WSL runs are optional
+  unless the current item explicitly requires platform-specific evidence.
 - Required item-scoped security, live-host, provider, migration, release, or publication checks
   remain additive.
 <!-- CURRENT-TEST-GOVERNANCE:END -->
