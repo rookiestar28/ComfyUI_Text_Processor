@@ -64,6 +64,7 @@ conda run -n comfyui python -m py_compile `
   __init__.py `
   advanced_text_filter.py `
   text_input.py `
+  split_string.py `
   text_scraper.py `
   text_storage.py `
   wildcards.py `
@@ -116,6 +117,7 @@ python -m py_compile \
   __init__.py \
   advanced_text_filter.py \
   text_input.py \
+  split_string.py \
   text_scraper.py \
   text_storage.py \
   wildcards.py \

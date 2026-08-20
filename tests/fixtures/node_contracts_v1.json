@@ -48,6 +48,21 @@
       "function": "join_texts",
       "category": "ComfyUI Text Processor"
     },
+    "TP_SplitString": {
+      "required": [
+        {"name": "text", "type": "STRING", "default": "", "widget": true},
+        {"name": "delimiter", "type": "STRING", "default": "|", "widget": true}
+      ],
+      "optional": [],
+      "hidden": [],
+      "outputs": [
+        {"index": 0, "type": "STRING", "name": "left"},
+        {"index": 1, "type": "STRING", "name": "right"}
+      ],
+      "output_node": false,
+      "function": "split_string",
+      "category": "ComfyUI Text Processor"
+    },
     "TextScraper": {
       "required": [
         {"name": "url", "type": "STRING", "default": "https://news.ycombinator.com", "widget": true},

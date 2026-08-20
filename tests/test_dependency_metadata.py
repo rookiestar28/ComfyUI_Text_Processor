@@ -186,6 +186,7 @@ class DependencyMetadataTests(unittest.TestCase):
             "global_random_seed.py",
             "advanced_resolution_selector.py",
             "advanced_resolution_selector_core.py",
+            "split_string.py",
             "web/advanced_resolution_selector.js",
             "web/global_random_seed.js",
             "pyproject.toml",

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "provenance": "clean_room_behavioral_reimplementation",
+  "node": {
+    "class_name": "SplitString",
+    "node_id": "TP_SplitString",
+    "display_name": "Split String",
+    "category": "ComfyUI Text Processor",
+    "function": "split_string",
+    "description": "Splits text once at the first literal delimiter into left and right outputs.",
+    "search_aliases": ["split string", "split text", "string delimiter", "text delimiter"],
+    "inputs": [
+      {
+        "name": "text",
+        "type": "STRING",
+        "default": "",
+        "multiline": true,
+        "tooltip": "Text to split at the first matching delimiter."
+      },
+      {
+        "name": "delimiter",
+        "type": "STRING",
+        "default": "|",
+        "multiline": false,
+        "tooltip": "Literal non-empty delimiter used for the first split."
+      }
+    ],
+    "outputs": [
+      {
+        "name": "left",
+        "type": "STRING",
+        "tooltip": "Text before the first delimiter, or the original text when no delimiter is found."
+      },
+      {
+        "name": "right",
+        "type": "STRING",
+        "tooltip": "Text after the first delimiter, or an empty string when no delimiter is found."
+      }
+    ]
+  },
+  "behavior_vectors": [
+    {"id": "middle", "text": "alpha|beta|gamma", "delimiter": "|", "expected": ["alpha", "beta|gamma"]},
+    {"id": "absent", "text": "alpha beta", "delimiter": "|", "expected": ["alpha beta", ""]},
+    {"id": "leading", "text": "|alpha", "delimiter": "|", "expected": ["", "alpha"]},
+    {"id": "trailing", "text": "alpha|", "delimiter": "|", "expected": ["alpha", ""]},
+    {"id": "repeated", "text": "alpha||beta", "delimiter": "|", "expected": ["alpha", "|beta"]},
+    {"id": "multi_character", "text": "left<->middle<->right", "delimiter": "<->", "expected": ["left", "middle<->right"]},
+    {"id": "unicode", "text": "左💠右💠尾", "delimiter": "💠", "expected": ["左", "右💠尾"]},
+    {"id": "whitespace_newline", "text": " head \n-- body \n-- tail ", "delimiter": "--", "expected": [" head \n", " body \n-- tail "]},
+    {"id": "empty_text", "text": "", "delimiter": "|", "expected": ["", ""]},
+    {"id": "case_sensitive", "text": "leftXright", "delimiter": "x", "expected": ["leftXright", ""]}
+  ],
+  "error_vectors": [
+    {"id": "empty_delimiter", "text": "private-canary", "delimiter": "", "error_type": "ValueError", "message": "delimiter must not be empty"}
+  ]
+}

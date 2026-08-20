@@ -26,6 +26,7 @@ EXPECTED_NODE_IDS = {
     "ResizeImageAdvanced",
     "Global_RandomSeed",
     "TP_AdvancedResolutionSelector",
+    "TP_SplitString",
 }
 
 
@@ -72,6 +73,13 @@ class NodeRegistrationTests(unittest.TestCase):
                 "Advanced Resolution Selector",
                 module.NODE_DISPLAY_NAME_MAPPINGS["TP_AdvancedResolutionSelector"],
             )
+            self.assertEqual("Split String", module.NODE_DISPLAY_NAME_MAPPINGS["TP_SplitString"])
+            self.assertNotIn("SplitString", module.NODE_CLASS_MAPPINGS)
+            self.assertNotIn("SplitStringByDelimiter", module.NODE_CLASS_MAPPINGS)
+            external_class = object()
+            combined = {"SplitString": external_class, **module.NODE_CLASS_MAPPINGS}
+            self.assertIs(external_class, combined["SplitString"])
+            self.assertIs(module.NODE_CLASS_MAPPINGS["TP_SplitString"], combined["TP_SplitString"])
             for node_id, node_class in module.NODE_CLASS_MAPPINGS.items():
                 self.assertTrue(callable(node_class), node_id)
                 self.assertTrue(

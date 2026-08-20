@@ -1,6 +1,6 @@
 # ComfyUI Text Processor
 
-An advanced automation toolkit with 19 production nodes for text processing, reusable storage, dynamic prompts, seed orchestration, image and mask workflows, composition, and export.
+An advanced automation toolkit with 20 production nodes for text processing, reusable storage, dynamic prompts, seed orchestration, image and mask workflows, composition, and export.
 
 ![Workflow Demo](./examples/advanced_text_filter.png)
 
@@ -77,7 +77,7 @@ An advanced automation toolkit with 19 production nodes for text processing, reu
   covering the validated Desktop floor and the current host snapshot.
 - Production nodes remain on the compatible V1 API while V3 migration stays
   deferred until a newer stable ComfyUI node API is available.
-- All 153 visible inputs now include tooltips, 10 complex nodes provide Markdown
+- All 155 visible inputs now include tooltips, 10 complex nodes provide Markdown
   help, and backend plus real-browser regression coverage protects host behavior.
 
 </details>
@@ -153,7 +153,7 @@ If you prefer terminal commands or don't use the Manager:
 * **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
 * **Current host observation:** The node pack has also been checked against Core 0.29.0 and Frontend 1.49.1. These versions are a current compatibility snapshot, not a new minimum or maximum.
 * **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
-* **In-app guidance:** All 153 visible node inputs provide host tooltips, and 10 complex nodes also provide fallback Markdown help in ComfyUI's node-help surface.
+* **In-app guidance:** All 155 visible node inputs provide host tooltips, and 10 complex nodes also provide fallback Markdown help in ComfyUI's node-help surface.
 
 ---
 
@@ -247,6 +247,14 @@ A smart text combiner that merges up to 7 text sources into a single string.
 * **Flexible Inputs:** Mix of 3 input slots (for chaining) and 4 text widgets (for manual input).
 * **Auto-Cleaning:** Automatically filters out empty inputs to prevent double separators.
 * **Fun Fallback:** If no input is provided, it returns a cute placeholder prompt.
+
+### Split String
+
+Splits text once at the first literal, case-sensitive delimiter and returns two named
+string outputs: `left` contains the text before the match, while `right` preserves
+everything after it, including later delimiters. If the delimiter is absent, the node
+returns the original text through `left` and an empty `right`. An empty delimiter is
+invalid and raises `delimiter must not be empty`.
 
 ### Text Scraper Node
 

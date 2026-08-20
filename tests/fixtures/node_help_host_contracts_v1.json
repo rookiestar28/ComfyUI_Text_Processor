@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "web_directory": "./web",
-  "expected_node_count": 19,
-  "expected_visible_input_count": 153,
+  "expected_node_count": 20,
+  "expected_visible_input_count": 155,
   "excluded_hidden_inputs": {
     "AdvancedImageSaver": ["prompt", "extra_pnginfo"]
   },
