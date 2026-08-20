@@ -40,6 +40,11 @@ def _zip_bytes(entries):
     return stream.getvalue()
 
 
+def _git_blob_id(data: bytes) -> str:
+    header = f"blob {len(data)}\0".encode("ascii")
+    return hashlib.sha1(header + data, usedforsecurity=False).hexdigest()
+
+
 class PublishCandidateContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -226,6 +231,25 @@ class PublishCandidateContractTests(unittest.TestCase):
                 candidate.CandidateError, "comfyignore_unsupported"
             ):
                 candidate.filter_archive_paths(tracked, manifest)
+
+    def test_archive_content_is_bound_to_exact_git_blob_ids(self):
+        expected_content = b"exact candidate bytes\n"
+        expected = [
+            candidate.TrackedPath(
+                "module.py",
+                candidate.REGULAR_FILE_MODE,
+                _git_blob_id(expected_content),
+            )
+        ]
+        candidate.verify_archive_bytes(
+            _zip_bytes([("module.py", expected_content, stat.S_IFREG | 0o644)]),
+            expected,
+        )
+        with self.assertRaisesRegex(candidate.CandidateError, "archive_content"):
+            candidate.verify_archive_bytes(
+                _zip_bytes([("module.py", b"substituted\n", stat.S_IFREG | 0o644)]),
+                expected,
+            )
 
     def test_archive_rejects_duplicate_member_names(self):
         stream = io.BytesIO()

@@ -58,6 +58,7 @@ class CandidateError(ValueError):
 class TrackedPath:
     path: str
     mode: str
+    object_id: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -140,6 +141,8 @@ def validate_tracked_paths(paths: list[TrackedPath] | tuple[TrackedPath, ...]) -
             raise CandidateError("tracked_symlink")
         if item.mode not in ALLOWED_FILE_MODES:
             raise CandidateError("tracked_file_type")
+        if item.object_id is not None and not FULL_SHA_PATTERN.fullmatch(item.object_id):
+            raise CandidateError("tracked_object_invalid")
 
 
 def list_tracked_paths(cwd: pathlib.Path | str = ".") -> tuple[TrackedPath, ...]:
@@ -151,12 +154,12 @@ def list_tracked_paths(cwd: pathlib.Path | str = ".") -> tuple[TrackedPath, ...]
             continue
         try:
             metadata, path = record.split("\t", 1)
-            mode, _object_id, stage = metadata.split(" ", 2)
+            mode, object_id, stage = metadata.split(" ", 2)
         except ValueError as exc:
             raise CandidateError("tracked_manifest_invalid") from exc
         if stage != "0":
             raise CandidateError("tracked_stage_invalid")
-        entries.append(TrackedPath(path=path, mode=mode))
+        entries.append(TrackedPath(path=path, mode=mode, object_id=object_id))
     if not entries:
         raise CandidateError("tracked_manifest_empty")
     validate_tracked_paths(entries)
@@ -428,7 +431,9 @@ def verify_archive_bytes(
             names = [info.filename for info in infos]
             if len(names) != len(set(names)):
                 raise CandidateError("archive_duplicate")
-            for info in infos:
+            if names != expected_names:
+                raise CandidateError("archive_members")
+            for info, expected in zip(infos, expected_paths, strict=True):
                 _validate_relative_path(info.filename)
                 if info.is_dir():
                     raise CandidateError("archive_member_type")
@@ -441,8 +446,17 @@ def verify_archive_bytes(
                 expanded += info.file_size
                 if expanded > MAX_ARCHIVE_EXPANDED_BYTES:
                     raise CandidateError("archive_expanded_size")
-            if names != expected_names:
-                raise CandidateError("archive_members")
+                if expected.object_id is not None:
+                    content = archive.read(info)
+                    header = f"blob {len(content)}\0".encode("ascii")
+                    # Git SHA-1 is a compatibility identity check here, not a password
+                    # or signature primitive. The exact candidate commit remains the
+                    # trust root and the archive bytes must resolve to its blob IDs.
+                    digest = hashlib.sha1(
+                        header + content, usedforsecurity=False
+                    ).hexdigest()
+                    if digest != expected.object_id:
+                        raise CandidateError("archive_content")
             bad_member = archive.testzip()
             if bad_member is not None:
                 raise CandidateError("archive_crc")
