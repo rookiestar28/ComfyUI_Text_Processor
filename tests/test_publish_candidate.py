@@ -206,6 +206,27 @@ class PublishCandidateContractTests(unittest.TestCase):
             ):
                 candidate.verify_archive_bytes(payload, expected)
 
+    def test_archive_manifest_honors_only_literal_comfyignore_exclusions(self):
+        tracked = [
+            candidate.TrackedPath(".comfyignore", candidate.REGULAR_FILE_MODE),
+            candidate.TrackedPath("README.md", candidate.REGULAR_FILE_MODE),
+            candidate.TrackedPath(".github/workflows/publish.yml", candidate.REGULAR_FILE_MODE),
+            candidate.TrackedPath("tests/test_node.py", candidate.REGULAR_FILE_MODE),
+            candidate.TrackedPath("package.json", candidate.REGULAR_FILE_MODE),
+        ]
+        filtered = candidate.filter_archive_paths(
+            tracked,
+            "# public package exclusions\n.github/\ntests/\npackage.json\n",
+        )
+        self.assertEqual([item.path for item in filtered], [".comfyignore", "README.md"])
+
+        unsupported = ("*.log\n", "!README.md\n", "docs/[ab].md\n")
+        for manifest in unsupported:
+            with self.subTest(manifest=manifest), self.assertRaisesRegex(
+                candidate.CandidateError, "comfyignore_unsupported"
+            ):
+                candidate.filter_archive_paths(tracked, manifest)
+
     def test_archive_rejects_duplicate_member_names(self):
         stream = io.BytesIO()
         with patch("warnings.warn"):

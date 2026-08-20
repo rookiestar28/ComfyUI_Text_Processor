@@ -43,6 +43,7 @@ FORBIDDEN_FILENAMES = frozenset(
     {".env", "id_dsa", "id_ecdsa", "id_ed25519", "id_rsa"}
 )
 FORBIDDEN_SUFFIXES = frozenset({".key", ".p12", ".pfx", ".pem"})
+COMFYIGNORE_PATH = ".comfyignore"
 
 
 class CandidateError(ValueError):
@@ -160,6 +161,56 @@ def list_tracked_paths(cwd: pathlib.Path | str = ".") -> tuple[TrackedPath, ...]
         raise CandidateError("tracked_manifest_empty")
     validate_tracked_paths(entries)
     return tuple(entries)
+
+
+def filter_archive_paths(
+    tracked_paths: tuple[TrackedPath, ...] | list[TrackedPath],
+    comfyignore_text: str,
+) -> tuple[TrackedPath, ...]:
+    """Apply the repository's intentionally literal ``.comfyignore`` contract."""
+    patterns: list[tuple[str, bool]] = []
+    for raw_line in comfyignore_text.splitlines():
+        pattern = raw_line.strip()
+        if not pattern or pattern.startswith("#"):
+            continue
+        is_directory = pattern.endswith("/")
+        normalized = pattern[:-1] if is_directory else pattern
+        # IMPORTANT: the validator implements only auditable literal exclusions.
+        # A glob/negation change must fail closed until its packaging impact is reviewed.
+        if not normalized or any(marker in normalized for marker in ("!", "*", "?", "[", "]")):
+            raise CandidateError("comfyignore_unsupported")
+        _validate_relative_path(normalized)
+        patterns.append((normalized, is_directory))
+
+    filtered = []
+    for item in tracked_paths:
+        excluded = any(
+            item.path == pattern or (is_directory and item.path.startswith(f"{pattern}/"))
+            for pattern, is_directory in patterns
+        )
+        if not excluded:
+            filtered.append(item)
+    if not filtered:
+        raise CandidateError("archive_manifest_empty")
+    validate_tracked_paths(filtered)
+    return tuple(filtered)
+
+
+def list_archive_paths(
+    tracked_paths: tuple[TrackedPath, ...] | list[TrackedPath],
+    *,
+    cwd: pathlib.Path | str = ".",
+) -> tuple[TrackedPath, ...]:
+    root = pathlib.Path(cwd)
+    manifest = {item.path: item for item in tracked_paths}
+    comfyignore = manifest.get(COMFYIGNORE_PATH)
+    if comfyignore is None or comfyignore.mode not in ALLOWED_FILE_MODES:
+        raise CandidateError("comfyignore_missing")
+    try:
+        text = (root / COMFYIGNORE_PATH).read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise CandidateError("comfyignore_unreadable") from exc
+    return filter_archive_paths(tracked_paths, text)
 
 
 def _head_sha(cwd: pathlib.Path) -> str:
@@ -505,7 +556,8 @@ def main(argv: list[str] | None = None) -> int:
         if head != expected:
             raise CandidateError("sha_mismatch")
         tracked = list_tracked_paths(cwd)
-        summary = verify_archive_file(pathlib.Path(args.archive), tracked)
+        archive_paths = list_archive_paths(tracked, cwd=cwd)
+        summary = verify_archive_file(pathlib.Path(args.archive), archive_paths)
         if args.expected_archive_sha and summary.sha256 != args.expected_archive_sha:
             raise CandidateError("archive_hash_mismatch")
         _safe_result(
