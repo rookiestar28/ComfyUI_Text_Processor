@@ -7,7 +7,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "publish.yml"
 CI_LOCK = ROOT / ".github" / "requirements-ci.txt"
 PUBLISH_LOCK = ROOT / ".github" / "requirements-publish.txt"
+PRECOMMIT_CONFIG = ROOT / ".pre-commit-config.yaml"
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
+EXPECTED_DETECT_SECRETS_COMMIT = "01886c8a910c64595c47f186ca1ffc0b77fa5458"
 
 
 def audit_workflow(text):
@@ -143,6 +145,27 @@ class PublishWorkflowSecurityTests(unittest.TestCase):
         self.assertRegex(ci_text, r"torch @ https://download\.pytorch\.org/.+#sha256=[0-9a-f]{64}")
         self.assertRegex(ci_text, r"torchvision @ https://download\.pytorch\.org/.+#sha256=[0-9a-f]{64}")
         self.assertIn("comfy-cli==1.16.0", PUBLISH_LOCK.read_text(encoding="utf-8"))
+
+    def test_hosted_precommit_hook_source_is_immutable(self):
+        text = PRECOMMIT_CONFIG.read_text(encoding="utf-8")
+        match = re.search(
+            r"repo:\s*https://github\.com/Yelp/detect-secrets\s+"
+            r"rev:\s*([^\s#]+)",
+            text,
+        )
+        self.assertIsNotNone(match)
+        revision = match.group(1)
+        self.assertTrue(FULL_SHA.fullmatch(revision))
+        self.assertEqual(revision, EXPECTED_DETECT_SECRETS_COMMIT)
+
+        mutation = text.replace(EXPECTED_DETECT_SECRETS_COMMIT, "v1.5.0", 1)
+        mutated_match = re.search(
+            r"repo:\s*https://github\.com/Yelp/detect-secrets\s+"
+            r"rev:\s*([^\s#]+)",
+            mutation,
+        )
+        self.assertIsNotNone(mutated_match)
+        self.assertFalse(FULL_SHA.fullmatch(mutated_match.group(1)))
 
     def test_mutations_are_detected(self):
         mutations = (

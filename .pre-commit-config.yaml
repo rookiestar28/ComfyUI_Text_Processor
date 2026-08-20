@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
+    rev: 01886c8a910c64595c47f186ca1ffc0b77fa5458 # v1.5.0
     hooks:
       - id: detect-secrets
 
