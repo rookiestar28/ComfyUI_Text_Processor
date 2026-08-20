@@ -6,7 +6,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Empty, Queue
-from threading import Thread
+from threading import BoundedSemaphore, Lock, Thread
 from typing import (
     Callable,
     Dict,
@@ -49,6 +49,9 @@ STREAM_CHUNK_BYTES = 64 * 1024
 CONNECT_TIMEOUT_SECONDS = 3.05
 READ_TIMEOUT_SECONDS = 5.0
 TOTAL_TIMEOUT_SECONDS = 10.0
+MAX_TRANSPORT_WORKERS = 4
+
+_steady_clock = time.monotonic
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -87,15 +90,69 @@ class _TransportError(Exception):
         self.public_message = public_message
 
 
-_DeadlineResult = TypeVar("_DeadlineResult")
+_WorkerResult = TypeVar("_WorkerResult")
+_TRANSPORT_WORKER_SLOTS = BoundedSemaphore(MAX_TRANSPORT_WORKERS)
 
 
-def _run_before_deadline(
-    operation: Callable[[], _DeadlineResult],
+def _close_safely(resource: object) -> None:
+    close = getattr(resource, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            pass
+
+
+class _TransportCancellation:
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._cancelled = False
+        self._resources: List[object] = []
+
+    def register(self, resource: object) -> bool:
+        close_now = False
+        with self._lock:
+            if self._cancelled:
+                close_now = True
+            elif not any(existing is resource for existing in self._resources):
+                self._resources.append(resource)
+        if close_now:
+            _close_safely(resource)
+            return False
+        return True
+
+    def unregister(self, resource: object) -> None:
+        with self._lock:
+            self._resources = [
+                existing for existing in self._resources if existing is not resource
+            ]
+
+    def cancel(self) -> None:
+        with self._lock:
+            self._cancelled = True
+            resources = tuple(reversed(self._resources))
+            self._resources.clear()
+        for resource in resources:
+            _close_safely(resource)
+
+    def raise_if_cancelled(self) -> None:
+        with self._lock:
+            cancelled = self._cancelled
+        if cancelled:
+            raise _TransportError(ERROR_TIMEOUT)
+
+
+def _run_transport_worker(
+    operation: Callable[[], _WorkerResult],
     deadline: float,
-) -> _DeadlineResult:
-    remaining = deadline - time.monotonic()
+    cancellation: _TransportCancellation,
+) -> _WorkerResult:
+    remaining = deadline - _steady_clock()
     if remaining <= 0:
+        cancellation.cancel()
+        raise _TransportError(ERROR_TIMEOUT)
+    if not _TRANSPORT_WORKER_SLOTS.acquire(blocking=False):
+        cancellation.cancel()
         raise _TransportError(ERROR_TIMEOUT)
 
     results: Queue[Tuple[bool, object]] = Queue(maxsize=1)
@@ -105,21 +162,33 @@ def _run_before_deadline(
             outcome: Tuple[bool, object] = (True, operation())
         except Exception as error:
             outcome = (False, error)
+        finally:
+            _TRANSPORT_WORKER_SLOTS.release()
         results.put_nowait(outcome)
 
-    # CRITICAL: blocking DNS/body work must not extend the caller past its deadline.
-    worker = Thread(target=invoke, name="text-scraper-deadline", daemon=True)
-    worker.start()
+    # CRITICAL: keep all blocking transport phases inside the fixed-capacity boundary.
+    worker = Thread(target=invoke, name="text-scraper-transport", daemon=True)
+    try:
+        worker.start()
+    except Exception:
+        _TRANSPORT_WORKER_SLOTS.release()
+        cancellation.cancel()
+        raise _TransportError(ERROR_REQUEST) from None
     try:
         succeeded, value = results.get(timeout=remaining)
     except Empty:
+        cancellation.cancel()
         raise _TransportError(ERROR_TIMEOUT) from None
+
+    if _steady_clock() >= deadline:
+        cancellation.cancel()
+        raise _TransportError(ERROR_TIMEOUT)
 
     if not succeeded:
         if isinstance(value, Exception):
             raise value
         raise _TransportError(ERROR_REQUEST)
-    return cast(_DeadlineResult, value)
+    return cast(_WorkerResult, value)
 
 
 @dataclass(frozen=True)
@@ -200,6 +269,7 @@ class _PinnedAddressAdapter(HTTPAdapter):
 def _open_pinned_response(
     target: _ValidatedTarget,
     timeout: Tuple[float, float],
+    cancellation: Optional[_TransportCancellation] = None,
 ) -> Iterator:
     if requests is None:
         raise _TransportError(ERROR_DEPENDENCIES)
@@ -207,6 +277,8 @@ def _open_pinned_response(
     session = requests.Session()
     response = None
     try:
+        if cancellation is not None and not cancellation.register(session):
+            raise _TransportError(ERROR_TIMEOUT)
         adapter = _PinnedAddressAdapter(target)
         # CRITICAL: environment proxies must never bypass the validated IP connector.
         session.trust_env = False
@@ -228,6 +300,8 @@ def _open_pinned_response(
         if response is not None:
             response.close()
         session.close()
+        if cancellation is not None:
+            cancellation.unregister(session)
 
 
 class TextScraper:
@@ -285,11 +359,7 @@ class TextScraper:
         "Scraped headline text or a clear validation/network error message.",
     )
 
-    def _resolve_target(
-        self,
-        url: str,
-        deadline: Optional[float] = None,
-    ) -> _ValidatedTarget:
+    def _resolve_target(self, url: str) -> _ValidatedTarget:
         if not isinstance(url, str):
             raise _TransportError(ERROR_INVALID_URL)
 
@@ -360,14 +430,11 @@ class TextScraper:
             if hostname in BLOCKED_HOSTNAMES:
                 raise _TransportError(ERROR_PRIVATE_ADDRESS)
 
-            def resolve_addresses():
-                return socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
-
             try:
-                resolved = (
-                    resolve_addresses()
-                    if deadline is None
-                    else _run_before_deadline(resolve_addresses, deadline)
+                resolved = socket.getaddrinfo(
+                    hostname,
+                    port,
+                    type=socket.SOCK_STREAM,
                 )
             except (OSError, ValueError):
                 raise _TransportError(ERROR_RESOLUTION) from None
@@ -418,7 +485,11 @@ class TextScraper:
         return target.url, None
 
     @staticmethod
-    def _bounded_response_text(response, deadline: float) -> str:
+    def _bounded_response_text(
+        response,
+        deadline: float,
+        cancellation: _TransportCancellation,
+    ) -> str:
         content_type = response.headers.get("Content-Type")
         if not isinstance(content_type, str):
             raise _TransportError(ERROR_MEDIA_TYPE)
@@ -434,40 +505,46 @@ class TextScraper:
             if int(value) > MAX_RESPONSE_BYTES:
                 raise _TransportError(ERROR_BODY_TOO_LARGE)
 
-        def consume_body() -> bytes:
-            content = bytearray()
-            for chunk in response.iter_content(
-                chunk_size=STREAM_CHUNK_BYTES,
-                decode_unicode=False,
-            ):
-                if not isinstance(chunk, (bytes, bytearray)):
-                    raise _TransportError(ERROR_REQUEST)
-                content.extend(chunk)
-                if len(content) > MAX_RESPONSE_BYTES:
-                    raise _TransportError(ERROR_BODY_TOO_LARGE)
-            return bytes(content)
+        content = bytearray()
+        for chunk in response.iter_content(
+            chunk_size=STREAM_CHUNK_BYTES,
+            decode_unicode=False,
+        ):
+            cancellation.raise_if_cancelled()
+            if time.monotonic() >= deadline:
+                raise _TransportError(ERROR_TIMEOUT)
+            if not isinstance(chunk, (bytes, bytearray)):
+                raise _TransportError(ERROR_REQUEST)
+            content.extend(chunk)
+            if len(content) > MAX_RESPONSE_BYTES:
+                raise _TransportError(ERROR_BODY_TOO_LARGE)
+            if time.monotonic() >= deadline:
+                raise _TransportError(ERROR_TIMEOUT)
 
-        content = _run_before_deadline(consume_body, deadline)
+        cancellation.raise_if_cancelled()
         if time.monotonic() >= deadline:
             raise _TransportError(ERROR_TIMEOUT)
 
         encoding = response.encoding or "utf-8"
         try:
-            return content.decode(encoding, errors="replace")
+            return bytes(content).decode(encoding, errors="replace")
         except (LookupError, TypeError):
             raise _TransportError(ERROR_PARSE) from None
 
-    def _fetch_text(self, url: str) -> str:
-        if requests is None:
-            raise _TransportError(ERROR_DEPENDENCIES)
-
+    def _fetch_text_sync(
+        self,
+        url: str,
+        cancellation: _TransportCancellation,
+    ) -> str:
         deadline = time.monotonic() + TOTAL_TIMEOUT_SECONDS
         current_url = url
         seen_urls = set()
         redirect_count = 0
 
         while True:
-            target = self._resolve_target(current_url, deadline=deadline)
+            cancellation.raise_if_cancelled()
+            target = self._resolve_target(current_url)
+            cancellation.raise_if_cancelled()
             if target.url in seen_urls:
                 raise _TransportError(ERROR_REDIRECT)
             seen_urls.add(target.url)
@@ -481,42 +558,57 @@ class TextScraper:
             )
 
             try:
-                with _open_pinned_response(target, timeout) as response:
-                    status = response.status_code
-                    if status in REDIRECT_STATUSES:
-                        if redirect_count >= MAX_REDIRECTS:
-                            raise _TransportError(ERROR_REDIRECT_LIMIT)
-                        raw_headers = getattr(
-                            getattr(response, "raw", None),
-                            "headers",
-                            None,
-                        )
-                        getlist = getattr(raw_headers, "getlist", None)
-                        if callable(getlist):
-                            locations = list(getlist("Location"))
-                        else:
-                            location_value = response.headers.get("Location")
-                            locations = [] if location_value is None else [location_value]
-                        if (
-                            len(locations) != 1
-                            or not isinstance(locations[0], str)
-                            or not locations[0].strip()
-                        ):
-                            raise _TransportError(ERROR_REDIRECT)
-                        try:
-                            next_url = urljoin(target.url, locations[0].strip())
-                            next_scheme = urlsplit(next_url).scheme.lower()
-                        except (TypeError, ValueError):
-                            raise _TransportError(ERROR_REDIRECT) from None
-                        if target.scheme == "https" and next_scheme == "http":
-                            raise _TransportError(ERROR_REDIRECT)
-                        redirect_count += 1
-                        current_url = next_url
-                        continue
+                with _open_pinned_response(
+                    target,
+                    timeout,
+                    cancellation=cancellation,
+                ) as response:
+                    if not cancellation.register(response):
+                        raise _TransportError(ERROR_TIMEOUT)
+                    try:
+                        status = response.status_code
+                        if status in REDIRECT_STATUSES:
+                            if redirect_count >= MAX_REDIRECTS:
+                                raise _TransportError(ERROR_REDIRECT_LIMIT)
+                            raw_headers = getattr(
+                                getattr(response, "raw", None),
+                                "headers",
+                                None,
+                            )
+                            getlist = getattr(raw_headers, "getlist", None)
+                            if callable(getlist):
+                                locations = list(getlist("Location"))
+                            else:
+                                location_value = response.headers.get("Location")
+                                locations = (
+                                    [] if location_value is None else [location_value]
+                                )
+                            if (
+                                len(locations) != 1
+                                or not isinstance(locations[0], str)
+                                or not locations[0].strip()
+                            ):
+                                raise _TransportError(ERROR_REDIRECT)
+                            try:
+                                next_url = urljoin(target.url, locations[0].strip())
+                                next_scheme = urlsplit(next_url).scheme.lower()
+                            except (TypeError, ValueError):
+                                raise _TransportError(ERROR_REDIRECT) from None
+                            if target.scheme == "https" and next_scheme == "http":
+                                raise _TransportError(ERROR_REDIRECT)
+                            redirect_count += 1
+                            current_url = next_url
+                            continue
 
-                    if not 200 <= status < 300:
-                        raise _TransportError(ERROR_STATUS)
-                    return self._bounded_response_text(response, deadline)
+                        if not 200 <= status < 300:
+                            raise _TransportError(ERROR_STATUS)
+                        return self._bounded_response_text(
+                            response,
+                            deadline,
+                            cancellation,
+                        )
+                    finally:
+                        cancellation.unregister(response)
             except _TransportError:
                 raise
             except requests.exceptions.Timeout:
@@ -525,6 +617,18 @@ class TextScraper:
                 raise _TransportError(ERROR_REQUEST) from None
             except Exception:
                 raise _TransportError(ERROR_REQUEST) from None
+
+    def _fetch_text(self, url: str) -> str:
+        if requests is None:
+            raise _TransportError(ERROR_DEPENDENCIES)
+
+        cancellation = _TransportCancellation()
+        deadline = _steady_clock() + TOTAL_TIMEOUT_SECONDS
+        return _run_transport_worker(
+            lambda: self._fetch_text_sync(url, cancellation),
+            deadline=deadline,
+            cancellation=cancellation,
+        )
 
     @staticmethod
     def _extract_headlines(response_text: str) -> List[Dict[str, str]]:

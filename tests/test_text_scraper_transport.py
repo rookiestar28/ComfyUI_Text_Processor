@@ -839,6 +839,219 @@ class TextScraperBoundedTransportTests(unittest.TestCase):
         self.assertIsInstance(outcome[0], text_scraper._TransportError)
         self.assertEqual(text_scraper.ERROR_TIMEOUT, outcome[0].public_message)
 
+    def test_blocked_request_opening_is_bounded_and_cancels_session(self):
+        request_started = threading.Event()
+        release_request = threading.Event()
+        session_closed = threading.Event()
+        response_closed = threading.Event()
+        outcome = []
+
+        class TrackedResponse(SyntheticResponse):
+            def close(self):
+                super().close()
+                response_closed.set()
+
+        response = TrackedResponse()
+
+        class BlockingSession:
+            trust_env = True
+
+            def mount(self, prefix, adapter):
+                del prefix, adapter
+
+            def get(self, *args, **kwargs):
+                del args, kwargs
+                request_started.set()
+                release_request.wait(1.0)
+                return response
+
+            def close(self):
+                session_closed.set()
+
+        def fetch():
+            try:
+                self.node._fetch_text("https://first.test/start")
+            except Exception as error:
+                outcome.append(error)
+
+        with patch(
+            "text_scraper.TOTAL_TIMEOUT_SECONDS",
+            0.05,
+        ), patch(
+            "text_scraper.socket.getaddrinfo",
+            return_value=getaddrinfo_for(PUBLIC_V4),
+        ), patch(
+            "text_scraper.requests.Session",
+            return_value=BlockingSession(),
+        ), patch(
+            "text_scraper._PinnedAddressAdapter",
+            return_value=Mock(),
+        ):
+            caller = threading.Thread(target=fetch, daemon=True)
+            started_at = time.perf_counter()
+            caller.start()
+            try:
+                request_did_start = request_started.wait(0.2)
+                caller.join(0.15)
+                elapsed = time.perf_counter() - started_at
+                returned_within_bound = not caller.is_alive()
+                closed_before_release = session_closed.is_set()
+            finally:
+                release_request.set()
+                caller.join(1.0)
+                late_response_closed = response_closed.wait(0.3)
+
+        self.assertTrue(request_did_start)
+        self.assertTrue(returned_within_bound)
+        self.assertLess(elapsed, 0.2)
+        self.assertTrue(closed_before_release)
+        self.assertTrue(late_response_closed)
+        self.assertTrue(response.closed)
+        self.assertEqual(1, len(outcome))
+        self.assertIsInstance(outcome[0], text_scraper._TransportError)
+        self.assertEqual(text_scraper.ERROR_TIMEOUT, outcome[0].public_message)
+
+    def test_transport_boundary_discards_late_values_and_errors(self):
+        cases = (
+            (lambda: b"late",),
+            (lambda: (_ for _ in ()).throw(ValueError("LATE_SECRET_CANARY")),),
+        )
+        for operation, in cases:
+            with self.subTest(operation=operation):
+                cancellation = text_scraper._TransportCancellation()
+                with patch(
+                    "text_scraper._steady_clock",
+                    side_effect=[100.0, 101.0],
+                ):
+                    with self.assertRaises(text_scraper._TransportError) as raised:
+                        text_scraper._run_transport_worker(
+                            operation,
+                            deadline=100.5,
+                            cancellation=cancellation,
+                        )
+                self.assertEqual(
+                    text_scraper.ERROR_TIMEOUT,
+                    raised.exception.public_message,
+                )
+                self.assertNotIn("CANARY", raised.exception.public_message)
+
+    def test_cancellation_deduplicates_resources_and_closes_late_registration(self):
+        cancellation = text_scraper._TransportCancellation()
+        registered = Mock()
+        late = Mock()
+
+        self.assertTrue(cancellation.register(registered))
+        self.assertTrue(cancellation.register(registered))
+        cancellation.cancel()
+
+        registered.close.assert_called_once_with()
+        self.assertFalse(cancellation.register(late))
+        late.close.assert_called_once_with()
+        with self.assertRaises(text_scraper._TransportError) as raised:
+            cancellation.raise_if_cancelled()
+        self.assertEqual(text_scraper.ERROR_TIMEOUT, raised.exception.public_message)
+
+    def test_transport_worker_slots_are_bounded_and_recover_after_release(self):
+        release_workers = threading.Event()
+        all_workers_started = threading.Event()
+        counter_lock = threading.Lock()
+        started_count = 0
+        outcomes = []
+
+        def blocked_operation():
+            nonlocal started_count
+            with counter_lock:
+                started_count += 1
+                if started_count == text_scraper.MAX_TRANSPORT_WORKERS:
+                    all_workers_started.set()
+            release_workers.wait(1.0)
+            return b"released"
+
+        def call_boundary():
+            cancellation = text_scraper._TransportCancellation()
+            try:
+                text_scraper._run_transport_worker(
+                    blocked_operation,
+                    deadline=text_scraper._steady_clock() + 0.05,
+                    cancellation=cancellation,
+                )
+            except Exception as error:
+                outcomes.append(error)
+
+        callers = [
+            threading.Thread(target=call_boundary, daemon=True)
+            for _ in range(text_scraper.MAX_TRANSPORT_WORKERS)
+        ]
+        for caller in callers:
+            caller.start()
+        try:
+            workers_did_start = all_workers_started.wait(0.3)
+            for caller in callers:
+                caller.join(0.2)
+            caller_returns_bounded = all(not caller.is_alive() for caller in callers)
+            started_before_overflow = started_count
+            with self.assertRaises(text_scraper._TransportError) as raised:
+                text_scraper._run_transport_worker(
+                    blocked_operation,
+                    deadline=text_scraper._steady_clock() + 0.05,
+                    cancellation=text_scraper._TransportCancellation(),
+                )
+            overflow_did_not_start = started_count == started_before_overflow
+        finally:
+            release_workers.set()
+            for caller in callers:
+                caller.join(1.0)
+            cleanup_deadline = time.perf_counter() + 1.0
+            while (
+                any(
+                    thread.name.startswith("text-scraper-transport")
+                    for thread in threading.enumerate()
+                )
+                and time.perf_counter() < cleanup_deadline
+            ):
+                threading.Event().wait(0.01)
+
+        self.assertTrue(workers_did_start)
+        self.assertTrue(caller_returns_bounded)
+        self.assertEqual(text_scraper.MAX_TRANSPORT_WORKERS, len(outcomes))
+        self.assertTrue(
+            all(
+                isinstance(error, text_scraper._TransportError)
+                and error.public_message == text_scraper.ERROR_TIMEOUT
+                for error in outcomes
+            )
+        )
+        self.assertEqual(text_scraper.ERROR_TIMEOUT, raised.exception.public_message)
+        self.assertTrue(overflow_did_not_start)
+        self.assertFalse(
+            any(
+                thread.name.startswith("text-scraper-transport")
+                for thread in threading.enumerate()
+            )
+        )
+
+    def test_transport_worker_start_failure_releases_its_slot(self):
+        for _ in range(text_scraper.MAX_TRANSPORT_WORKERS):
+            with patch(
+                "text_scraper.Thread.start",
+                side_effect=RuntimeError("THREAD_SECRET_CANARY"),
+            ):
+                with self.assertRaises(text_scraper._TransportError) as raised:
+                    text_scraper._run_transport_worker(
+                        lambda: b"unused",
+                        deadline=text_scraper._steady_clock() + 1.0,
+                        cancellation=text_scraper._TransportCancellation(),
+                    )
+            self.assertEqual(text_scraper.ERROR_REQUEST, raised.exception.public_message)
+            self.assertNotIn("CANARY", raised.exception.public_message)
+
+        result = text_scraper._run_transport_worker(
+            lambda: b"slot recovered",
+            deadline=text_scraper._steady_clock() + 1.0,
+            cancellation=text_scraper._TransportCancellation(),
+        )
+        self.assertEqual(b"slot recovered", result)
+
     def test_network_exception_and_privacy_canaries_are_not_exposed_or_logged(self):
         stdout = io.StringIO()
         stderr = io.StringIO()
