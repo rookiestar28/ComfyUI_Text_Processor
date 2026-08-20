@@ -1,6 +1,8 @@
 import contextlib
 import io
 import socket
+import threading
+import time
 import unittest
 from unittest.mock import Mock, patch
 
@@ -187,6 +189,9 @@ class TextScraperTargetValidationTests(unittest.TestCase):
             ("file:///etc/passwd", text_scraper.ERROR_SCHEME),
             ("https://user@example.test/a", text_scraper.ERROR_CREDENTIALS),
             ("https://example.test/a#frag", text_scraper.ERROR_FRAGMENT),
+            ("https://example.test:/a", text_scraper.ERROR_PORT),
+            ("http://example.test:/a", text_scraper.ERROR_PORT),
+            (f"https://[{PUBLIC_V6}]:/a", text_scraper.ERROR_PORT),
             ("https://example.test:444/a", text_scraper.ERROR_PORT),
             ("http://example.test:443/a", text_scraper.ERROR_PORT),
             ("https://example.test\\@evil.test/a", text_scraper.ERROR_INVALID_URL),
@@ -654,6 +659,11 @@ class TextScraperBoundedTransportTests(unittest.TestCase):
                 {"first.test": (PUBLIC_V4,), "second.test": (PUBLIC_V4_SECOND,)},
             ),
             (
+                "https://second.test:/path",
+                text_scraper.ERROR_PORT,
+                {"first.test": (PUBLIC_V4,), "second.test": (PUBLIC_V4_SECOND,)},
+            ),
+            (
                 "https://second.test/path",
                 text_scraper.ERROR_PRIVATE_ADDRESS,
                 {
@@ -729,6 +739,105 @@ class TextScraperBoundedTransportTests(unittest.TestCase):
             )
         self.assertEqual(text_scraper.ERROR_TIMEOUT, raised.exception.public_message)
         self.assertTrue(after.closed)
+
+    def test_blocked_dns_returns_at_aggregate_deadline_without_opening_request(self):
+        resolver_started = threading.Event()
+        release_resolver = threading.Event()
+        outcome = []
+
+        def blocked_resolver(host, port, type):
+            del host, port, type
+            resolver_started.set()
+            release_resolver.wait(1.0)
+            return getaddrinfo_for(PUBLIC_V4)
+
+        def fetch():
+            try:
+                self.node._fetch_text("https://first.test/start")
+            except Exception as error:
+                outcome.append(error)
+
+        with patch(
+            "text_scraper.TOTAL_TIMEOUT_SECONDS",
+            0.05,
+        ), patch(
+            "text_scraper.socket.getaddrinfo",
+            side_effect=blocked_resolver,
+        ), patch(
+            "text_scraper._open_pinned_response",
+        ) as opener:
+            caller = threading.Thread(target=fetch, daemon=True)
+            started_at = time.perf_counter()
+            caller.start()
+            try:
+                resolver_did_start = resolver_started.wait(0.2)
+                caller.join(0.15)
+                elapsed = time.perf_counter() - started_at
+                returned_within_bound = not caller.is_alive()
+                request_not_opened = opener.call_count == 0
+            finally:
+                release_resolver.set()
+                caller.join(1.0)
+
+        self.assertTrue(resolver_did_start)
+        self.assertTrue(returned_within_bound)
+        self.assertLess(elapsed, 0.2)
+        self.assertTrue(request_not_opened)
+        self.assertEqual(1, len(outcome))
+        self.assertIsInstance(outcome[0], text_scraper._TransportError)
+        self.assertEqual(text_scraper.ERROR_TIMEOUT, outcome[0].public_message)
+        opener.assert_not_called()
+
+    def test_blocked_body_read_returns_at_deadline_and_closes_response(self):
+        iterator_started = threading.Event()
+        release_iterator = threading.Event()
+        outcome = []
+
+        class BlockingResponse(SyntheticResponse):
+            def iter_content(self, chunk_size=1, decode_unicode=False):
+                self.iter_calls.append((chunk_size, decode_unicode))
+                iterator_started.set()
+                release_iterator.wait(1.0)
+                yield b"late body"
+
+        response = BlockingResponse()
+
+        def fetch():
+            try:
+                self.node._fetch_text("https://first.test/start")
+            except Exception as error:
+                outcome.append(error)
+
+        with patch(
+            "text_scraper.TOTAL_TIMEOUT_SECONDS",
+            0.05,
+        ), patch(
+            "text_scraper.socket.getaddrinfo",
+            return_value=getaddrinfo_for(PUBLIC_V4),
+        ), patch(
+            "text_scraper._open_pinned_response",
+            return_value=SyntheticResponseContext(response),
+        ):
+            caller = threading.Thread(target=fetch, daemon=True)
+            started_at = time.perf_counter()
+            caller.start()
+            try:
+                iterator_did_start = iterator_started.wait(0.2)
+                caller.join(0.15)
+                elapsed = time.perf_counter() - started_at
+                returned_within_bound = not caller.is_alive()
+                closed_before_release = response.closed
+            finally:
+                release_iterator.set()
+                caller.join(1.0)
+
+        self.assertTrue(iterator_did_start)
+        self.assertTrue(returned_within_bound)
+        self.assertLess(elapsed, 0.2)
+        self.assertTrue(closed_before_release)
+        self.assertEqual(1, len(outcome))
+        self.assertIsInstance(outcome[0], text_scraper._TransportError)
+        self.assertEqual(text_scraper.ERROR_TIMEOUT, outcome[0].public_message)
 
     def test_network_exception_and_privacy_canaries_are_not_exposed_or_logged(self):
         stdout = io.StringIO()

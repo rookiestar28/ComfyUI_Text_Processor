@@ -5,7 +5,19 @@ import socket
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Mapping, Optional, Tuple
+from queue import Empty, Queue
+from threading import Thread
+from typing import (
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+)
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 
@@ -73,6 +85,41 @@ class _TransportError(Exception):
     def __init__(self, public_message: str):
         super().__init__(public_message)
         self.public_message = public_message
+
+
+_DeadlineResult = TypeVar("_DeadlineResult")
+
+
+def _run_before_deadline(
+    operation: Callable[[], _DeadlineResult],
+    deadline: float,
+) -> _DeadlineResult:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise _TransportError(ERROR_TIMEOUT)
+
+    results: Queue[Tuple[bool, object]] = Queue(maxsize=1)
+
+    def invoke() -> None:
+        try:
+            outcome: Tuple[bool, object] = (True, operation())
+        except Exception as error:
+            outcome = (False, error)
+        results.put_nowait(outcome)
+
+    # CRITICAL: blocking DNS/body work must not extend the caller past its deadline.
+    worker = Thread(target=invoke, name="text-scraper-deadline", daemon=True)
+    worker.start()
+    try:
+        succeeded, value = results.get(timeout=remaining)
+    except Empty:
+        raise _TransportError(ERROR_TIMEOUT) from None
+
+    if not succeeded:
+        if isinstance(value, Exception):
+            raise value
+        raise _TransportError(ERROR_REQUEST)
+    return cast(_DeadlineResult, value)
 
 
 @dataclass(frozen=True)
@@ -238,7 +285,11 @@ class TextScraper:
         "Scraped headline text or a clear validation/network error message.",
     )
 
-    def _resolve_target(self, url: str) -> _ValidatedTarget:
+    def _resolve_target(
+        self,
+        url: str,
+        deadline: Optional[float] = None,
+    ) -> _ValidatedTarget:
         if not isinstance(url, str):
             raise _TransportError(ERROR_INVALID_URL)
 
@@ -286,6 +337,9 @@ class TextScraper:
         if literal_ip is not None and "%" in hostname_value:
             raise _TransportError(ERROR_PRIVATE_ADDRESS)
 
+        authority = parsed.netloc.rsplit("@", 1)[-1]
+        if authority.endswith(":"):
+            raise _TransportError(ERROR_PORT)
         try:
             explicit_port = parsed.port
         except ValueError:
@@ -306,11 +360,14 @@ class TextScraper:
             if hostname in BLOCKED_HOSTNAMES:
                 raise _TransportError(ERROR_PRIVATE_ADDRESS)
 
+            def resolve_addresses():
+                return socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+
             try:
-                resolved = socket.getaddrinfo(
-                    hostname,
-                    port,
-                    type=socket.SOCK_STREAM,
+                resolved = (
+                    resolve_addresses()
+                    if deadline is None
+                    else _run_before_deadline(resolve_addresses, deadline)
                 )
             except (OSError, ValueError):
                 raise _TransportError(ERROR_RESOLUTION) from None
@@ -377,27 +434,26 @@ class TextScraper:
             if int(value) > MAX_RESPONSE_BYTES:
                 raise _TransportError(ERROR_BODY_TOO_LARGE)
 
+        def consume_body() -> bytes:
+            content = bytearray()
+            for chunk in response.iter_content(
+                chunk_size=STREAM_CHUNK_BYTES,
+                decode_unicode=False,
+            ):
+                if not isinstance(chunk, (bytes, bytearray)):
+                    raise _TransportError(ERROR_REQUEST)
+                content.extend(chunk)
+                if len(content) > MAX_RESPONSE_BYTES:
+                    raise _TransportError(ERROR_BODY_TOO_LARGE)
+            return bytes(content)
+
+        content = _run_before_deadline(consume_body, deadline)
         if time.monotonic() >= deadline:
             raise _TransportError(ERROR_TIMEOUT)
 
-        content = bytearray()
-        for chunk in response.iter_content(
-            chunk_size=STREAM_CHUNK_BYTES,
-            decode_unicode=False,
-        ):
-            if time.monotonic() >= deadline:
-                raise _TransportError(ERROR_TIMEOUT)
-            if not isinstance(chunk, (bytes, bytearray)):
-                raise _TransportError(ERROR_REQUEST)
-            content.extend(chunk)
-            if len(content) > MAX_RESPONSE_BYTES:
-                raise _TransportError(ERROR_BODY_TOO_LARGE)
-            if time.monotonic() >= deadline:
-                raise _TransportError(ERROR_TIMEOUT)
-
         encoding = response.encoding or "utf-8"
         try:
-            return bytes(content).decode(encoding, errors="replace")
+            return content.decode(encoding, errors="replace")
         except (LookupError, TypeError):
             raise _TransportError(ERROR_PARSE) from None
 
@@ -411,7 +467,7 @@ class TextScraper:
         redirect_count = 0
 
         while True:
-            target = self._resolve_target(current_url)
+            target = self._resolve_target(current_url, deadline=deadline)
             if target.url in seen_urls:
                 raise _TransportError(ERROR_REDIRECT)
             seen_urls.add(target.url)
