@@ -211,6 +211,87 @@ class PublishCandidateContractTests(unittest.TestCase):
             ):
                 candidate.verify_archive_bytes(payload, expected)
 
+    def test_archive_rejects_known_registry_dynamic_execution_patterns(self):
+        expected = [candidate.TrackedPath("module.py", candidate.REGULAR_FILE_MODE)]
+        attacks = (
+            b'NAME = "Simple Eval (Integers)"\n',
+            b'result = evaluator.eval(expression)\n',
+            b'tree = ast.parse(expression, mode="eval")\n',
+            b'result = eval(expression)\n',
+            b'exec(source)\n',
+            b'compile(source, "<x>", "exec")\n',
+        )
+        for source in attacks:
+            with self.subTest(source=source), self.assertRaisesRegex(
+                candidate.CandidateError,
+                "archive_registry_dynamic_execution",
+            ):
+                candidate.verify_archive_bytes(
+                    _zip_bytes([("module.py", source, stat.S_IFREG | 0o644)]),
+                    expected,
+                )
+
+        safe = b"EvaluateInts = simple_eval_expression\n"
+        candidate.verify_archive_bytes(
+            _zip_bytes([("module.py", safe, stat.S_IFREG | 0o644)]),
+            expected,
+        )
+
+    def test_archive_rejects_retired_network_capability_patterns(self):
+        expected = [candidate.TrackedPath("module.py", candidate.REGULAR_FILE_MODE)]
+        attacks = (
+            b"import requests\n",
+            b"from requests import Session\n",
+            b"import socket\nsocket.getaddrinfo('x', 443)\n",
+            b"from urllib.request import urlopen\n",
+            b"from urllib import request\n",
+            b"import urllib3\n",
+            b"from bs4 import BeautifulSoup\n",
+            b"import httpx\n",
+            b"import aiohttp\n",
+            b"import http.client\n",
+            b"response = requests.get(url)\n",
+        )
+        for source in attacks:
+            with self.subTest(source=source), self.assertRaisesRegex(
+                candidate.CandidateError,
+                "archive_registry_network_capability",
+            ):
+                candidate.verify_archive_bytes(
+                    _zip_bytes([("module.py", source, stat.S_IFREG | 0o644)]),
+                    expected,
+                )
+
+    def test_archive_rejects_non_utf8_python_without_disclosing_content(self):
+        expected = [candidate.TrackedPath("module.py", candidate.REGULAR_FILE_MODE)]
+        with self.assertRaisesRegex(
+            candidate.CandidateError,
+            "archive_python_encoding",
+        ):
+            candidate.verify_archive_bytes(
+                _zip_bytes([("module.py", b"\xff", stat.S_IFREG | 0o644)]),
+                expected,
+            )
+
+    def test_current_comfyignore_filtered_worktree_passes_registry_surface_scan(self):
+        tracked = candidate.list_tracked_paths(ROOT)
+        archive_paths = candidate.list_archive_paths(tracked, cwd=ROOT)
+        entries = []
+        expected = []
+        for item in archive_paths:
+            mode = (
+                stat.S_IFREG | 0o755
+                if item.mode == candidate.EXECUTABLE_FILE_MODE
+                else stat.S_IFREG | 0o644
+            )
+            entries.append((item.path, (ROOT / item.path).read_bytes(), mode))
+            expected.append(candidate.TrackedPath(item.path, item.mode))
+
+        summary = candidate.verify_archive_bytes(_zip_bytes(entries), expected)
+        self.assertEqual(len(expected), summary.member_count)
+        self.assertIn("simple_eval.py", {item.path for item in expected})
+        self.assertIn("text_scraper.py", {item.path for item in expected})
+
     def test_archive_manifest_honors_only_literal_comfyignore_exclusions(self):
         tracked = [
             candidate.TrackedPath(".comfyignore", candidate.REGULAR_FILE_MODE),

@@ -21,11 +21,7 @@ license = {file = "LICENSE"}
 #     "Environment :: GPU :: Apple Metal",    # Apple Metal support
 # ]
 
-dependencies = [
-    "simpleeval",
-    "requests",
-    "beautifulsoup4",
-]
+dependencies = []
 
 [project.optional-dependencies]
 aesthetic = ["aesthetic-predictor-v2-5"]

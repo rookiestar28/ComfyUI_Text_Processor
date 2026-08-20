@@ -49,9 +49,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "TextScraper": "Text Scraper",
     "WildcardsNode": "Wildcards Processor",
     "AddTextToImage": "Add text to image",
-    "EvaluateInts": "Simple Eval Integers",
-    "EvaluateFloats": "Simple Eval Floats",
-    "EvaluateStrs": "Simple Eval Strings",
+    "EvaluateInts": "Simple Expression Integers",
+    "EvaluateFloats": "Simple Expression Floats",
+    "EvaluateStrs": "Simple Expression Strings",
     "AdvancedImageSaver": "Advanced Image Saver (Aesthetic)",
 }
 

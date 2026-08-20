@@ -225,8 +225,8 @@ class V3MigrationContractTests(unittest.TestCase):
 
         self.assertEqual(
             {
-                "stateless": 10,
-                "external_stateful": 4,
+                "stateless": 11,
+                "external_stateful": 3,
                 "class_stateful": 2,
                 "instance_stateful": 4,
             },
@@ -246,6 +246,11 @@ class V3MigrationContractTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             assert_split_string_classification(seam_mutation)
 
+        scraper = classifications["TextScraper"]
+        self.assertEqual("stateless", scraper["classification"])
+        self.assertEqual(["disabled_compatibility_stub"], scraper["state_seams"])
+        self.assertTrue(scraper["prototype_eligible"])
+
     def test_required_stateful_seams_are_explicit(self):
         nodes = _load_json(MIGRATION_CONTRACT_PATH)["nodes"]
 
@@ -259,7 +264,7 @@ class V3MigrationContractTests(unittest.TestCase):
             "TextStorageReader": {"storage_handler", "storage_version", "user_filesystem"},
             "TextStorageWriter": {"storage_handler", "storage_version", "user_filesystem"},
             "TP_SaveMask": {"constructor_output_directory", "output_filesystem"},
-            "TextScraper": {"dns_resolution", "http_network"},
+            "TextScraper": {"disabled_compatibility_stub"},
             "WildcardsNode": {"wildcard_filesystem", "seeded_randomness"},
             "AddTextToImage": {"font_registry", "font_filesystem"},
             "TP_LoadMask": {"input_filesystem"},

@@ -1,98 +1,75 @@
-import socket
+import contextlib
+import io
+from pathlib import Path
 import unittest
-from unittest.mock import patch
 
 import text_scraper
 from text_scraper import TextScraper
-from test_text_scraper_transport import (
-    SyntheticResponse,
-    SyntheticResponseContext,
-)
 
 
-PUBLIC_GETADDRINFO = [
-    (
-        socket.AF_INET,
-        socket.SOCK_STREAM,
-        6,
-        "",
-        ("93.184.216.34", 443),
-    )
-]
-
-
-class TextScraperUrlSafetyTests(unittest.TestCase):
+class TextScraperDisabledCompatibilityTests(unittest.TestCase):
     def setUp(self):
         self.node = TextScraper()
 
-    def test_scheme_less_url_normalizes_to_https(self):
-        with patch("text_scraper.socket.getaddrinfo", return_value=PUBLIC_GETADDRINFO):
-            url, error = self.node.normalize_and_validate_url("example.com/news")
+    def test_public_schema_and_registration_surface_remain_exact(self):
+        schema = TextScraper.INPUT_TYPES()
+        self.assertEqual(["url", "seed"], list(schema["required"]))
+        self.assertEqual("STRING", schema["required"]["url"][0])
+        self.assertEqual(
+            "https://news.ycombinator.com",
+            schema["required"]["url"][1]["default"],
+        )
+        self.assertEqual("INT", schema["required"]["seed"][0])
+        self.assertEqual(0, schema["required"]["seed"][1]["default"])
+        self.assertEqual(("STRING",), TextScraper.RETURN_TYPES)
+        self.assertEqual(("text",), TextScraper.RETURN_NAMES)
+        self.assertEqual("scrape_news", TextScraper.FUNCTION)
+        self.assertEqual("ComfyUI Text Processor", TextScraper.CATEGORY)
 
-        self.assertIsNone(error)
-        self.assertEqual("https://example.com/news", url)
+    def test_every_invocation_returns_static_disabled_message_without_echo(self):
+        cases = (
+            ("https://PUBLIC_URL_CANARY.invalid/path?secret=URL_CANARY", 123456),
+            ("http://127.0.0.1/PRIVATE_CANARY", 0),
+            ("not a url", -1),
+            (None, object()),
+        )
+        for url, seed in cases:
+            with self.subTest(
+                url_type=type(url).__name__,
+                seed_type=type(seed).__name__,
+            ):
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    result = self.node.scrape_news(url, seed)
+                self.assertEqual((text_scraper.TEXT_SCRAPER_DISABLED,), result)
+                self.assertEqual("", output.getvalue())
+                self.assertNotIn("CANARY", result[0])
 
-    def test_blocks_non_http_scheme(self):
-        url, error = self.node.normalize_and_validate_url("file:///etc/passwd")
-
-        self.assertIsNone(url)
-        self.assertEqual("Blocked URL: only http and https URLs are allowed.", error)
-
-    def test_blocks_loopback_before_http_request(self):
-        with patch("text_scraper._open_pinned_response") as open_response:
-            output, = self.node.scrape_news("http://127.0.0.1:8188", seed=1)
-
-        open_response.assert_not_called()
-        self.assertEqual("Blocked URL: private or local network addresses are not allowed.", output)
-
-    def test_blocks_hostname_that_resolves_to_private_address(self):
-        private_addr = [
-            (
-                socket.AF_INET,
-                socket.SOCK_STREAM,
-                6,
-                "",
-                ("192.168.1.10", 443),
-            )
-        ]
-        with patch("text_scraper.socket.getaddrinfo", return_value=private_addr):
-            url, error = self.node.normalize_and_validate_url("https://example.test")
-
-        self.assertIsNone(url)
-        self.assertEqual("Blocked URL: private or local network addresses are not allowed.", error)
-
-    def test_safe_public_url_uses_bounded_pinned_transport(self):
-        response = SyntheticResponse(
-            chunks=[b"<html><h1>Example headline long enough</h1></html>"],
+    def test_compatibility_helpers_are_static_and_content_free(self):
+        normalized, error = self.node.normalize_and_validate_url("PRIVATE_URL_CANARY")
+        self.assertIsNone(normalized)
+        self.assertEqual(text_scraper.TEXT_SCRAPER_DISABLED, error)
+        self.assertEqual(
+            [{"headline": text_scraper.TEXT_SCRAPER_DISABLED}],
+            self.node.scrape_headlines("PRIVATE_URL_CANARY"),
         )
 
-        with patch("text_scraper.socket.getaddrinfo", return_value=PUBLIC_GETADDRINFO):
-            with patch(
-                "text_scraper._open_pinned_response",
-                return_value=SyntheticResponseContext(response),
-            ) as open_response:
-                output, = self.node.scrape_news("https://example.com", seed=2)
-
-        open_response.assert_called_once()
-        target = open_response.call_args.args[0]
-        self.assertEqual("example.com", target.hostname)
-        self.assertEqual("93.184.216.34", target.address)
-        self.assertTrue(response.closed)
-        self.assertIn("Example headline long enough", output)
-
-    def test_stable_errors_do_not_include_workflow_url_or_raw_exception(self):
-        with patch(
-            "text_scraper.socket.getaddrinfo",
-            side_effect=OSError("DNS_SECRET_CANARY"),
+    def test_product_module_has_no_network_or_html_client_surface(self):
+        source = Path(text_scraper.__file__).read_text(encoding="utf-8").lower()
+        for forbidden in (
+            "import requests",
+            "from requests",
+            "import socket",
+            "from socket",
+            "getaddrinfo",
+            "urllib3",
+            "urlopen(",
+            "beautifulsoup",
+            "from bs4",
+            "requests.",
         ):
-            output, = self.node.scrape_news(
-                "https://example.test/private?token=URL_SECRET_CANARY",
-                seed=3,
-            )
-
-        self.assertEqual(text_scraper.ERROR_RESOLUTION, output)
-        self.assertNotIn("CANARY", output)
-        self.assertNotIn("example.test", output)
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, source)
 
 
 if __name__ == "__main__":

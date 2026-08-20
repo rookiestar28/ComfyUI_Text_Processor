@@ -48,11 +48,11 @@
       "rationale": "Execution derives two string outputs only from the supplied text and literal delimiter."
     },
     "TextScraper": {
-      "classification": "external_stateful",
-      "state_seams": ["dns_resolution", "http_network"],
-      "prototype_eligible": false,
+      "classification": "stateless",
+      "state_seams": ["disabled_compatibility_stub"],
+      "prototype_eligible": true,
       "selected_prototype": false,
-      "rationale": "Results and security behavior depend on DNS and remote HTTP state."
+      "rationale": "The compatibility node ignores its inputs and returns one static disabled message without external state."
     },
     "WildcardsNode": {
       "classification": "external_stateful",

@@ -70,6 +70,18 @@ class NodeRegistrationTests(unittest.TestCase):
             self.assertEqual("Load Image Batch", module.NODE_DISPLAY_NAME_MAPPINGS["LoadImageBatch"])
             self.assertEqual("Resize Image Advanced", module.NODE_DISPLAY_NAME_MAPPINGS["ResizeImageAdvanced"])
             self.assertEqual(
+                "Simple Expression Integers",
+                module.NODE_DISPLAY_NAME_MAPPINGS["EvaluateInts"],
+            )
+            self.assertEqual(
+                "Simple Expression Floats",
+                module.NODE_DISPLAY_NAME_MAPPINGS["EvaluateFloats"],
+            )
+            self.assertEqual(
+                "Simple Expression Strings",
+                module.NODE_DISPLAY_NAME_MAPPINGS["EvaluateStrs"],
+            )
+            self.assertEqual(
                 "Advanced Resolution Selector",
                 module.NODE_DISPLAY_NAME_MAPPINGS["TP_AdvancedResolutionSelector"],
             )

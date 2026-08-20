@@ -39,6 +39,11 @@ class DependencyMetadataTests(unittest.TestCase):
         }
 
         self.assertEqual(required, requirements)
+        self.assertEqual(
+            set(),
+            required,
+            "the owned expression interpreter and disabled scraper need no runtime dependency",
+        )
 
     @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
     def test_aesthetic_predictor_is_optional_extra(self):

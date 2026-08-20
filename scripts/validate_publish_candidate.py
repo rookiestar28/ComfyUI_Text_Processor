@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed validation for hosted Registry publication candidates."""
+"""Fail-closed validation for Registry publication candidates."""
 
 from __future__ import annotations
 
@@ -44,6 +44,22 @@ FORBIDDEN_FILENAMES = frozenset(
 )
 FORBIDDEN_SUFFIXES = frozenset({".key", ".p12", ".pfx", ".pem"})
 COMFYIGNORE_PATH = ".comfyignore"
+REGISTRY_DYNAMIC_EXECUTION_PATTERNS = (
+    re.compile(r"(?i)(?<![A-Za-z0-9_])eval\s*[\(\[]"),
+    re.compile(r"(?i)\bmode\s*=\s*['\"]eval['\"]"),
+    re.compile(r"(?i)(?<![A-Za-z0-9_])exec\s*\("),
+    re.compile(r"(?i)(?<![A-Za-z0-9_])compile\s*\("),
+)
+REGISTRY_NETWORK_CAPABILITY_PATTERNS = (
+    re.compile(
+        r"(?im)^\s*(?:import|from)\s+"
+        r"(?:requests|urllib3|socket|bs4|urllib\.request|httpx|aiohttp|http\.client)"
+        r"(?:\b|\.)"
+    ),
+    re.compile(r"(?im)^\s*from\s+urllib\s+import\s+request\b"),
+    re.compile(r"(?i)(?<![A-Za-z0-9_])requests\s*\."),
+    re.compile(r"(?i)(?<![A-Za-z0-9_])(?:urlopen|getaddrinfo)\s*\("),
+)
 
 
 class CandidateError(ValueError):
@@ -52,6 +68,20 @@ class CandidateError(ValueError):
     def __init__(self, code: str):
         super().__init__(code)
         self.code = code
+
+
+def validate_registry_scan_surface(path: str, content: bytes) -> None:
+    """Reject known Registry trigger families without emitting source content."""
+    if pathlib.PurePosixPath(path).suffix.lower() != ".py":
+        return
+    try:
+        source = content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise CandidateError("archive_python_encoding") from None
+    if any(pattern.search(source) for pattern in REGISTRY_DYNAMIC_EXECUTION_PATTERNS):
+        raise CandidateError("archive_registry_dynamic_execution")
+    if any(pattern.search(source) for pattern in REGISTRY_NETWORK_CAPABILITY_PATTERNS):
+        raise CandidateError("archive_registry_network_capability")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -446,8 +476,11 @@ def verify_archive_bytes(
                 expanded += info.file_size
                 if expanded > MAX_ARCHIVE_EXPANDED_BYTES:
                     raise CandidateError("archive_expanded_size")
-                if expected.object_id is not None:
+                content = None
+                if expected.object_id is not None or info.filename.lower().endswith(".py"):
                     content = archive.read(info)
+                if expected.object_id is not None:
+                    assert content is not None
                     header = f"blob {len(content)}\0".encode("ascii")
                     # Git SHA-1 is a compatibility identity check here, not a password
                     # or signature primitive. The exact candidate commit remains the
@@ -457,6 +490,8 @@ def verify_archive_bytes(
                     ).hexdigest()
                     if digest != expected.object_id:
                         raise CandidateError("archive_content")
+                if content is not None:
+                    validate_registry_scan_surface(info.filename, content)
             bad_member = archive.testzip()
             if bad_member is not None:
                 raise CandidateError("archive_crc")

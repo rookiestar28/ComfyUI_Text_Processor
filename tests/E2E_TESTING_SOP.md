@@ -44,7 +44,8 @@ When adding or reviewing E2E coverage, prefer assertions that prove final user-v
 - Python 3.10+ in the same environment used by ComfyUI.
 - ComfyUI dependencies importable in that environment, including `folder_paths`.
 - For image/tensor nodes: `torch`, `torchvision`, `Pillow`, and `numpy`.
-- For text scraper checks: mockable `requests` and `beautifulsoup4`.
+- Text Scraper is a dependency-free disabled compatibility node; its checks assert
+  deterministic no-I/O behavior.
 - Node.js 18+ and npm.
 - Repo-local ignored npm cache, Playwright browser storage, and process temp paths.
 

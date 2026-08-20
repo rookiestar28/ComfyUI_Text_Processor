@@ -97,7 +97,8 @@ behavior-bearing files change.
 
 - Python 3.10+ in the same environment used by ComfyUI, or a repo-local venv with equivalent dependencies.
 - For tensor/image node checks: `torch`, `torchvision`, `Pillow`, and ComfyUI runtime dependencies must be importable.
-- For optional scraper checks: `requests` and `beautifulsoup4`.
+- Text Scraper is a dependency-free disabled compatibility node; its tests must prove
+  deterministic no-I/O behavior.
 - For optional aesthetic scorer checks: `aesthetic-predictor-v2-5`.
 - `pre-commit` only after `.pre-commit-config.yaml` exists.
 - Node.js 18+ and npm.

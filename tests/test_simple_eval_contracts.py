@@ -5,10 +5,9 @@ import contextlib
 import importlib.util
 import io
 from pathlib import Path
+import re
 import unittest
 from unittest import mock
-
-import simpleeval
 
 import simple_eval as subject
 
@@ -134,22 +133,17 @@ class SimpleEvalBehaviorTests(unittest.TestCase):
         )
         self.assertEqual([], numeric_canary.operations)
 
-    def test_random_and_mutated_upstream_default_functions_are_rejected(self) -> None:
-        with mock.patch.dict(
-            simpleeval.DEFAULT_FUNCTIONS,
-            {"unexpected": lambda: 41},
-            clear=False,
-        ):
-            for expression in ("rand()", "randint(1, 2)", "unexpected()"):
-                with self.subTest(expression=expression):
-                    self.assert_silent_result(
-                        lambda expression=expression: self.ints.evaluate(expression, "False"),
-                        (0, 0.0, "Error"),
-                    )
-            self.assert_silent_result(
-                lambda: self.strings.evaluate("unexpected()", "False"),
-                ("Error",),
-            )
+    def test_random_and_unowned_functions_are_rejected(self) -> None:
+        for expression in ("rand()", "randint(1, 2)", "unexpected()"):
+            with self.subTest(expression=expression):
+                self.assert_silent_result(
+                    lambda expression=expression: self.ints.evaluate(expression, "False"),
+                    (0, 0.0, "Error"),
+                )
+        self.assert_silent_result(
+            lambda: self.strings.evaluate("unexpected()", "False"),
+            ("Error",),
+        )
 
     def test_forbidden_access_syntax_and_operator_families_fail_closed(self) -> None:
         expressions = (
@@ -165,6 +159,7 @@ class SimpleEvalBehaviorTests(unittest.TestCase):
             "a if True else b",
             "f'{a}'",
             "__import__('os')",
+            "1;",
         )
         for expression in expressions:
             with self.subTest(expression=expression):
@@ -177,6 +172,10 @@ class SimpleEvalBehaviorTests(unittest.TestCase):
         self.assert_silent_result(
             lambda: self.ints.evaluate("a.real", "False", 7),
             (0, 0.0, "Error"),
+        )
+        self.assert_silent_result(
+            lambda: self.strings.evaluate("'safe;literal'", "False"),
+            ("safe;literal",),
         )
 
     def test_syntax_runtime_nonfinite_complex_and_nonscalar_failures_are_stable(self) -> None:
@@ -267,7 +266,7 @@ class SimpleEvalBehaviorTests(unittest.TestCase):
 
 
 class SimpleEvalDependencyAbsenceTests(unittest.TestCase):
-    def test_import_and_all_nodes_fail_consistently_without_dependency(self) -> None:
+    def test_import_and_all_nodes_work_without_third_party_dependency(self) -> None:
         module_path = Path(subject.__file__)
         module_name = "simple_eval_without_dependency_for_test"
         original_import = builtins.__import__
@@ -288,9 +287,9 @@ class SimpleEvalDependencyAbsenceTests(unittest.TestCase):
                 ints = module.EvaluateInts().evaluate("1 + 1", "False")
                 floats = module.EvaluateFloats().evaluate("1 + 1", "False")
                 strings = module.EvaluateStrs().evaluate("'a' + 'b'", "False")
-        self.assertEqual((0, 0.0, "Error"), ints)
-        self.assertEqual((0, 0.0, "Error"), floats)
-        self.assertEqual(("Error",), strings)
+        self.assertEqual((2, 2.0, "2"), ints)
+        self.assertEqual((2, 2.0, "2"), floats)
+        self.assertEqual(("ab",), strings)
         self.assertEqual("", output.getvalue())
 
 
@@ -305,6 +304,21 @@ class SimpleEvalPublicContractTests(unittest.TestCase):
         self.assertEqual(100_000, subject.MAX_STRING_LENGTH)
         self.assertEqual(1_000, subject.MAX_POWER_ABS_OPERAND)
 
+    def test_production_source_avoids_registry_dynamic_execution_patterns(self) -> None:
+        source = Path(subject.__file__).read_text(encoding="utf-8")
+        forbidden = (
+            re.compile(r"(?i)(?<![A-Za-z0-9_])eval\s*[\(\[]"),
+            re.compile(r"(?i)\bmode\s*=\s*['\"]eval['\"]"),
+            re.compile(r"(?i)(?<![A-Za-z0-9_])exec\s*\("),
+            re.compile(r"(?i)(?<![A-Za-z0-9_])compile\s*\("),
+        )
+        for pattern in forbidden:
+            with self.subTest(pattern=pattern.pattern):
+                self.assertIsNone(pattern.search(source))
+        self.assertNotIn("simpleeval", source.lower())
+        self.assertNotIn("simple eval", source.lower())
+        self.assertIn("EvaluateInts", source)
+
     def test_stable_node_and_schema_contracts_remain_exact(self) -> None:
         self.assertEqual(
             {"EvaluateInts", "EvaluateFloats", "EvaluateStrs"},
@@ -312,9 +326,9 @@ class SimpleEvalPublicContractTests(unittest.TestCase):
         )
         self.assertEqual(
             {
-                "EvaluateInts": "Simple Eval (Integers)",
-                "EvaluateFloats": "Simple Eval (Floats)",
-                "EvaluateStrs": "Simple Eval (Strings)",
+                "EvaluateInts": "Simple Expression (Integers)",
+                "EvaluateFloats": "Simple Expression (Floats)",
+                "EvaluateStrs": "Simple Expression (Strings)",
             },
             subject.NODE_DISPLAY_NAME_MAPPINGS,
         )

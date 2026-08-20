@@ -62,8 +62,8 @@ An advanced automation toolkit with 20 production nodes for text processing, reu
 - Hardened LLM parsing with first-valid bounded JSON extraction, complete
   punctuation-aware code-fence info strings, identifier-safe Markdown cleanup, and
   input-safe static diagnostics.
-- Text Scraper blocks local/private targets and adds bounded public HTTP/HTTPS
-  fetching; Wildcards uses safer source resolution and path handling.
+- Text Scraper remains available for workflow compatibility but remote fetching is
+  disabled; Wildcards uses safer source resolution and path handling.
 - Text Storage prefers the ComfyUI user directory while retaining legacy reads,
   delete compatibility, and a clear empty-state placeholder.
 
@@ -258,11 +258,15 @@ invalid and raises `delimiter must not be empty`.
 
 ### Text Scraper Node
 
-Fetches and formats headlines from public HTTP/HTTPS URLs. Ideal for injecting real-time context into LLMs.
+Retained as a compatibility placeholder so existing workflows continue to load. Remote
+fetching is disabled, and the node returns a static explanatory message without making
+network requests.
 
-* **Simple Interface:** Just input a URL string.
-* **Smart Parsing:** Uses heuristics to identify headlines from `h1`-`h3`, headline-like class names, and matching links.
-* **Safe:** Allows only HTTP/HTTPS public targets by default, blocks local/private network addresses, and includes timeouts to prevent workflow freezing.
+* **Workflow Compatible:** Preserves the existing URL and seed inputs plus the original
+  string output so saved workflows remain loadable.
+* **No Remote Access:** Ignores URL and seed values, performs no fetch, and returns one
+  static disabled message.
+* **Privacy Preserving:** Does not echo the supplied URL or write it to console output.
 
 ### Text Storage Nodes (Reader & Writer)
 
@@ -319,9 +323,11 @@ Generate rich, dynamic prompts using wildcard syntax (e.g., `__style__`) and ran
 
 ## 3. Logic & Math Nodes
 
-Control workflow seeds or safely evaluate Python expressions for dynamic calculations and logic flow. Expression evaluation is powered by `simpleeval`.
+Control workflow seeds or safely process allowlisted expressions for dynamic
+calculations and logic flow. Expression processing uses the package's bounded,
+repository-owned AST interpreter and never invokes Python's dynamic execution built-ins.
 
-### Simple Eval (Integers / Floats / Strings)
+### Simple Expression (Integers / Floats / Strings)
 
 Perform mathematical calculations or string manipulations without writing complex code.
 

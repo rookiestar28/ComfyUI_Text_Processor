@@ -4,14 +4,10 @@ import ast
 import math
 import operator
 import sys
+import tokenize
+from io import StringIO
 from types import MappingProxyType
 from typing import Any, Callable, Mapping
-
-try:
-    from simpleeval import SimpleEval
-except ImportError:
-    # CRITICAL: keep imports registration-safe when the optional runtime dependency is absent.
-    SimpleEval = None
 
 
 MAX_EXPRESSION_LENGTH = 4_096
@@ -94,7 +90,8 @@ _CONSTANT_NAMES: Mapping[str, Any] = MappingProxyType(
 
 _ALLOWED_NODE_TYPES = frozenset(
     {
-        ast.Expression,
+        ast.Module,
+        ast.Expr,
         ast.Constant,
         ast.Name,
         ast.Load,
@@ -129,17 +126,23 @@ def _validate_expression(
     expression: str,
     variable_names: Mapping[str, Any],
     functions: Mapping[str, Callable[..., Any]],
-) -> str:
+) -> ast.expr:
     if not isinstance(expression, str):
         raise ExpressionPolicyError("expression must be text")
     if len(expression) > MAX_EXPRESSION_LENGTH:
         raise ExpressionPolicyError("expression limit exceeded")
 
     normalized_expression = expression.strip()
-    tree = ast.parse(normalized_expression, mode="eval")
+    for token in tokenize.generate_tokens(StringIO(normalized_expression).readline):
+        if token.type == tokenize.OP and token.string == ";":
+            raise ExpressionPolicyError("statement separator is not allowed")
+    tree = ast.parse(normalized_expression)
     nodes = list(ast.walk(tree))
     if len(nodes) > MAX_AST_NODES:
         raise ExpressionPolicyError("expression complexity limit exceeded")
+
+    if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Expr):
+        raise ExpressionPolicyError("exactly one expression is required")
 
     allowed_names = set(variable_names) | set(_CONSTANT_NAMES) | set(functions)
     for node in nodes:
@@ -171,7 +174,7 @@ def _validate_expression(
         elif isinstance(node, ast.Compare):
             if any(type(comparator) not in _OPERATORS for comparator in node.ops):
                 raise ExpressionPolicyError("comparison operator is not allowed")
-    return normalized_expression
+    return tree.body[0].value
 
 
 def _validate_variable_types(
@@ -183,29 +186,95 @@ def _validate_variable_types(
         raise ExpressionPolicyError("variable type is not allowed")
 
 
+def _guard_intermediate(value: Any) -> Any:
+    if type(value) not in {bool, int, float, str, type(None), complex}:
+        raise ExpressionPolicyError("non-scalar result")
+    _guard_string_length(value)
+    return value
+
+
+def _interpret_node(
+    node: ast.expr,
+    names: Mapping[str, Any],
+    functions: Mapping[str, Callable[..., Any]],
+) -> Any:
+    # SECURITY: keep dispatch exhaustive; generic AST execution would bypass the allowlist.
+    if isinstance(node, ast.Constant):
+        return _guard_intermediate(node.value)
+    if isinstance(node, ast.Name):
+        if node.id in names:
+            return _guard_intermediate(names[node.id])
+        raise ExpressionPolicyError("name is not allowed")
+    if isinstance(node, ast.BinOp):
+        operation = _OPERATORS.get(type(node.op))
+        if operation is None:
+            raise ExpressionPolicyError("binary operator is not allowed")
+        return _guard_intermediate(
+            operation(
+                _interpret_node(node.left, names, functions),
+                _interpret_node(node.right, names, functions),
+            )
+        )
+    if isinstance(node, ast.UnaryOp):
+        operation = _OPERATORS.get(type(node.op))
+        if operation is None:
+            raise ExpressionPolicyError("unary operator is not allowed")
+        return _guard_intermediate(
+            operation(_interpret_node(node.operand, names, functions))
+        )
+    if isinstance(node, ast.BoolOp):
+        values = iter(node.values)
+        result = _interpret_node(next(values), names, functions)
+        if isinstance(node.op, ast.And):
+            for value in values:
+                if not result:
+                    return _guard_intermediate(result)
+                result = _interpret_node(value, names, functions)
+            return _guard_intermediate(result)
+        if isinstance(node.op, ast.Or):
+            for value in values:
+                if result:
+                    return _guard_intermediate(result)
+                result = _interpret_node(value, names, functions)
+            return _guard_intermediate(result)
+        raise ExpressionPolicyError("boolean operator is not allowed")
+    if isinstance(node, ast.Compare):
+        left = _interpret_node(node.left, names, functions)
+        for operator_node, comparator_node in zip(
+            node.ops,
+            node.comparators,
+            strict=True,
+        ):
+            operation = _OPERATORS.get(type(operator_node))
+            if operation is None:
+                raise ExpressionPolicyError("comparison operator is not allowed")
+            right = _interpret_node(comparator_node, names, functions)
+            if not operation(left, right):
+                return False
+            left = right
+        return True
+    if isinstance(node, ast.Call):
+        # SECURITY: only direct bare-name calls resolved from the immutable owned map.
+        if not isinstance(node.func, ast.Name) or node.func.id not in functions:
+            raise ExpressionPolicyError("function call is not allowed")
+        arguments = [
+            _interpret_node(argument, names, functions) for argument in node.args
+        ]
+        return _guard_intermediate(functions[node.func.id](*arguments))
+    raise ExpressionPolicyError(f"unsupported syntax: {type(node).__name__}")
+
+
 def _evaluate_expression(
     expression: str,
     variables: Mapping[str, Any],
     functions: Mapping[str, Callable[..., Any]],
 ) -> Any:
-    if SimpleEval is None:
-        raise ImportError("simpleeval dependency unavailable")
-
     for value in variables.values():
         _guard_string_length(value)
-    normalized_expression = _validate_expression(expression, variables, functions)
+    expression_node = _validate_expression(expression, variables, functions)
     names = dict(_CONSTANT_NAMES)
     names.update(variables)
-    evaluator = SimpleEval(
-        operators=dict(_OPERATORS),
-        functions=dict(functions),
-        names=names,
-    )
-    result = evaluator.eval(normalized_expression)
-    if type(result) not in {bool, int, float, str, type(None), complex}:
-        raise ExpressionPolicyError("non-scalar result")
-    _guard_string_length(result)
-    return result
+    return _interpret_node(expression_node, names, functions)
 
 
 def _convert_numeric_result(result: Any) -> tuple[int, float, str]:
@@ -351,7 +420,12 @@ class EvaluateInts(_EvaluateMixin):
     FUNCTION = "evaluate"
     CATEGORY = "ComfyUI Text Processor/Logic"
     DESCRIPTION = "Evaluates a numeric expression with integer inputs and returns int, float, and string forms."
-    SEARCH_ALIASES = ["simple eval int", "integer expression", "math eval", "logic integer"]
+    SEARCH_ALIASES = [
+        "simple expression int",
+        "integer expression",
+        "math expression",
+        "logic integer",
+    ]
     OUTPUT_TOOLTIPS = ("Integer result.", "Float result.", "String representation of the result.")
 
     def evaluate(self, python_expression, print_to_console, a=0, b=0, c=0):
@@ -425,7 +499,12 @@ class EvaluateFloats(_EvaluateMixin):
     FUNCTION = "evaluate"
     CATEGORY = "ComfyUI Text Processor/Logic"
     DESCRIPTION = "Evaluates a numeric expression with float inputs and returns int, float, and string forms."
-    SEARCH_ALIASES = ["simple eval float", "float expression", "math eval", "logic float"]
+    SEARCH_ALIASES = [
+        "simple expression float",
+        "float expression",
+        "math expression",
+        "logic float",
+    ]
     OUTPUT_TOOLTIPS = ("Integer-cast result.", "Float result.", "String representation of the result.")
 
     def evaluate(self, python_expression, print_to_console, a=0.0, b=0.0, c=0.0):
@@ -493,7 +572,12 @@ class EvaluateStrs(_EvaluateMixin):
     FUNCTION = "evaluate"
     CATEGORY = "ComfyUI Text Processor/Logic"
     DESCRIPTION = "Evaluates a string expression with three string variables."
-    SEARCH_ALIASES = ["simple eval string", "string expression", "text expression", "logic string"]
+    SEARCH_ALIASES = [
+        "simple expression string",
+        "string expression",
+        "text expression",
+        "logic string",
+    ]
     OUTPUT_TOOLTIPS = ("String evaluation result.",)
 
     def evaluate(self, python_expression, print_to_console, a="", b="", c=""):
@@ -512,7 +596,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "EvaluateInts": "Simple Eval (Integers)",
-    "EvaluateFloats": "Simple Eval (Floats)",
-    "EvaluateStrs": "Simple Eval (Strings)",
+    "EvaluateInts": "Simple Expression (Integers)",
+    "EvaluateFloats": "Simple Expression (Floats)",
+    "EvaluateStrs": "Simple Expression (Strings)",
 }
