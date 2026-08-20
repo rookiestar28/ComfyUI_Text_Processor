@@ -9,7 +9,7 @@ CI_LOCK = ROOT / ".github" / "requirements-ci.txt"
 PUBLISH_LOCK = ROOT / ".github" / "requirements-publish.txt"
 PRECOMMIT_CONFIG = ROOT / ".pre-commit-config.yaml"
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
-EXPECTED_DETECT_SECRETS_COMMIT = "01886c8a910c64595c47f186ca1ffc0b77fa5458"
+EXPECTED_DETECT_SECRETS_COMMIT = "01886c8a910c64595c47f186ca1ffc0b77fa5458"  # pragma: allowlist secret
 
 
 def audit_workflow(text):
