@@ -129,13 +129,14 @@ def _validate_expression(
     expression: str,
     variable_names: Mapping[str, Any],
     functions: Mapping[str, Callable[..., Any]],
-) -> None:
+) -> str:
     if not isinstance(expression, str):
         raise ExpressionPolicyError("expression must be text")
     if len(expression) > MAX_EXPRESSION_LENGTH:
         raise ExpressionPolicyError("expression limit exceeded")
 
-    tree = ast.parse(expression, mode="eval")
+    normalized_expression = expression.strip()
+    tree = ast.parse(normalized_expression, mode="eval")
     nodes = list(ast.walk(tree))
     if len(nodes) > MAX_AST_NODES:
         raise ExpressionPolicyError("expression complexity limit exceeded")
@@ -170,6 +171,16 @@ def _validate_expression(
         elif isinstance(node, ast.Compare):
             if any(type(comparator) not in _OPERATORS for comparator in node.ops):
                 raise ExpressionPolicyError("comparison operator is not allowed")
+    return normalized_expression
+
+
+def _validate_variable_types(
+    variables: Mapping[str, Any],
+    allowed_types: tuple[type, ...],
+) -> None:
+    # SECURITY: reject custom objects before any overloaded evaluator operation can run.
+    if any(type(value) not in allowed_types for value in variables.values()):
+        raise ExpressionPolicyError("variable type is not allowed")
 
 
 def _evaluate_expression(
@@ -182,7 +193,7 @@ def _evaluate_expression(
 
     for value in variables.values():
         _guard_string_length(value)
-    _validate_expression(expression, variables, functions)
+    normalized_expression = _validate_expression(expression, variables, functions)
     names = dict(_CONSTANT_NAMES)
     names.update(variables)
     evaluator = SimpleEval(
@@ -190,7 +201,7 @@ def _evaluate_expression(
         functions=dict(functions),
         names=names,
     )
-    result = evaluator.eval(expression)
+    result = evaluator.eval(normalized_expression)
     if type(result) not in {bool, int, float, str, type(None), complex}:
         raise ExpressionPolicyError("non-scalar result")
     _guard_string_length(result)
@@ -256,6 +267,7 @@ class _EvaluateMixin:
     _node_name: str
     _functions: Mapping[str, Callable[..., Any]]
     _fallback: tuple[Any, ...]
+    _variable_types: tuple[type, ...]
 
     def _run(
         self,
@@ -265,6 +277,7 @@ class _EvaluateMixin:
         converter: Callable[[Any], tuple[Any, ...]],
     ) -> tuple[Any, ...]:
         try:
+            _validate_variable_types(variables, self._variable_types)
             result = _evaluate_expression(expression, variables, self._functions)
             converted = converter(result)
             if print_to_console == "True":
@@ -280,6 +293,7 @@ class EvaluateInts(_EvaluateMixin):
     _node_name = "Evaluate Integers"
     _functions = _NUMERIC_FUNCTIONS
     _fallback = (0, 0.0, "Error")
+    _variable_types = (int,)
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -353,6 +367,7 @@ class EvaluateFloats(_EvaluateMixin):
     _node_name = "Evaluate Floats"
     _functions = _NUMERIC_FUNCTIONS
     _fallback = (0, 0.0, "Error")
+    _variable_types = (int, float)
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -426,6 +441,7 @@ class EvaluateStrs(_EvaluateMixin):
     _node_name = "Evaluate Strings"
     _functions = _STRING_FUNCTIONS
     _fallback = ("Error",)
+    _variable_types = (str,)
 
     @classmethod
     def INPUT_TYPES(cls):

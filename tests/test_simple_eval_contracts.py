@@ -13,6 +13,19 @@ import simpleeval
 import simple_eval as subject
 
 
+class _OperationCanary:
+    def __init__(self) -> None:
+        self.operations = []
+
+    def __add__(self, other):
+        self.operations.append(("add", other))
+        return []
+
+    def __mul__(self, other):
+        self.operations.append(("multiply", other))
+        return []
+
+
 class SimpleEvalBehaviorTests(unittest.TestCase):
     def setUp(self) -> None:
         self.ints = subject.EvaluateInts()
@@ -81,6 +94,45 @@ class SimpleEvalBehaviorTests(unittest.TestCase):
             lambda: self.strings.evaluate("a == b or False", "False", "x", "x", ""),
             ("True",),
         )
+
+    def test_outer_whitespace_preserves_baseline_expression_compatibility(self) -> None:
+        self.assert_silent_result(
+            lambda: self.ints.evaluate("   (a + b) * 2 \n", "False", 3, 4, 0),
+            (14, 14.0, "14"),
+        )
+        self.assert_silent_result(
+            lambda: self.strings.evaluate(" \t a + b \r\n", "False", "left", "right", ""),
+            ("leftright",),
+        )
+
+    def test_invalid_variable_types_are_rejected_before_overloaded_operations(self) -> None:
+        for invalid in (["x"], ("x",)):
+            with self.subTest(invalid_type=type(invalid).__name__):
+                self.assert_silent_result(
+                    lambda invalid=invalid: self.strings.evaluate("a", "False", invalid),
+                    ("Error",),
+                )
+
+        add_canary = _OperationCanary()
+        self.assert_silent_result(
+            lambda: self.strings.evaluate("a + b", "False", add_canary, add_canary, ""),
+            ("Error",),
+        )
+        self.assertEqual([], add_canary.operations)
+
+        multiply_canary = _OperationCanary()
+        self.assert_silent_result(
+            lambda: self.strings.evaluate("a * b", "False", multiply_canary, 1_000_000, ""),
+            ("Error",),
+        )
+        self.assertEqual([], multiply_canary.operations)
+
+        numeric_canary = _OperationCanary()
+        self.assert_silent_result(
+            lambda: self.ints.evaluate("a + 1", "False", numeric_canary, 0, 0),
+            (0, 0.0, "Error"),
+        )
+        self.assertEqual([], numeric_canary.operations)
 
     def test_random_and_mutated_upstream_default_functions_are_rejected(self) -> None:
         with mock.patch.dict(
