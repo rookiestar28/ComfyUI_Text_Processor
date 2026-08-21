@@ -8,10 +8,14 @@ from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from datetime import datetime
 from importlib import import_module
+from typing import Any, Callable
 import folder_paths
 
+# CRITICAL: keep this sentinel defined; clean CI/hosts may omit the optional predictor.
+convert_v2_5_from_siglip: Callable[..., tuple[Any, Any]] | None = None
 try:
-    from aesthetic_predictor_v2_5 import convert_v2_5_from_siglip
+    from aesthetic_predictor_v2_5 import convert_v2_5_from_siglip as _convert_v2_5_from_siglip
+    convert_v2_5_from_siglip = _convert_v2_5_from_siglip
     AESTHETIC_AVAILABLE = True
 except ImportError:
     AESTHETIC_AVAILABLE = False
@@ -462,7 +466,7 @@ class AdvancedImageSaver:
             print("[AdvancedImageSaver] Aesthetic scoring requires allow_aesthetic_remote_code=true.")
             return False
         
-        if not AESTHETIC_AVAILABLE:
+        if not AESTHETIC_AVAILABLE or not callable(convert_v2_5_from_siglip):
             self.aesthetic_status = "failed"
             self.aesthetic_last_error = "aesthetic_predictor_v2_5 module not installed."
             print("[AdvancedImageSaver] Aesthetic scoring unavailable: aesthetic_predictor_v2_5 module not installed.")

@@ -1,3 +1,5 @@
+import builtins
+import importlib.util
 import sys
 import tempfile
 import types
@@ -16,6 +18,28 @@ if "folder_paths" not in sys.modules:
 
 import advanced_image_saver
 from advanced_image_saver import AdvancedImageSaver
+
+
+def import_advanced_image_saver_without_optional_predictor():
+    module_name = "_advanced_image_saver_without_optional_predictor"
+    spec = importlib.util.spec_from_file_location(module_name, advanced_image_saver.__file__)
+    if spec is None or spec.loader is None:
+        raise AssertionError("could not create isolated advanced_image_saver import spec")
+    module = importlib.util.module_from_spec(spec)
+    real_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "aesthetic_predictor_v2_5":
+            raise ImportError("simulated optional predictor absence")
+        return real_import(name, globals, locals, fromlist, level)
+
+    sys.modules[module_name] = module
+    try:
+        with patch.object(builtins, "__import__", guarded_import):
+            spec.loader.exec_module(module)
+        return module
+    finally:
+        sys.modules.pop(module_name, None)
 
 
 class AdvancedImageSaverAestheticTests(unittest.TestCase):
@@ -42,6 +66,43 @@ class AdvancedImageSaverAestheticTests(unittest.TestCase):
 
         node.load_predictor.assert_not_called()
         self.assertEqual(["N/A"], result["result"][2])
+
+    def test_missing_optional_predictor_has_stable_fail_closed_boundary(self):
+        isolated_module = import_advanced_image_saver_without_optional_predictor()
+
+        self.assertFalse(isolated_module.AESTHETIC_AVAILABLE)
+        self.assertIsNone(
+            getattr(isolated_module, "convert_v2_5_from_siglip", "missing")
+        )
+
+        converter = Mock()
+        with patch.object(
+            isolated_module, "convert_v2_5_from_siglip", converter
+        ):
+            node = isolated_module.AdvancedImageSaver()
+            loaded = node.load_predictor(allow_remote_code=True)
+
+        self.assertFalse(loaded)
+        self.assertEqual(
+            "aesthetic_predictor_v2_5 module not installed.",
+            node.aesthetic_last_error,
+        )
+        converter.assert_not_called()
+
+    def test_non_callable_converter_state_fails_closed(self):
+        node = AdvancedImageSaver()
+
+        with patch.object(advanced_image_saver, "AESTHETIC_AVAILABLE", True):
+            with patch.object(
+                advanced_image_saver, "convert_v2_5_from_siglip", None
+            ):
+                loaded = node.load_predictor(allow_remote_code=True)
+
+        self.assertFalse(loaded)
+        self.assertEqual(
+            "aesthetic_predictor_v2_5 module not installed.",
+            node.aesthetic_last_error,
+        )
 
     def test_load_predictor_requires_remote_code_opt_in(self):
         node = AdvancedImageSaver()
