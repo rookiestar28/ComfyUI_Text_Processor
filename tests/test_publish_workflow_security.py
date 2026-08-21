@@ -147,6 +147,53 @@ class PublishWorkflowSecurityTests(unittest.TestCase):
         self.assertRegex(ci_text, r"torchvision @ https://download\.pytorch\.org/.+#sha256=[0-9a-f]{64}")
         self.assertIn("comfy-cli==1.16.0", PUBLISH_LOCK.read_text(encoding="utf-8"))
 
+    def test_ci_lock_pins_pillow_at_complete_security_floor(self):
+        ci_text = CI_LOCK.read_text(encoding="utf-8")
+        match = re.search(r"(?mi)^pillow==(\d+)\.(\d+)\.(\d+)\s+\\$", ci_text)
+        self.assertIsNotNone(match, "CI lock must contain one exact Pillow pin")
+        self.assertGreaterEqual(
+            tuple(int(part) for part in match.groups()),
+            (12, 3, 0),
+            "Pillow 12.3.0 is the first release covering the complete advisory set",
+        )
+
+        pillow_block = ci_text[match.start() :].split("\nplatformdirs==", 1)[0]
+        self.assertIn("--hash=sha256:", pillow_block)
+        self.assertNotIn(" @ ", pillow_block.splitlines()[0])
+
+    def test_ci_lock_pins_requests_at_security_floor_without_product_reachability(self):
+        ci_text = CI_LOCK.read_text(encoding="utf-8")
+        publish_text = PUBLISH_LOCK.read_text(encoding="utf-8")
+        pattern = r"(?mi)^requests==(\d+)\.(\d+)\.(\d+)\s+\\$"
+        ci_match = re.search(pattern, ci_text)
+        publish_match = re.search(pattern, publish_text)
+        self.assertIsNotNone(ci_match, "CI lock must contain one exact Requests pin")
+        self.assertIsNotNone(
+            publish_match, "publication lock must contain one exact Requests pin"
+        )
+        ci_version = tuple(int(part) for part in ci_match.groups())
+        publish_version = tuple(int(part) for part in publish_match.groups())
+        self.assertGreaterEqual(
+            ci_version,
+            (2, 33, 0),
+            "Requests 2.33.0 is the first release outside the vulnerable range",
+        )
+        self.assertEqual(ci_version, (2, 34, 2))
+        self.assertEqual(ci_version, publish_version)
+
+        requests_block = ci_text[ci_match.start() :].split("\nsimpleeval==", 1)[0]
+        self.assertIn("--hash=sha256:", requests_block)
+        self.assertNotIn(" @ ", requests_block.splitlines()[0])
+
+        for path in ROOT.glob("*.py"):
+            product_text = path.read_text(encoding="utf-8")
+            self.assertNotRegex(
+                product_text,
+                r"(?m)^\s*(?:import requests\b|from requests\b)",
+                f"Requests must remain outside product source: {path.name}",
+            )
+            self.assertNotIn("extract_zipped_paths", product_text, path.name)
+
     def test_detect_secrets_uses_selected_hash_locked_interpreter(self):
         config = PRECOMMIT_CONFIG.read_text(encoding="utf-8")
         ci_lock = CI_LOCK.read_text(encoding="utf-8")
