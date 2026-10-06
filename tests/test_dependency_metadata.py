@@ -68,22 +68,8 @@ class DependencyMetadataTests(unittest.TestCase):
             pyproject["tool"]["comfy"].get("requires-comfyui"),
         )
 
-    @unittest.skipIf(tomllib is None, "tomllib is unavailable in this Python runtime")
-    def test_project_release_version_is_1_8_2(self):
-        pyproject = _load_pyproject()
-        self.assertEqual("1.8.2", pyproject["project"]["version"])
-
-    def test_readme_release_contract_is_current(self):
+    def test_readme_documents_behavior_without_internal_content(self):
         readme = (REPO_DIR / "README.md").read_text(encoding="utf-8")
-        self.assertIn(
-            "- Version 1.8.2 supports Python 3.10+ and ComfyUI Core 0.22.3+",
-            readme,
-        )
-        self.assertIn(
-            "* **Release requirements:** ComfyUI Text Processor 1.8.2 requires Python 3.10+",
-            readme,
-        )
-        self.assertNotIn("1.7.3", readme)
         self.assertIn("* **17 Operation Modes**:", readme)
         self.assertIn(
             "normalizes missing-match routing and preserves\n"
