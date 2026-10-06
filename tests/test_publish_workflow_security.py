@@ -13,6 +13,56 @@ WINDOWS_FULL_GATE = ROOT / "scripts" / "run_full_tests_windows.ps1"
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
+def audit_locked_package(
+    text: str, package: str, minimum: tuple[int, int, int]
+) -> list[str]:
+    blocks = re.findall(
+        rf"(?m)^{re.escape(package)}(?=[= @<>!;\[]).*"
+        r"(?:\n[ \t].*)*",
+        text,
+    )
+    if len(blocks) != 1:
+        return [f"{package}:missing_or_duplicate_pin"]
+    block = blocks[0]
+    pin = re.fullmatch(
+        rf"{re.escape(package)}==(\d+)\.(\d+)\.(\d+)\s+\\",
+        block.splitlines()[0],
+    )
+    if pin is None:
+        return [f"{package}:non_exact_final_pin"]
+    findings = []
+    if tuple(int(part) for part in pin.groups()) < minimum:
+        findings.append(f"{package}:below_security_floor")
+    hashes = re.findall(r"--hash=sha256:([^\s\\]+)", block)
+    if not hashes or any(re.fullmatch(r"[0-9a-f]{64}", value) is None for value in hashes):
+        findings.append(f"{package}:missing_or_invalid_hash")
+    return findings
+
+
+def audit_urllib3_locks(ci_text: str, publish_text: str) -> list[str]:
+    # CRITICAL: checking CI alone leaves publication's separate HTTP tool lock vulnerable.
+    findings = []
+    for label, text in (("ci", ci_text), ("publish", publish_text)):
+        findings.extend(
+            f"{label}:{finding}"
+            for finding in audit_locked_package(text, "urllib3", (2, 8, 0))
+        )
+    if not findings:
+        pattern = r"(?m)^urllib3==([^\s]+)"
+        ci_pin = re.search(pattern, ci_text).group(1)
+        publish_pin = re.search(pattern, publish_text).group(1)
+        if ci_pin != publish_pin:
+            findings.append("urllib3:manifest_version_drift")
+    return findings
+
+
+def audit_virtualenv_lock(ci_text: str) -> list[str]:
+    # CRITICAL: virtualenv 21.7.13 alone conflicts with python-discovery 1.5.2 in hashed installs.
+    return audit_locked_package(ci_text, "virtualenv", (21, 7, 13)) + audit_locked_package(
+        ci_text, "python-discovery", (1, 6, 0)
+    )
+
+
 def audit_workflow(text):
     findings = []
     lowered = text.lower()
@@ -228,6 +278,65 @@ class PublishWorkflowSecurityTests(unittest.TestCase):
         self.assertNotRegex(mutations[1], r"(?m)^detect-secrets==1\.5\.0")
         self.assertNotIn('export PATH="$(dirname "$SelectedPython"):$PATH"', mutations[2])
         self.assertNotIn("[IO.Path]::PathSeparator", mutations[3])
+
+    def test_both_tool_locks_pin_urllib3_at_complete_security_floor(self):
+        self.assertEqual(
+            audit_urllib3_locks(
+                CI_LOCK.read_text(encoding="utf-8"),
+                PUBLISH_LOCK.read_text(encoding="utf-8"),
+            ),
+            [],
+        )
+
+    def test_urllib3_security_pin_rejects_insecure_or_unhashed_mutations(self):
+        safe = "urllib3==2.8.0 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+        self.assertEqual(audit_locked_package(safe, "urllib3", (2, 8, 0)), [])
+        mutations = (
+            safe.replace("2.8.0", "2.7.0"),
+            safe.replace("2.8.0", "1.26.20"),
+            safe.replace("2.8.0", "2.8.0rc1"),
+            safe.replace("urllib3==2.8.0", "urllib3>=2.8.0"),
+            "",
+            safe + safe,
+            safe.splitlines()[0] + "\n",
+            safe.replace("a" * 64, "invalid"),
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                self.assertTrue(audit_locked_package(mutation, "urllib3", (2, 8, 0)))
+
+    def test_urllib3_lock_pair_rejects_publication_only_downgrade_or_drift(self):
+        safe = "urllib3==2.8.0 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+        self.assertEqual(audit_urllib3_locks(safe, safe), [])
+        for publish in (safe.replace("2.8.0", "2.7.0"), safe.replace("2.8.0", "2.9.0")):
+            with self.subTest(publish=publish):
+                self.assertTrue(audit_urllib3_locks(safe, publish))
+
+    def test_ci_virtualenv_security_floor_and_companion_dependency_are_compatible(self):
+        self.assertEqual(audit_virtualenv_lock(CI_LOCK.read_text(encoding="utf-8")), [])
+
+    def test_virtualenv_lock_rejects_all_vulnerable_intermediate_floors(self):
+        safe = (
+            "virtualenv==21.7.13 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+            "python-discovery==1.6.0 \\\n    --hash=sha256:" + "b" * 64 + "\n"
+        )
+        self.assertEqual(audit_virtualenv_lock(safe), [])
+        for version in ("21.7.4", "21.7.10", "21.7.11", "21.7.12"):
+            with self.subTest(version=version):
+                self.assertTrue(audit_virtualenv_lock(safe.replace("21.7.13", version)))
+
+    def test_virtualenv_lock_rejects_stale_or_missing_companion_pin(self):
+        safe = (
+            "virtualenv==21.7.13 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+            "python-discovery==1.6.0 \\\n    --hash=sha256:" + "b" * 64 + "\n"
+        )
+        for mutation in (
+            safe.replace("1.6.0", "1.5.2"),
+            safe.split("python-discovery==", 1)[0],
+            safe + safe.split("python-discovery==", 1)[0],
+        ):
+            with self.subTest(mutation=mutation):
+                self.assertTrue(audit_virtualenv_lock(mutation))
 
     def test_mutations_are_detected(self):
         mutations = (
