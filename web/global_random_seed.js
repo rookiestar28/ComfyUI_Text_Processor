@@ -109,29 +109,77 @@ function findWidget(node, name) {
 }
 
 function resolveNode(nodeId) {
-  const candidates = [nodeId];
-  if (/^(0|[1-9][0-9]*)$/.test(nodeId)) {
-    const numericId = Number(nodeId);
-    if (Number.isSafeInteger(numericId)) {
-      candidates.push(numericId);
-    }
+  // CRITICAL: execution IDs are root-relative instance paths, never leaf IDs.
+  // Searching the active graph after a root miss can overwrite an unrelated seed.
+  const graph = [app.rootGraph, app.graph, app.canvas?.graph].find(
+    (value) => typeof value?.getNodeById === "function",
+  );
+  if (!graph || nodeId.length > 4096) {
+    return undefined;
   }
 
-  const graphs = [app.rootGraph, app.graph, app.canvas?.graph];
-  const visited = new Set();
-  for (const graph of graphs) {
-    if (!graph || visited.has(graph) || typeof graph.getNodeById !== "function") {
-      continue;
+  // Bound malformed/ambiguous graphs: at most 32 edges and 1024 lookup calls.
+  const ancestors = new Set();
+  let work = 0;
+  let invalid = false;
+  const lookup = (current, id) => {
+    const ids = [id];
+    if (/^(0|[1-9][0-9]*)$/.test(id) && Number.isSafeInteger(Number(id))) {
+      ids.push(Number(id));
     }
-    visited.add(graph);
-    for (const candidate of candidates) {
-      const node = graph.getNodeById(candidate);
-      if (node) {
-        return node;
+    let found;
+    for (const candidate of ids) {
+      if (++work > 1024) {
+        invalid = true;
+        return undefined;
       }
+      const node = current.getNodeById(candidate);
+      if (node && found && node !== found) {
+        invalid = true;
+        return undefined;
+      }
+      if (node) found = node;
     }
+    return found;
+  };
+  const visit = (current, id, depth) => {
+    if (invalid) return undefined;
+    if (depth > 32 || ancestors.has(current) || typeof current?.getNodeById !== "function") {
+      invalid = true;
+      return undefined;
+    }
+    ancestors.add(current);
+    let resolved;
+    try {
+      for (let end = id.indexOf(":"); end !== -1; end = id.indexOf(":", end + 1)) {
+        if (end === 0 || end === id.length - 1) continue;
+        const host = lookup(current, id.slice(0, end));
+        if (invalid) return undefined;
+        if (typeof host?.isSubgraphNode !== "function" || !host.isSubgraphNode()) continue;
+        const nested = visit(host.subgraph, id.slice(end + 1), depth + 1);
+        if (invalid) return undefined;
+        if (nested) {
+          // Distinct valid instance paths are ambiguous even with a shared definition.
+          if (resolved) {
+            invalid = true;
+            return undefined;
+          }
+          resolved = nested;
+        }
+      }
+      // A verified path precedes a literal colon ID, matching host resolution.
+      return resolved ?? lookup(current, id);
+    } finally {
+      ancestors.delete(current);
+    }
+  };
+  try {
+    const node = visit(graph, nodeId, 0);
+    return invalid ? undefined : node;
+  } catch {
+    // Deleted or malformed host interfaces must not redirect writes elsewhere.
+    return undefined;
   }
-  return undefined;
 }
 
 function setWidgetValue(node, name, value) {

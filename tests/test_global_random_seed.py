@@ -377,6 +377,28 @@ class GlobalRandomSeedPromptTests(unittest.TestCase):
         targets = server.sent[0][1]["targets"]
         self.assertEqual(["2", "11", "alpha"], [target["node_id"] for target in targets])
 
+    def test_qualified_ids_are_preserved_in_prompt_and_client_event(self):
+        original = _envelope({
+            "10:inner:controller": _controller(value="100", distribution="increment"),
+            "11:inner:target": {"class_type": "Target", "inputs": {"seed": 0}},
+            "10:inner:target": {"class_type": "Target", "inputs": {"noise_seed": 0, "other": 17}},
+        })
+        original["extra_data"] = {"extra_pnginfo": {"workflow": {"nodes": []}}}
+        before = copy.deepcopy(original)
+        result, server = self.run_hook(original)
+        self.assertEqual(before, original)
+        self.assertEqual(set(before["prompt"]), set(result["prompt"]))
+        self.assertEqual(100, result["prompt"]["10:inner:target"]["inputs"]["noise_seed"])
+        self.assertEqual(101, result["prompt"]["11:inner:target"]["inputs"]["seed"])
+        self.assertEqual(17, result["prompt"]["10:inner:target"]["inputs"]["other"])
+        self.assertEqual(before["extra_data"], result["extra_data"])
+        event, payload, sid = server.sent[0]
+        self.assertEqual("text-processor-global-random-seed", event)
+        self.assertEqual("client-a", sid)
+        self.assertEqual("10:inner:controller", payload["controller_id"])
+        self.assertEqual(["10:inner:target", "11:inner:target"], [target["node_id"] for target in payload["targets"]])
+        self.assertEqual({"controller_id", "seed_width", "timing", "queue_action", "distribution", "applied_seed", "next_value", "targets"}, set(payload))
+
     def test_inspire_seed_boundary_does_not_touch_independent_seed_fields(self):
         maximum = "9007199254740991"
         data = _envelope(
