@@ -1,3 +1,8 @@
+try:
+    from host_contracts import host_matrix, host_tiers
+except ModuleNotFoundError:
+    from tests.host_contracts import host_matrix, host_tiers
+
 import json
 import re
 import unittest
@@ -103,7 +108,7 @@ class NodeHelpContractTests(unittest.TestCase):
 
         self.assertEqual(frozen["nodes"], actual)
 
-    def test_two_tier_help_transport_is_pinned_and_identical(self):
+    def test_historical_two_tier_help_transport_is_pinned_and_identical(self):
         contract = self.load_help_contract()
         tiers = contract["tiers"]
         self.assertEqual({"desktop_floor", "current_observation"}, set(tiers))

@@ -1,3 +1,8 @@
+try:
+    from host_contracts import host_matrix, host_tiers
+except ModuleNotFoundError:
+    from tests.host_contracts import host_matrix, host_tiers
+
 import json
 import re
 import unittest
@@ -15,7 +20,7 @@ FIXTURE_PATH = (
 
 
 class AdvancedResolutionRuntimeLabelContractTests(unittest.TestCase):
-    def test_runtime_fixture_pins_both_supported_host_tiers(self):
+    def test_historical_runtime_fixture_pins_two_host_tiers(self):
         fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
         self.assertEqual(1, fixture["schema_version"])
         self.assertEqual(

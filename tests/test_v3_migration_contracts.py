@@ -1,3 +1,8 @@
+try:
+    from host_contracts import host_matrix, host_tiers
+except ModuleNotFoundError:
+    from tests.host_contracts import host_matrix, host_tiers
+
 import copy
 import importlib.util
 import json
@@ -174,7 +179,7 @@ class V3MigrationContractTests(unittest.TestCase):
                     f"required migration artifact missing: {path.name}",
                 )
 
-    def test_decision_and_two_tier_sources_are_pinned(self):
+    def test_historical_decision_and_two_tier_sources_are_pinned(self):
         contract = _load_json(MIGRATION_CONTRACT_PATH)
 
         self.assertEqual(1, contract["schema_version"])
@@ -300,7 +305,7 @@ class V3MigrationContractTests(unittest.TestCase):
             v1_contract = _normalize_node_contract(v1_class)
             display_name = package.NODE_DISPLAY_NAME_MAPPINGS["TextInput"]
 
-            for tier in contract["supported_tiers"]:
+            for tier in host_tiers():
                 with self.subTest(tier=tier["id"]):
                     prototype = prototype_module.build_text_input_v3_prototype(
                         _FakeIO(tier["id"])
@@ -339,7 +344,7 @@ class V3MigrationContractTests(unittest.TestCase):
             v1_contract = _normalize_node_contract(v1_class)
             widget_names = _widget_input_names(v1_contract)
 
-            for tier in contract["supported_tiers"]:
+            for tier in host_tiers():
                 prototype = prototype_module.build_text_input_v3_prototype(_FakeIO(tier["id"]))
                 for workflow in workflows["workflows"]:
                     with self.subTest(tier=tier["id"], workflow=workflow["id"]):

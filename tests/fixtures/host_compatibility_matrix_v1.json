@@ -1,0 +1,579 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-29",
+  "evidence_kind": "source_derived_contract",
+  "host_execution_verified": false,
+  "tiers": [
+    {
+      "id": "desktop_floor",
+      "pair_relation": "desktop_declared_pair",
+      "core": {
+        "version": "0.22.3",
+        "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "declared_frontend_version": "1.43.18",
+        "sources": {
+          "comfyui_version.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "1e6429eda54869db2cc35ed556105d080bd35757", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/comfyui_version.py"
+          },
+          "requirements.txt": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "43d496f63d17aaaa08f36eade8de900f84b2fb21", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/requirements.txt"
+          },
+          "nodes.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "fdd6eeb5f459631fa6e6fefff2efe49feaa23a40", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/nodes.py"
+          },
+          "server.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "44470b9042ed972ea68db915d270fbb470ffe216", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/server.py"
+          },
+          "execution.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "4c7de2e84e781d6791e2c04d9bdb7dd86687e907", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/execution.py"
+          },
+          "folder_paths.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "ad7f0f4fc3e9c48c5b1db69e0fcbf4df0cc5c109", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/folder_paths.py"
+          },
+          "comfy_api/v0_0_2/__init__.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "c4fa1d97116dd23985244856eabb6076c3a0689f", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/comfy_api/v0_0_2/__init__.py"
+          },
+          "comfy_api/version_list.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "be6e1db663974fcf7fb0b4fd7299742e9d4ec724", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/comfy_api/version_list.py"
+          },
+          "comfy_api/latest/_io.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "5ed968960b1c78e9a200b9a740bc4f7c629ac83c", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/comfy_api/latest/_io.py"
+          },
+          "comfy_extras/nodes_resolution.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "520b4067e271b928d2a75f56bded77b63aabbdd6", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/comfy_extras/nodes_resolution.py"
+          },
+          "comfy/cli_args.py": {
+            "commit": "7c47f4db5b9bc8c8cc0923c74392a111c858d539", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "76faed3ad5afc667c209a2d82b6e0ad934de4c80", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/7c47f4db5b9bc8c8cc0923c74392a111c858d539/comfy/cli_args.py"
+          }
+        }
+      },
+      "frontend": {
+        "version": "1.43.18",
+        "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "sources": {
+          "package.json": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "60b0131c0f86a76d273ac86cd34ae3f6c8cb06cd", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/package.json"
+          },
+          "src/scripts/app.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "da2f071769705f46178852c7230f6d9d83e7ec13", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/scripts/app.ts"
+          },
+          "src/scripts/api.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "23f074b99c01a2ea8381ca9fb00de641ab7dca2f", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/scripts/api.ts"
+          },
+          "src/services/extensionService.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "57213b897d054855a2a9990f312d43e3581bcf2f", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/services/extensionService.ts"
+          },
+          "src/services/litegraphService.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "832a355eed5493c13065d123aeeacc20c7907762", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/services/litegraphService.ts"
+          },
+          "src/utils/executionUtil.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "a57d60822f7467510aeb6db96f217ac558515e41", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/utils/executionUtil.ts"
+          },
+          "src/lib/litegraph/src/subgraph/ExecutableNodeDTO.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "1ea33b319d41b5e0225b41a0a4fbb70ad1da53be", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/lib/litegraph/src/subgraph/ExecutableNodeDTO.ts"
+          },
+          "src/utils/graphTraversalUtil.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "c9167bdebf65d85b46481d8966df19070b6e73f8", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/utils/graphTraversalUtil.ts"
+          },
+          "src/lib/litegraph/src/LGraph.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "9699e5f453ce618912d70d54814f99043c2a78e7", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/lib/litegraph/src/LGraph.ts"
+          },
+          "src/lib/litegraph/src/widgets/BaseWidget.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "b87d4aad18e3be1572c24dc7c16177518c3c7fd0", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/lib/litegraph/src/widgets/BaseWidget.ts"
+          },
+          "src/lib/litegraph/src/node/NodeSlot.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "86329660a4f34a78f19d996113caab20a423b068", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/lib/litegraph/src/node/NodeSlot.ts"
+          },
+          "src/services/nodeHelpService.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "3bbebfdda3fa4705378c4de838b2df6bda7fb79a", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/services/nodeHelpService.ts"
+          },
+          "src/composables/useNodeHelpContent.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "81ef9ae473f362d271d1d18f8fe4e84c4985e79d", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/composables/useNodeHelpContent.ts"
+          },
+          "src/workbench/utils/nodeHelpUtil.ts": {
+            "commit": "6a207bb52a887b1a70fbf654641ebc57710f97c7", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "2efec34a0214029df0c7adffe8929175c6def1cd", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/6a207bb52a887b1a70fbf654641ebc57710f97c7/src/workbench/utils/nodeHelpUtil.ts"
+          }
+        }
+      },
+      "widget_facade": "legacy"
+    },
+    {
+      "id": "core_declared_frontend",
+      "pair_relation": "core_declared_pair",
+      "core": {
+        "version": "0.43.0",
+        "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "declared_frontend_version": "1.57.6",
+        "release_tag_commit": "426f5eea52a7ece1dd599fff4cb6cd1f352ddd24", "_release_tag_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "post_release_commits": 14,
+        "sources": {
+          "comfyui_version.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "e0603fa15e00b40fd1ab9e1b4fb261385c269e63", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfyui_version.py"
+          },
+          "requirements.txt": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "ed0149955555516bbaa553554f6ac04af135c0e9", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/requirements.txt"
+          },
+          "nodes.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "e279ae2fec49c23a97f2079b63b696aa0510de50", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/nodes.py"
+          },
+          "server.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "3eb75d925bbe2b50e03c75bf5a2035eb67675caa", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/server.py"
+          },
+          "execution.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "3d67a46277d0353bdd68235ba31329b9550bee0e", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/execution.py"
+          },
+          "folder_paths.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "0673f6c958688ee5771cca35aa653b2062b02d60", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/folder_paths.py"
+          },
+          "app/governance.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "2172818ed8cf7e37f99e71cd429f8ecdf754f542", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/app/governance.py"
+          },
+          "comfy_execution/asset_enrichment.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "cd1eb0f6b84b3d033776b6a764ff59631b63ef66", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_execution/asset_enrichment.py"
+          },
+          "comfy_execution/media_enrichment.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "707f3fd2ccff73b617b77f33a64d0167f8ff87dc", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_execution/media_enrichment.py"
+          },
+          "comfy_api/v0_0_2/__init__.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "c4fa1d97116dd23985244856eabb6076c3a0689f", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_api/v0_0_2/__init__.py"
+          },
+          "comfy_api/version_list.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "be6e1db663974fcf7fb0b4fd7299742e9d4ec724", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_api/version_list.py"
+          },
+          "comfy_api/latest/_io.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "42d2d1f374f74bcf2c82c9b5fad94ad72752448b", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_api/latest/_io.py"
+          },
+          "comfy_extras/nodes_resolution.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "945a05538c5485bc318994b5de2bc927fd10a989", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_extras/nodes_resolution.py"
+          },
+          "comfy/cli_args.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "bd605a703802084e2cac38eecf0019d35dc382ce", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy/cli_args.py"
+          }
+        }
+      },
+      "frontend": {
+        "version": "1.57.6",
+        "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "sources": {
+          "package.json": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "66c5a1d25a44b1590572417729909cc6d6a157d5", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/package.json"
+          },
+          "src/scripts/app.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "ec183fea31d44da37c1070e20618cbb742cc3184", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/scripts/app.ts"
+          },
+          "src/scripts/api.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "6ba14e3779c643f7fc13f79dab2a9a5a60691292", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/scripts/api.ts"
+          },
+          "src/services/extensionService.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "1af9950780569a7a6e2413d27a60bfa203961f07", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/services/extensionService.ts"
+          },
+          "src/services/litegraphService.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "d2917be9ad05ac66b562a5735946c79fdf35a3e0", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/services/litegraphService.ts"
+          },
+          "src/utils/executionUtil.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "5744a7843eaec8f4c1425db3f81a3137657290dd", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/utils/executionUtil.ts"
+          },
+          "src/lib/litegraph/src/subgraph/ExecutableNodeDTO.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "11f41ca578ec8342e10286cafd87f080caf38334", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/lib/litegraph/src/subgraph/ExecutableNodeDTO.ts"
+          },
+          "src/utils/graphTraversalUtil.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "556a04cc690b42b1e53d2e1d198ac799ec3afca1", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/utils/graphTraversalUtil.ts"
+          },
+          "src/lib/litegraph/src/LGraph.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "27b708d1fc4ac982c5232c3ce746cb8125e68d40", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/lib/litegraph/src/LGraph.ts"
+          },
+          "src/lib/litegraph/src/widgets/BaseWidget.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "5ed3e6430f8d28b20b9ed3a89d3f117d810deb51", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/lib/litegraph/src/widgets/BaseWidget.ts"
+          },
+          "src/core/graph/widgets/nodeWidgetValues.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "9c4b50c1dcf4bb16e73d605d75508f24210f38a7", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/core/graph/widgets/nodeWidgetValues.ts"
+          },
+          "src/lib/litegraph/src/node/NodeSlot.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "1400099ef0144ba205967e20e35d65371deba44c", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/lib/litegraph/src/node/NodeSlot.ts"
+          },
+          "src/core/graph/nodeShell/slotLabelReactivity.regression.test.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "8bd5bc60b0d5a78f318c7f328e3cae7c774f4f83", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/core/graph/nodeShell/slotLabelReactivity.regression.test.ts"
+          },
+          "src/components/builder/useResolvedSelectedInputs.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "c627f5b8ee01aaa882aa24031f37e302ef1ca4a3", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/components/builder/useResolvedSelectedInputs.ts"
+          },
+          "src/services/nodeHelpService.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "f51f6215302c08c9d0418b1ae5422cb8b7aeb0bf", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/services/nodeHelpService.ts"
+          },
+          "src/composables/useNodeHelpContent.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "81ef9ae473f362d271d1d18f8fe4e84c4985e79d", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/composables/useNodeHelpContent.ts"
+          },
+          "src/workbench/utils/nodeHelpUtil.ts": {
+            "commit": "142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "2efec34a0214029df0c7adffe8929175c6def1cd", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/142b9fc0a9a2d6e4fcc5275aaee7d61f575a5890/src/workbench/utils/nodeHelpUtil.ts"
+          }
+        }
+      },
+      "widget_facade": "state_backed"
+    },
+    {
+      "id": "independent_frontend_head",
+      "pair_relation": "independent_source_observation",
+      "core": {
+        "version": "0.43.0",
+        "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "declared_frontend_version": "1.57.6",
+        "release_tag_commit": "426f5eea52a7ece1dd599fff4cb6cd1f352ddd24", "_release_tag_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "post_release_commits": 14,
+        "sources": {
+          "comfyui_version.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "e0603fa15e00b40fd1ab9e1b4fb261385c269e63", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfyui_version.py"
+          },
+          "requirements.txt": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "ed0149955555516bbaa553554f6ac04af135c0e9", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/requirements.txt"
+          },
+          "nodes.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "e279ae2fec49c23a97f2079b63b696aa0510de50", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/nodes.py"
+          },
+          "server.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "3eb75d925bbe2b50e03c75bf5a2035eb67675caa", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/server.py"
+          },
+          "execution.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "3d67a46277d0353bdd68235ba31329b9550bee0e", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/execution.py"
+          },
+          "folder_paths.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "0673f6c958688ee5771cca35aa653b2062b02d60", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/folder_paths.py"
+          },
+          "app/governance.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "2172818ed8cf7e37f99e71cd429f8ecdf754f542", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/app/governance.py"
+          },
+          "comfy_execution/asset_enrichment.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "cd1eb0f6b84b3d033776b6a764ff59631b63ef66", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_execution/asset_enrichment.py"
+          },
+          "comfy_execution/media_enrichment.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "707f3fd2ccff73b617b77f33a64d0167f8ff87dc", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_execution/media_enrichment.py"
+          },
+          "comfy_api/v0_0_2/__init__.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "c4fa1d97116dd23985244856eabb6076c3a0689f", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_api/v0_0_2/__init__.py"
+          },
+          "comfy_api/version_list.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "be6e1db663974fcf7fb0b4fd7299742e9d4ec724", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_api/version_list.py"
+          },
+          "comfy_api/latest/_io.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "42d2d1f374f74bcf2c82c9b5fad94ad72752448b", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_api/latest/_io.py"
+          },
+          "comfy_extras/nodes_resolution.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "945a05538c5485bc318994b5de2bc927fd10a989", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy_extras/nodes_resolution.py"
+          },
+          "comfy/cli_args.py": {
+            "commit": "fd7639f477050e5c25b68fc38a9c2a6b6d988211", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "bd605a703802084e2cac38eecf0019d35dc382ce", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI/blob/fd7639f477050e5c25b68fc38a9c2a6b6d988211/comfy/cli_args.py"
+          }
+        }
+      },
+      "frontend": {
+        "version": "1.60.0",
+        "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "release_tag_commit": "5cb2899fc4bc5034513fbafae72b39265c4a213e", "_release_tag_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+        "post_release_commits": 108,
+        "sources": {
+          "package.json": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "c03b0928ee7e6fcf66fd4cecc3057f97cca134ee", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/package.json"
+          },
+          "src/scripts/app.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "3436e03163635fc5d8d4ab018ce43ea5601ca7a6", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/scripts/app.ts"
+          },
+          "src/scripts/api.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "9ceac174ebc758f78973f382ddaca73f0b3e423f", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/scripts/api.ts"
+          },
+          "src/services/extensionService.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "f94b6f8d8b2ea710b33090da23452be9b0c09ef9", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/services/extensionService.ts"
+          },
+          "src/services/litegraphService.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "838f34d114234bfa5e5b7054f612efdb5e1d8297", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/services/litegraphService.ts"
+          },
+          "src/utils/executionUtil.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "184c262f47182a1ea09c01211fb85e720195d499", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/utils/executionUtil.ts"
+          },
+          "src/lib/litegraph/src/subgraph/ExecutableNodeDTO.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "41b2f1fd31528eaf65f3a971c415c50584824dbc", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/lib/litegraph/src/subgraph/ExecutableNodeDTO.ts"
+          },
+          "src/utils/graphTraversalUtil.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "b8e789fe8fac0fc8e172522e3d8e0cfcf978b9f6", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/utils/graphTraversalUtil.ts"
+          },
+          "src/lib/litegraph/src/LGraph.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "c7024409b5f83178869fe7a6aaff9070223db2e3", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/lib/litegraph/src/LGraph.ts"
+          },
+          "src/lib/litegraph/src/widgets/BaseWidget.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "4324cc0dfe0f5e8b474bc7b2a887c632d00b075e", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/lib/litegraph/src/widgets/BaseWidget.ts"
+          },
+          "src/core/graph/widgets/nodeWidgetValues.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "66f0a4832647cb9be246effc03c0a445123a0d7d", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/core/graph/widgets/nodeWidgetValues.ts"
+          },
+          "src/lib/litegraph/src/utils/restoredWidgetValue.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "57928c14c73e7a821301a3ac83abcb7987b8d291", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/lib/litegraph/src/utils/restoredWidgetValue.ts"
+          },
+          "src/lib/litegraph/src/node/NodeSlot.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "894801f25286d3177f8c3e466b0196e13d501b22", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/lib/litegraph/src/node/NodeSlot.ts"
+          },
+          "src/core/graph/nodeShell/slotLabelReactivity.regression.test.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "2964f0a8ca9d6ade548a829488ce457b3c9f5cc2", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/core/graph/nodeShell/slotLabelReactivity.regression.test.ts"
+          },
+          "src/components/builder/useResolvedSelectedInputs.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "6aac24aa03a19a424c1bfbdad262edc4ff1d8b41", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/components/builder/useResolvedSelectedInputs.ts"
+          },
+          "src/services/nodeHelpService.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "39f38a37f9ecc3a20b8a484d3b731383cf8bc935", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/services/nodeHelpService.ts"
+          },
+          "src/composables/useNodeHelpContent.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "56faba608c99a7d6b5a42d3c687bc4d635401e9d", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/composables/useNodeHelpContent.ts"
+          },
+          "src/workbench/utils/nodeHelpUtil.ts": {
+            "commit": "21e3646c0d4c749883fb76ee59f329567166388c", "_commit_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "blob": "1e8eeded478f8ac1ca7284af5d09b4a01f3ffec0", "_blob_note": "Public source or fixture hash; # pragma: allowlist secret",
+            "url": "https://github.com/Comfy-Org/ComfyUI_frontend/blob/21e3646c0d4c749883fb76ee59f329567166388c/src/workbench/utils/nodeHelpUtil.ts"
+          }
+        }
+      },
+      "widget_facade": "state_backed"
+    }
+  ],
+  "contracts": {
+    "prompt_handler_api": "add_on_prompt_handler(handler)",
+    "event_api": "send_sync(event, data, sid)",
+    "extension_api": "app.registerExtension",
+    "client_event_api": "api.addEventListener",
+    "localized_lookup": "/extensions/{module}/docs/{node_id}/{locale}.md",
+    "fallback_lookup": "/extensions/{module}/docs/{node_id}.md",
+    "refresh": [
+      "setDirtyCanvas",
+      "node:slot-label:changed"
+    ],
+    "v0_0_2_stable": false,
+    "loader_precedence": "V1_BEFORE_V3",
+    "decision": "DEFER_PRODUCTION",
+    "expected_node_count": 20,
+    "expected_visible_input_count": 155,
+    "expected_help_count": 10
+  },
+  "historical_fixtures_sha256": {
+    "advanced_resolution_selector_contract_v1.json": {
+      "sha256": "b9c26767ac1a4cb4b3f4513585014f7e2a14f1d05a8eb2fb11be960059c31514", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_resolution_selector_contract_v2.json": {
+      "sha256": "cd2ec31461ae719d217006ac7d800067657e7ad09015e85579b600fb08499cf3", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_resolution_selector_contract_v3.json": {
+      "sha256": "1fe13b70a340ccc59223f520972566489064f99b053519cd7b6992f3c252f094", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_resolution_selector_current_stage_v2.json": {
+      "sha256": "c277bbd230dc7e018bc063c6815d0d476a8cd5cf2b8d4a8ad7e0107c5a31f496", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_resolution_selector_current_stage_v3.json": {
+      "sha256": "f11dc5f4788bca35873cdc72f22466e72011fb334e41cf3dd6399ec99fd7109e", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_resolution_selector_legacy_migration_v2.json": {
+      "sha256": "549a506a525ef971fad231304f87db2e0f07e596e572120a99775f46c625456c", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_resolution_selector_mode_migration_v3.json": {
+      "sha256": "f29f9ce670a590aafb1c4e97b739ec2fe6af6e3a6faa95ac76c294ad7333c2c2", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_resolution_selector_runtime_labels_v1.json": {
+      "sha256": "a5f156de275809e858f14814ea4b928f5642edc47992bc1aaab7abcce95b2ba4", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "advanced_text_filter_operation_contract_v1.json": {
+      "sha256": "ca50e2cb83b201b1b32fab4981de21078ee94238f9ca6d5d0a0f61b53737e99f", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "global_random_seed_contract_v1.json": {
+      "sha256": "bb0642f7f5fe1799bb111fcada67706739864c0e8ff0b227b00b6c20c896fc1d", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "global_random_seed_host_tiers_v1.json": {
+      "sha256": "c4da1c723d55996d7518128a7ff8fea678e43c6c80ba4f3784e5cc72284af41e", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "legacy_workflows_v1.json": {
+      "sha256": "361a06896f0143b9348e40d7637c7af64e99854273d7886729366d5b8c82aaa1", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "node_contracts_v1.json": {
+      "sha256": "65066dac162acaf29286ea28ae823408c66418aa8532dc7c0452ac23e21c2602", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "node_help_host_contracts_v1.json": {
+      "sha256": "de1b38397761422aa5650b9f21352f40ac446ed5a40ce7550849a140fd9acd55", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "split_string_contract_v1.json": {
+      "sha256": "e3d51c97f3f6f6beeab7e9f9b56deaf28918b5629dea99a8acfc088300724a4b", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "v3_migration_contracts_v1.json": {
+      "sha256": "e27694f4e9f935dcafcdf3de0989604c492650015beda8a6f75ab0060d993c61", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    },
+    "v3_text_input_workflows_v1.json": {
+      "sha256": "142614b62e31b2f273a1ee983116f9a4962f436f42f13c8563b6d19f712d97ed", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+    }
+  }
+}

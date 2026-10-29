@@ -1,3 +1,8 @@
+try:
+    from host_contracts import host_matrix, host_tiers
+except ModuleNotFoundError:
+    from tests.host_contracts import host_matrix, host_tiers
+
 import copy
 import importlib
 import json
@@ -13,7 +18,6 @@ except ModuleNotFoundError:
 
 
 REPO_DIR = Path(__file__).resolve().parents[1]
-HOST_TIERS_PATH = REPO_DIR / "tests" / "fixtures" / "global_random_seed_host_tiers_v1.json"
 
 
 class _SequenceRandom:
@@ -531,12 +535,13 @@ class GlobalRandomSeedPromptTests(unittest.TestCase):
 
 
 class GlobalRandomSeedHostTierTests(unittest.TestCase):
-    def test_real_package_registers_and_runs_on_both_pinned_host_seams(self):
-        tiers = json.loads(HOST_TIERS_PATH.read_text(encoding="utf-8"))["tiers"]
+    def test_real_package_registers_on_source_derived_host_facades(self):
+        tiers = host_tiers()
         self.assertEqual(
             [
                 ("desktop_floor", "0.22.3", "1.43.18"),
-                ("current_host", "0.29.0", "1.49.1"),
+                ("core_declared_frontend", "0.43.0", "1.57.6"),
+                ("independent_frontend_head", "0.43.0", "1.60.0"),
             ],
             [
                 (

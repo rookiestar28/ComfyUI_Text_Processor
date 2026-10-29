@@ -153,7 +153,7 @@ If you prefer terminal commands or don't use the Manager:
 
 * **Release requirements:** ComfyUI Text Processor 1.8.2 requires Python 3.10+ and ComfyUI Core 0.22.3+.
 * **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
-* **Current host observation:** The node pack has also been checked against Core 0.29.0 and Frontend 1.49.1. These versions are a current compatibility snapshot, not a new minimum or maximum.
+* **Compatibility evidence:** Core 0.29.0 / Frontend 1.49.1 is a historical contract snapshot. Offline source-derived regressions now distinguish the Desktop floor, Core 0.43.0 with its declared Frontend 1.57.6, and independent Frontend 1.60.0 sources observed on 2026-10-29. The latter checkouts include commits after their version tags. These tests exercise local facades and the node pack; they do not certify execution on those host builds or change the minimum supported version.
 * **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
 * **In-app guidance:** All 155 visible node inputs provide host tooltips, and 10 complex nodes also provide fallback Markdown help in ComfyUI's node-help surface.
 

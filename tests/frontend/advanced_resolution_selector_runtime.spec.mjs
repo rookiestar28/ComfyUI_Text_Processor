@@ -19,7 +19,9 @@ const contract = JSON.parse(
 );
 
 
-async function loadExtension(page, tierId) {
+const hostTiers = JSON.parse(await fs.readFile(path.join(repoRoot, "tests/fixtures/host_compatibility_matrix_v1.json"), "utf8")).tiers;
+
+export async function loadExtension(page, tierId) {
   const extensionSource = await fs.readFile(extensionPath, "utf8");
   await page.route("https://host.test/**", async (route) => {
     const url = new URL(route.request().url());
@@ -91,6 +93,12 @@ async function loadExtension(page, tierId) {
         if (hasLabel) {
           value.label = label;
         }
+        let reactiveLabel = value.label;
+        if (hasLabel) Object.defineProperty(value, "label", {
+          enumerable: true, configurable: true,
+          get() { return reactiveLabel; },
+          set(next) { reactiveLabel = next; },
+        });
         return value;
       };
       node.outputs = [];
@@ -136,7 +144,7 @@ test("registers the exact extension without changing protected host methods", as
 });
 
 
-for (const tierId of Object.keys(contract.tiers)) {
+for (const { id: tierId } of hostTiers) {
   test(`${tierId}: valid and cached UI output updates both labels and refreshes both renderers`, async ({
     page,
   }) => {
@@ -194,7 +202,7 @@ for (const tierId of Object.keys(contract.tiers)) {
 }
 
 
-for (const tierId of Object.keys(contract.tiers)) {
+for (const { id: tierId } of hostTiers) {
   test(`${tierId}: comparable synthetic baseline and runtime label captures`, async ({
     page,
   }) => {

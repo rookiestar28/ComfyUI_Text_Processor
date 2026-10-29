@@ -330,7 +330,7 @@ test("synthetic snapshots fail when the public positional contract drifts", asyn
 });
 
 
-test("floor and current synthetic tiers restore and serialize unavailable legacy 21:9", async ({ page }) => {
+test("historical floor and current synthetic tiers restore and serialize unavailable legacy 21:9", async ({ page }) => {
   await page.setContent("<!doctype html><html><body></body></html>");
   const fixture = loadMigrationFixture();
   expect(fixture.frontend_tiers).toEqual([

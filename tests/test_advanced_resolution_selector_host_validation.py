@@ -1,3 +1,8 @@
+try:
+    from host_contracts import host_matrix, host_tiers
+except ModuleNotFoundError:
+    from tests.host_contracts import host_matrix, host_tiers
+
 import inspect
 import unittest
 
@@ -9,7 +14,7 @@ except ModuleNotFoundError:
 
 PUBLIC_OPTIONS = ["1:1", "9:7", "4:3", "19:13", "3:2", "7:4", "16:9", "custom"]
 EXECUTABLE_OPTIONS = PUBLIC_OPTIONS + ["21:9"]
-SUPPORTED_HOST_TIERS = ("current_core_0.29.0", "desktop_floor_core_0.22.3")
+SUPPORTED_HOST_TIERS = tuple(tier["id"] for tier in host_tiers())
 
 
 def _values(**overrides):
