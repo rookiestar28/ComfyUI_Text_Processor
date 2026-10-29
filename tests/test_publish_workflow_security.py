@@ -24,14 +24,15 @@ def audit_locked_package(
     if len(blocks) != 1:
         return [f"{package}:missing_or_duplicate_pin"]
     block = blocks[0]
+    # IMPORTANT: packaging has two-part final releases; compare a missing patch as zero.
     pin = re.fullmatch(
-        rf"{re.escape(package)}==(\d+)\.(\d+)\.(\d+)\s+\\",
+        rf"{re.escape(package)}==(\d+)\.(\d+)(?:\.(\d+))?\s+\\",
         block.splitlines()[0],
     )
     if pin is None:
         return [f"{package}:non_exact_final_pin"]
     findings = []
-    if tuple(int(part) for part in pin.groups()) < minimum:
+    if tuple(int(part or 0) for part in pin.groups()) < minimum:
         findings.append(f"{package}:below_security_floor")
     hashes = re.findall(r"--hash=sha256:([^\s\\]+)", block)
     if not hashes or any(re.fullmatch(r"[0-9a-f]{64}", value) is None for value in hashes):
@@ -56,11 +57,21 @@ def audit_urllib3_locks(ci_text: str, publish_text: str) -> list[str]:
     return findings
 
 
+def audit_filelock_lock(ci_text: str) -> list[str]:
+    # CRITICAL: 4.2.0 still permits SQLite path races and Windows lock denial of service.
+    return audit_locked_package(ci_text, "filelock", (4, 2, 1))
+
+
 def audit_virtualenv_lock(ci_text: str) -> list[str]:
-    # CRITICAL: virtualenv 21.7.13 alone conflicts with python-discovery 1.5.2 in hashed installs.
-    return audit_locked_package(ci_text, "virtualenv", (21, 7, 13)) + audit_locked_package(
-        ci_text, "python-discovery", (1, 6, 0)
-    )
+    # CRITICAL: earlier 21.14.x fixes are incomplete; omitted companions break hashed installs.
+    findings = []
+    for package, minimum in (
+        ("virtualenv", (21, 14, 9)),
+        ("python-discovery", (1, 6, 1)),
+        ("packaging", (26, 3, 0)),
+    ):
+        findings.extend(audit_locked_package(ci_text, package, minimum))
+    return findings
 
 
 def audit_workflow(text):
@@ -312,31 +323,101 @@ class PublishWorkflowSecurityTests(unittest.TestCase):
             with self.subTest(publish=publish):
                 self.assertTrue(audit_urllib3_locks(safe, publish))
 
+    def test_ci_filelock_pin_covers_sqlite_and_windows_security_fixes(self):
+        self.assertEqual(audit_filelock_lock(CI_LOCK.read_text(encoding="utf-8")), [])
+
+    def test_filelock_lock_rejects_vulnerable_or_unverifiable_pins(self):
+        safe = "filelock==4.2.1 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+        self.assertEqual(audit_filelock_lock(safe), [])
+        mutations = [
+            safe.replace("4.2.1", version) for version in ("3.32.3", "4.0.0", "4.2.0")
+        ]
+        mutations.extend(
+            (
+                "",
+                safe + safe,
+                safe.replace("==4.2.1", ">=4.2.1"),
+                safe.replace("4.2.1", "4.2.1rc1"),
+                safe.splitlines()[0] + "\n",
+                safe.replace("a" * 64, "invalid"),
+            )
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                self.assertTrue(audit_filelock_lock(mutation))
+
     def test_ci_virtualenv_security_floor_and_companion_dependency_are_compatible(self):
         self.assertEqual(audit_virtualenv_lock(CI_LOCK.read_text(encoding="utf-8")), [])
 
     def test_virtualenv_lock_rejects_all_vulnerable_intermediate_floors(self):
         safe = (
-            "virtualenv==21.7.13 \\\n    --hash=sha256:" + "a" * 64 + "\n"
-            "python-discovery==1.6.0 \\\n    --hash=sha256:" + "b" * 64 + "\n"
+            "virtualenv==21.14.9 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+            "python-discovery==1.6.1 \\\n    --hash=sha256:" + "b" * 64 + "\n"
+            "packaging==26.3 \\\n    --hash=sha256:" + "c" * 64 + "\n"
         )
         self.assertEqual(audit_virtualenv_lock(safe), [])
-        for version in ("21.7.4", "21.7.10", "21.7.11", "21.7.12"):
+        for version in (
+            "21.7.4", "21.7.10", "21.7.11", "21.7.12", "21.7.13",
+            "21.14.1", "21.14.2", "21.14.3", "21.14.4",
+            "21.14.6", "21.14.7", "21.14.8",
+        ):
             with self.subTest(version=version):
-                self.assertTrue(audit_virtualenv_lock(safe.replace("21.7.13", version)))
+                self.assertIn(
+                    "virtualenv:below_security_floor",
+                    audit_virtualenv_lock(safe.replace("21.14.9", version)),
+                )
 
     def test_virtualenv_lock_rejects_stale_or_missing_companion_pin(self):
         safe = (
-            "virtualenv==21.7.13 \\\n    --hash=sha256:" + "a" * 64 + "\n"
-            "python-discovery==1.6.0 \\\n    --hash=sha256:" + "b" * 64 + "\n"
+            "virtualenv==21.14.9 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+            "python-discovery==1.6.1 \\\n    --hash=sha256:" + "b" * 64 + "\n"
+            "packaging==26.3 \\\n    --hash=sha256:" + "c" * 64 + "\n"
         )
+        for package, version, digest in (
+            ("python-discovery", "1.6.1", "b" * 64),
+            ("packaging", "26.3", "c" * 64),
+        ):
+            block = f"{package}=={version} \\\n    --hash=sha256:{digest}\n"
+            with self.subTest(missing=package):
+                self.assertEqual(
+                    audit_virtualenv_lock(safe.replace(block, "")),
+                    [f"{package}:missing_or_duplicate_pin"],
+                )
+            with self.subTest(duplicate=package):
+                self.assertEqual(
+                    audit_virtualenv_lock(safe + block),
+                    [f"{package}:missing_or_duplicate_pin"],
+                )
         for mutation in (
-            safe.replace("1.6.0", "1.5.2"),
+            safe.replace("1.6.1", "1.5.2"),
+            safe.replace("1.6.1", "1.6.0"),
+            safe.replace("26.3", "26.2"),
             safe.split("python-discovery==", 1)[0],
+            safe.split("packaging==", 1)[0],
             safe + safe.split("python-discovery==", 1)[0],
+            safe + "packaging==" + safe.split("packaging==", 1)[1],
+            safe.replace("1.6.1", "1.6.1rc1"),
+            safe.replace("packaging==", "packaging>="),
+            safe.replace("26.3", "26.3rc1"),
+            safe.replace("b" * 64, "invalid"),
+            safe.replace("c" * 64, "invalid"),
+            safe.replace("    --hash=sha256:" + "c" * 64 + "\n", ""),
         ):
             with self.subTest(mutation=mutation):
                 self.assertTrue(audit_virtualenv_lock(mutation))
+
+    def test_numeric_final_pins_normalize_missing_patch_without_weakening_floor(self):
+        safe = "packaging==26.3 \\\n    --hash=sha256:" + "a" * 64 + "\n"
+        for version in ("26.3", "26.3.0", "26.4"):
+            with self.subTest(version=version):
+                self.assertEqual(
+                    audit_locked_package(safe.replace("26.3", version), "packaging", (26, 3, 0)), []
+                )
+        for version in ("26.2.99", "26.3rc1", "26.3.post1", "26.3.0.1", "26"):
+            with self.subTest(version=version):
+                self.assertTrue(
+                    audit_locked_package(safe.replace("26.3", version), "packaging", (26, 3, 0))
+                )
 
     def test_mutations_are_detected(self):
         mutations = (
