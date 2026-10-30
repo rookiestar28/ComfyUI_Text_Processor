@@ -10,6 +10,20 @@ An advanced automation toolkit with 20 production nodes for text processing, reu
 
 <details>
 
+<summary><strong>Seed readback and host compatibility updated</strong></summary>
+
+- Fixed `Global Random Seed` widget readback inside open and closed nested
+  subgraphs, keeping repeated local node IDs separate.
+- Added safe handling for missing or ambiguous graph paths without changing
+  backend seed assignments or numeric precision safeguards.
+- Expanded compatibility regressions for newer Core and Frontend source snapshots,
+  including widget restoration, output feedback, help, and package boundaries.
+- Updated vulnerable CI tooling dependencies without adding node runtime packages.
+
+</details>
+
+<details>
+
 <summary><strong>Resolution selection modes and output feedback improved</strong></summary>
 
 - Added `Advanced Resolution Selector` presets, custom ratios, portrait and
@@ -77,8 +91,8 @@ An advanced automation toolkit with 20 production nodes for text processing, reu
 
 <summary><strong>Host compatibility, guidance, and packaging refreshed</strong></summary>
 
-- Version 1.8.2 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
-  covering the validated Desktop floor and the current host snapshot.
+- Version 1.8.5 supports Python 3.10+ and ComfyUI Core 0.22.3+, with contracts
+  covering the Desktop floor and newer source observations.
 - Production nodes remain on the compatible V1 API while V3 migration stays
   deferred until a newer stable ComfyUI node API is available.
 - All 155 visible inputs now include tooltips, 10 complex nodes provide Markdown
@@ -151,7 +165,7 @@ If you prefer terminal commands or don't use the Manager:
 
 ## Compatibility and host support
 
-* **Release requirements:** ComfyUI Text Processor 1.8.2 requires Python 3.10+ and ComfyUI Core 0.22.3+.
+* **Release requirements:** ComfyUI Text Processor 1.8.5 requires Python 3.10+ and ComfyUI Core 0.22.3+.
 * **Validated Desktop floor:** Desktop 0.9.4 with Core 0.22.3 and Frontend 1.43.18 is the oldest host combination covered by the compatibility contract.
 * **Compatibility evidence:** Core 0.29.0 / Frontend 1.49.1 is a historical contract snapshot. Offline source-derived regressions now distinguish the Desktop floor, Core 0.43.0 with its declared Frontend 1.57.6, and independent Frontend 1.60.0 sources observed on 2026-10-29. The latter checkouts include commits after their version tags. These tests exercise local facades and the node pack; they do not certify execution on those host builds or change the minimum supported version.
 * **Node API posture:** Production nodes remain on V1 for compatibility. V3 migration is intentionally deferred until ComfyUI publishes a stable node API newer than the experimental `v0_0_2` contract.
@@ -391,9 +405,11 @@ to `fixed` when comparing its widget directly with `last_seed`.
 API prompts work without serialized workflow metadata. When no browser client is
 present, callers must resubmit the next controller `value`; the server deliberately
 keeps no per-client continuation state. Backend coverage is defined by eligible
-nodes present in the submitted prompt. Root/current-graph widgets receive
-best-effort readback, while nested subgraph widget synchronization is not
-guaranteed and does not affect the submitted backend assignment.
+nodes present in the submitted prompt. Browser readback follows the full instance
+path from the root graph for both open and closed nested subgraphs, so repeated
+local IDs do not redirect updates to another instance. Missing widgets, ambiguous
+paths, and malformed or excessively deep graphs safely omit readback without
+affecting the submitted backend assignment.
 
 See [Global Random Seed](./web/docs/Global_RandomSeed.md) for the compact in-app
 input reference.
