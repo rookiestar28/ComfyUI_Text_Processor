@@ -523,9 +523,10 @@
     "expected_visible_input_count": 155,
     "expected_help_count": 10
   },
+  "historical_fixtures_hash_format": "sha256-crlf-to-lf",
   "historical_fixtures_sha256": {
     "advanced_resolution_selector_contract_v1.json": {
-      "sha256": "b9c26767ac1a4cb4b3f4513585014f7e2a14f1d05a8eb2fb11be960059c31514", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "e972a20fd8c00a88d811b47f727e8f1790da49060360ae2fb9c7dacfa4f930be", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "advanced_resolution_selector_contract_v2.json": {
       "sha256": "cd2ec31461ae719d217006ac7d800067657e7ad09015e85579b600fb08499cf3", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
@@ -546,34 +547,34 @@
       "sha256": "f29f9ce670a590aafb1c4e97b739ec2fe6af6e3a6faa95ac76c294ad7333c2c2", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "advanced_resolution_selector_runtime_labels_v1.json": {
-      "sha256": "a5f156de275809e858f14814ea4b928f5642edc47992bc1aaab7abcce95b2ba4", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "b69091ad89da3c4124c006ce3747e3c26af88f60e60966d04a7a1c165d2bc8e3", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "advanced_text_filter_operation_contract_v1.json": {
       "sha256": "ca50e2cb83b201b1b32fab4981de21078ee94238f9ca6d5d0a0f61b53737e99f", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "global_random_seed_contract_v1.json": {
-      "sha256": "bb0642f7f5fe1799bb111fcada67706739864c0e8ff0b227b00b6c20c896fc1d", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "bb089a4581461dc7b5f655289598c417d0e98a5fd3026bcbc50775edf47e51d5", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "global_random_seed_host_tiers_v1.json": {
-      "sha256": "c4da1c723d55996d7518128a7ff8fea678e43c6c80ba4f3784e5cc72284af41e", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "78a7266e52b93cebd52cccbfefec2d24ec6c8f173eda6d13becc97b38168445b", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "legacy_workflows_v1.json": {
-      "sha256": "361a06896f0143b9348e40d7637c7af64e99854273d7886729366d5b8c82aaa1", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "64cf8945febf42b3cbeea45f450260211d764a9e695c1c410daeb0ae1bff0685", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "node_contracts_v1.json": {
-      "sha256": "65066dac162acaf29286ea28ae823408c66418aa8532dc7c0452ac23e21c2602", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "ec2a63ae7a77226f7148eff4fff7cfc8ad01f819de3831703ccb64e819c2ab7e", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "node_help_host_contracts_v1.json": {
-      "sha256": "de1b38397761422aa5650b9f21352f40ac446ed5a40ce7550849a140fd9acd55", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "c2508bdb84053f0d4fdc9a4ee74dcdda7bad9cbc9a72a8956aff59ee79e6a5c0", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "split_string_contract_v1.json": {
       "sha256": "e3d51c97f3f6f6beeab7e9f9b56deaf28918b5629dea99a8acfc088300724a4b", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "v3_migration_contracts_v1.json": {
-      "sha256": "e27694f4e9f935dcafcdf3de0989604c492650015beda8a6f75ab0060d993c61", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "7ec84fa9764e405ecf02964f2e17365c8e4bdcd8090fe3afe54038b51ae991de", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     },
     "v3_text_input_workflows_v1.json": {
-      "sha256": "142614b62e31b2f273a1ee983116f9a4962f436f42f13c8563b6d19f712d97ed", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
+      "sha256": "2f7889b041a0ac3573b27e60aaec70e3fe2fe2cd081fc1421155da0136ac922b", "_sha256_note": "Public source or fixture hash; # pragma: allowlist secret"
     }
   }
 }

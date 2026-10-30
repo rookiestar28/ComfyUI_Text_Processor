@@ -23,7 +23,23 @@ from scripts import validate_publish_candidate as candidate
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
 
 
+def _fixture_sha256(payload: bytes) -> str:
+    # IMPORTANT: Git may check out CRLF or LF; raw-byte hashes break Linux CI.
+    # Normalize only CRLF, so whitespace, lone CR and content edits still fail.
+    return hashlib.sha256(payload.replace(b'\r\n', b'\n')).hexdigest()
+
+
 class CurrentHostContractsTests(unittest.TestCase):
+    def test_fixture_digest_is_checkout_portable_but_detects_non_newline_edits(self):
+        for name, digest in host_matrix()['historical_fixtures_sha256'].items():
+            lf = (FIXTURES / name).read_bytes().replace(b'\r\n', b'\n')
+            for variant in (lf, lf.replace(b'\n', b'\r\n')):
+                with self.subTest(fixture=name, line_ending='CRLF' if b'\r\n' in variant else 'LF'):
+                    self.assertEqual(digest['sha256'], _fixture_sha256(variant))
+            for edited in (lf + b' ', lf.replace(b'\n', b'\r', 1), b'!' + lf[1:]):
+                with self.subTest(fixture=name, mutation=edited[:20]):
+                    self.assertNotEqual(_fixture_sha256(lf), _fixture_sha256(edited))
+
     def test_active_observations_distinguish_declared_and_independent_frontend(self):
         path = FIXTURES / 'host_compatibility_matrix_v1.json'
         self.assertTrue(path.exists(), 'active source matrix is missing; old current tiers cannot describe updated sources')
@@ -39,6 +55,7 @@ class CurrentHostContractsTests(unittest.TestCase):
     def test_source_identity_and_historical_fixture_integrity(self):
         matrix = host_matrix()
         self.assertEqual('source_derived_contract', matrix['evidence_kind'])
+        self.assertEqual('sha256-crlf-to-lf', matrix['historical_fixtures_hash_format'])
         for tier in host_tiers():
             for source in (tier['core'], tier['frontend']):
                 self.assertRegex(source['commit'], r'^[0-9a-f]{40}$')
@@ -52,7 +69,7 @@ class CurrentHostContractsTests(unittest.TestCase):
         self.assertEqual(108, matrix['tiers'][2]['frontend']['post_release_commits'])
         for name, digest in matrix['historical_fixtures_sha256'].items():
             with self.subTest(fixture=name):
-                self.assertEqual(digest["sha256"], hashlib.sha256((FIXTURES / name).read_bytes()).hexdigest())
+                self.assertEqual(digest["sha256"], _fixture_sha256((FIXTURES / name).read_bytes()))
         text = json.dumps(matrix)
         self.assertIsNone(re.search(r'(?i)\.planning|reference/docs|[A-Z]:\\|/home/', text))
 
